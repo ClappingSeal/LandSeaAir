@@ -12,5 +12,5 @@ while True:
         numbers = [num for num in numbers if num != 0]
         print("Received data:", numbers)
 
-# 이 코드에서 종료는 실행되지 않음
+# 이 코드에서 종료 실행 X
 master.close()
