@@ -14,3 +14,4 @@ while True:
 
 # 이 코드에서 종료는 실행되지 않음
 master.close()
+# 진혁시치
