@@ -5,8 +5,6 @@ class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
         self.connection_string = connection_string
         self.baudrate = baudrate
-
-        # 연결 설정
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
 
     def send_data(self, data):
@@ -23,7 +21,6 @@ class Drone:
         self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
 
     def arm(self):
-        # 드론 시동(arm)
         self.vehicle.mav.command_long_send(
             self.vehicle.target_system,
             self.vehicle.target_component,
@@ -34,10 +31,10 @@ class Drone:
         )
 
     def close_connection(self):
-        # 연결 종료
         self.vehicle.close()
 
 
 # 사용 예시:
 drone = Drone()
-drone.arm()  # 드론 시동
+drone.arm()
+drone.send_data([123,425,234,212])
