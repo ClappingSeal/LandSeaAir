@@ -8,16 +8,16 @@ class Drone:
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
 
     def send_data(self, data):
-        # 데이터 패킹
+        # Packing Data
         packed_data = bytearray()
         for item in data:
             packed_data += item.to_bytes(4, 'little')
 
-        # 64바이트로 패딩
+        # 64byte Padding
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        # 데이터 전송
+        # Sending Data
         self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
 
     def arm(self):
@@ -34,7 +34,7 @@ class Drone:
         self.vehicle.close()
 
 
-# 사용 예시:
-drone = Drone()
-drone.arm()
-drone.send_data([123,425,234,212])
+if __name__=='__main__':
+    drone = Drone()
+    drone.arm()
+    drone.send_data([123,425,234,212])
