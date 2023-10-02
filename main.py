@@ -1,5 +1,5 @@
 from pymavlink import mavutil
-
+import picamera
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
