@@ -6,6 +6,8 @@ class Drone:
         self.connection_string = connection_string
         self.baudrate = baudrate
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
+        self.camera = picamera.PiCamera()
+        self.camera.start_preview()
 
     def send_data(self, data):
         # Packing Data
@@ -36,5 +38,4 @@ class Drone:
 
 if __name__=='__main__':
     drone = Drone()
-    drone.arm()
     drone.send_data([123,425,234,212])
