@@ -1,5 +1,6 @@
 from pymavlink import mavutil
 import cv2
+import threading
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
@@ -12,6 +13,16 @@ class Drone:
             return
 
     def send_data(self, data):
+        while True:
+            ret, frame = self.camera.read()
+            if not ret:
+                print("Error: Couldn't read frame.")
+                break
+
+            cv2.imshow("Camera Stream", frame) # delete this line to make process quick
+            if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to quit
+                break
+        
         # Packing Data
         packed_data = bytearray()
         for item in data:
@@ -23,15 +34,6 @@ class Drone:
 
         # Sending Data
         self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
-
-    def arm(self):
-        self.vehicle.mav.command_long_send(
-            self.vehicle.target_system,
-            self.vehicle.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0,  
-            1,  # 1 to arm
-            0, 0, 0, 0, 0, 0  
-        )
 
     def show_camera_stream(self):
         while True:
@@ -50,6 +52,8 @@ class Drone:
 
 if __name__=='__main__':
     drone = Drone()
-    drone.send_data([123,425,234,212])
-    drone.show_camera_stream()
 
+    camera_thread = threading.Thread(target=drone.show_camera_stream)
+    camera_thread.start()
+    while True:
+        drone.send_data([123, 425, 234, 212])
