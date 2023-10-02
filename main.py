@@ -40,7 +40,7 @@ class Drone:
                 print("Error: Couldn't read frame.")
                 break
 
-            cv2.imshow("Camera Stream", frame)
+            cv2.imshow("Camera Stream", frame) # delete this line to make process quick
             if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to quit
                 break
 
