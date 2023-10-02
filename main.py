@@ -1,13 +1,15 @@
 from pymavlink import mavutil
-import picamera
+import cv2
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
         self.connection_string = connection_string
         self.baudrate = baudrate
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
-        self.camera = picamera.PiCamera()
-        self.camera.start_preview()
+        self.camera = cv2.VideoCapture(0)
+        if not self.camera.isOpened():
+            print("Error: Couldn't open the camera.")
+            return
 
     def send_data(self, data):
         # Packing Data
