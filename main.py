@@ -33,6 +33,17 @@ class Drone:
             0, 0, 0, 0, 0, 0  
         )
 
+    def show_camera_stream(self):
+        while True:
+            ret, frame = self.camera.read()
+            if not ret:
+                print("Error: Couldn't read frame.")
+                break
+
+            cv2.imshow("Camera Stream", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to quit
+                break
+
     def close_connection(self):
         self.vehicle.close()
 
@@ -40,3 +51,5 @@ class Drone:
 if __name__=='__main__':
     drone = Drone()
     drone.send_data([123,425,234,212])
+    drone.show_camera_stream()
+
