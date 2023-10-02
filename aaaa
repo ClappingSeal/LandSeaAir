@@ -1,0 +1,11 @@
+[Unit]
+Description=My Python Script Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /path/to/your_script.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
