@@ -6,7 +6,7 @@ After=multi-user.target
 Type=simple
 ExecStart=/usr/bin/python3 /home/GISTracker/LandSeaAir/main.py
 WorkingDirectory=/home/GISTracker/LandSeaAir/
-User=pi
+User=GISTracker
 Restart=on-failure
 
 [Install]
