@@ -24,7 +24,7 @@ class Drone:
             packed_data += b'\x00'
 
         # Sending Data
-        self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
+        self.vehicle._master.mav.data64_send(0, len(packed_data), packed_data)
 
     def show_camera_stream(self):
         while True:
