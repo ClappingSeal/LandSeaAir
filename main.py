@@ -28,10 +28,9 @@ class Drone:
         self.vehicle.mav.command_long_send(
             self.vehicle.target_system,
             self.vehicle.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-            0,  # command's confirmation (0 means no need for confirmation)
-            1,  # 1 to arm, 0 to disarm
-            0, 0, 0, 0, 0, 0  # unused parameters for this command
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0,  
+            1,  # 1 to arm
+            0, 0, 0, 0, 0, 0  
         )
 
     def close_connection(self):
