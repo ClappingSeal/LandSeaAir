@@ -48,4 +48,4 @@ if __name__=='__main__':
     camera_thread.start()
     while True:
         drone.send_data([123, 425, 234, 212])
-        time.sleep(1)
+        time.sleep(0.1)
