@@ -293,7 +293,6 @@ if __name__ == "__main__":
         # 미션 시작
         if len(nums) == 2:
             print(drone.async_result)
-            drone.RTL()
             """
             drone.arm()
             drone.takeoff(3)
@@ -302,6 +301,8 @@ if __name__ == "__main__":
             drone.goto_auto(1, 10, 3, 3)
             time.sleep(3)
             drone.land_by_auto_mode()
+            
+            # drone.RTL()
             """
 
         else:
@@ -311,3 +312,4 @@ if __name__ == "__main__":
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
         drone.close_connection()
+
