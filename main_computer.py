@@ -3,6 +3,7 @@ from pymavlink.dialects.v20 import ardupilotmega
 import time
 import logging
 import threading
+from openpyxl import Workbook
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -216,13 +217,13 @@ class Drone:
 
         row_number = 2
         while True:
-            current_time = time.strftime('%H:%M:%S')
             lat = drone_receiver.vehicle.location.global_relative_frame.lat
             lon = drone_receiver.vehicle.location.global_relative_frame.lon
             alt = drone_receiver.vehicle.location.global_relative_frame.alt
 
             # Write the new data to the next row in the Excel sheet
-            ws.cell(row=row_number, column=1, value=current_time)
+            ws.cell(row=row_number, column=1,
+                    value=row_number - 1)  # Here we use row_number - 1 for sequential numbering
             ws.cell(row=row_number, column=2, value=lat)
             ws.cell(row=row_number, column=3, value=lon)
             ws.cell(row=row_number, column=4, value=alt)
@@ -235,8 +236,10 @@ class Drone:
 
 
 if __name__ == "__main__":
-    # 드론 연결 및 데이터 수신 async 처리
+    # 드론 연결
     drone = Drone()
+
+    # 데이터 수신 async 처리
     data_thread = threading.Thread(target=Drone.asynchronous_received_data, args=(drone,))
     data_thread.start()
 
