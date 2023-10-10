@@ -1,9 +1,11 @@
-from dronekit import Command, VehicleMode, connect, LocationGlobalRelative
+from dronekit import Command, VehicleMode, connect, LocationGlobalRelative, APIException
 from pymavlink.dialects.v20 import ardupilotmega
+from pymavlink import mavutil
 import time
 import logging
 import threading
 from openpyxl import Workbook
+import math
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -15,7 +17,7 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate)
+        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=60)
 
         # Communication value
         self.vehicle.add_message_listener('DATA64', self.on_data64)
@@ -200,6 +202,41 @@ class Drone:
 
         print("Landed successfully!")
 
+    # RTL 고도/속도 조절 (추후에 반드시 해야함)
+
+    def RTL(self, h=3, velocity=4):
+        target_lat = self.init_lat
+        target_lon = self.init_lon
+
+        self.set_flight_mode_by_pwm(1400)  # pwm signal for GUIDED mode
+        time.sleep(0.1)
+
+        cmds = self.vehicle.commands
+        cmds.download()
+        cmds.wait_ready()
+        cmds.clear()
+
+        goto_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                           mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, velocity, 0, target_lat, target_lon, h)
+        land_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                           mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 0, 0, 0, 0, 0,
+                           self.vehicle.location.global_relative_frame.lat,
+                           self.vehicle.location.global_relative_frame.lon, 0)  # 0 for altitude as it's landing
+        cmds.add(goto_cmd)
+        cmds.add(land_cmd)
+        cmds.upload()
+
+        self.set_flight_mode_by_pwm(1300)  # pwm signal for AUTO mode
+
+        # 모니터 링
+        while math.dist([self.vehicle.location.global_relative_frame.lat,
+                         self.vehicle.location.global_relative_frame.lon,
+                         self.vehicle.location.global_relative_frame.alt],
+                        [target_lat, target_lon, h]) > 0.5:  # Adjust as needed
+            print(f"Current Position: {self.vehicle.location.global_relative_frame}")
+            time.sleep(0.5)
+        print("Landed successfully!")
+
     # 그 외 함수들
 
     @staticmethod
@@ -243,7 +280,7 @@ if __name__ == "__main__":
     data_thread = threading.Thread(target=Drone.asynchronous_received_data, args=(drone,))
     data_thread.start()
 
-    # 엑셀 저장 시작
+    # 엑셀 저장 시작 (메인 프로젝트 시 제거)
     excel_thread = threading.Thread(target=Drone.position_excel, args=(drone,))
     excel_thread.start()
 
@@ -255,9 +292,17 @@ if __name__ == "__main__":
 
         # 미션 시작
         if len(nums) == 2:
-            while True:
-                print(drone.async_result)
-                time.sleep(0.1)
+            print(drone.async_result)
+            drone.RTL()
+            """
+            drone.arm()
+            drone.takeoff(3)
+            drone.goto_auto(1, 2, 3, 3)
+            time.sleep(3)
+            drone.goto_auto(1, 10, 3, 3)
+            time.sleep(3)
+            drone.land_by_auto_mode()
+            """
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
