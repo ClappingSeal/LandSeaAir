@@ -1,4 +1,4 @@
-from dronekit import Command, VehicleMode, connect
+from dronekit import Command, VehicleMode, connect, LocationGlobalRelative
 from pymavlink.dialects.v20 import ardupilotmega
 import time
 import logging
@@ -10,13 +10,20 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 class Drone:
     def __init__(self, connection_string='COM5', baudrate=57600):
         print('vehicle connecting...')
+
+        # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
         self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate)
+
+        # Communication value
         self.vehicle.add_message_listener('DATA64', self.on_data64)
         self.received_data = None
-        self.data = None
         self.async_result = None
+
+        # Position value
+        self.init_lat = self.vehicle.location.global_relative_frame.lat
+        self.init_lon = self.vehicle.location.global_relative_frame.lon
 
     # 통신 함수
 
@@ -98,6 +105,7 @@ class Drone:
 
         print("Taking off!")
 
+        # Monitoring altitude
         while True:
             print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
             if self.vehicle.location.global_relative_frame.alt >= h * 0.8:
@@ -105,17 +113,17 @@ class Drone:
                 break
             time.sleep(0.5)
 
-    def goto(self, x, y, z):
+    def goto_auto(self, x, y, z, velocity=2):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
-        base_lat = 35.2265867
-        base_lon = 126.8397070
+        base_lat = self.init_lat
+        base_lon = self.init_lon
 
         target_lat = base_lat + (y / LATITUDE_CONVERSION)
         target_lon = base_lon + (x / LONGITUDE_CONVERSION)
 
-        self.set_flight_mode_by_pwm(1400)
+        self.set_flight_mode_by_pwm(1400)  # pwm signal for GUIDED mode
         time.sleep(0.1)
 
         cmds = self.vehicle.commands
@@ -124,14 +132,39 @@ class Drone:
         cmds.clear()
 
         goto_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                           mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, z)
+                           mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, velocity, 0, target_lat, target_lon, z)
         cmds.add(goto_cmd)
         cmds.upload()
 
-        self.vehicle.mode = VehicleMode("AUTO")
         self.set_flight_mode_by_pwm(1300)  # pwm signal for AUTO mode
 
-        # Monitoring the position until it reaches the target
+        # 모니터 링
+        while math.dist([self.vehicle.location.global_relative_frame.lat,
+                         self.vehicle.location.global_relative_frame.lon,
+                         self.vehicle.location.global_relative_frame.alt],
+                        [target_lat, target_lon, z]) > 0.5:  # Adjust as needed
+            print(f"Current Position: {self.vehicle.location.global_relative_frame}")
+            time.sleep(0.5)
+        print("Reached target position")
+
+    def goto_guided(self, x, y, z, velocity=2):
+        LATITUDE_CONVERSION = 111000
+        LONGITUDE_CONVERSION = 88.649 * 1000
+
+        base_lat = self.init_lat
+        base_lon = self.init_lon
+
+        target_lat = base_lat + (y / LATITUDE_CONVERSION)
+        target_lon = base_lon + (x / LONGITUDE_CONVERSION)
+
+        self.set_flight_mode_by_pwm(1400)  # pwm signal for GUIDED mode
+        time.sleep(0.1)
+
+        # Set target location and velocity in GUIDED mode
+        location = LocationGlobalRelative(target_lat, target_lon, z)
+        self.vehicle.simple_goto(location, groundspeed=velocity)
+
+        # Monitoring the position
         while math.dist([self.vehicle.location.global_relative_frame.lat,
                          self.vehicle.location.global_relative_frame.lon,
                          self.vehicle.location.global_relative_frame.alt],
@@ -166,12 +199,50 @@ class Drone:
 
         print("Landed successfully!")
 
+    # 그 외 함수들
+
+    @staticmethod
+    def position_excel(drone_receiver):
+        # Create a new Excel workbook and select the active worksheet
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Drone Positions"
+
+        # Write the header to the Excel sheet
+        headers = ['Time', 'Latitude', 'Longitude', 'Altitude']
+        for col_num, header in enumerate(headers, 1):
+            col_letter = ws.cell(row=1, column=col_num)
+            col_letter.value = header
+
+        row_number = 2
+        while True:
+            current_time = time.strftime('%H:%M:%S')
+            lat = drone_receiver.vehicle.location.global_relative_frame.lat
+            lon = drone_receiver.vehicle.location.global_relative_frame.lon
+            alt = drone_receiver.vehicle.location.global_relative_frame.alt
+
+            # Write the new data to the next row in the Excel sheet
+            ws.cell(row=row_number, column=1, value=current_time)
+            ws.cell(row=row_number, column=2, value=lat)
+            ws.cell(row=row_number, column=3, value=lon)
+            ws.cell(row=row_number, column=4, value=alt)
+            row_number += 1
+
+            # Save the workbook to a file
+            wb.save('drone_position.xlsx')
+
+            time.sleep(1)
+
 
 if __name__ == "__main__":
     # 드론 연결 및 데이터 수신 async 처리
     drone = Drone()
     data_thread = threading.Thread(target=Drone.asynchronous_received_data, args=(drone,))
     data_thread.start()
+
+    # 엑셀 저장 시작
+    excel_thread = threading.Thread(target=Drone.position_excel, args=(drone,))
+    excel_thread.start()
 
     # 드론 행동 블럭
     try:
@@ -192,5 +263,3 @@ if __name__ == "__main__":
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
         drone.close_connection()
-
-
