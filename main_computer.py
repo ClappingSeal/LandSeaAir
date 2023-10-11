@@ -86,9 +86,9 @@ class Drone:
 
     def takeoff(self, h):
         self.set_flight_mode_by_pwm(1000)
-        time.sleep(0.1)
-        self.vehicle.channels.overrides['3'] = 1500
-        time.sleep(2)
+        time.sleep(5)
+        self.vehicle.channels.overrides['3'] = 1200
+        time.sleep(5)
 
         cmds = self.vehicle.commands
         cmds.download()
@@ -119,7 +119,7 @@ class Drone:
     def north_direction(self):
         self.set_flight_mode_by_pwm(1400)  # pwm signal for GUIDED mode
         time.sleep(0.1)
-        
+
         yaw_angle = 0
         is_relative = 0
         clockwise = 0
