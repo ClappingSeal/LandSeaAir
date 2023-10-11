@@ -39,7 +39,7 @@ class Drone:
 
     def arm(self):
         try:
-            self.vehicle.channels.overrides['3'] = 1000
+            self.vehicle.channels.overrides['3'] = 1111
             self.vehicle.mode = VehicleMode("STABILIZE")
             time.sleep(3)
             self.vehicle.armed = True
@@ -54,7 +54,7 @@ class Drone:
     def takeoff(self, h):
         self.vehicle.mode = VehicleMode("STABILIZE")
         time.sleep(0.1)
-        self.vehicle.channels.overrides['3'] = 1200
+        self.vehicle.channels.overrides['3'] = 1222
         time.sleep(2)
 
         cmds = self.vehicle.commands
