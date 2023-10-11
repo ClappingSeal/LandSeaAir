@@ -86,9 +86,9 @@ class Drone:
 
     def takeoff(self, h):
         self.set_flight_mode_by_pwm(1000)
-        time.sleep(5)
+        time.sleep(0.1)
         self.vehicle.channels.overrides['3'] = 1200
-        time.sleep(5)
+        time.sleep(2)
 
         cmds = self.vehicle.commands
         cmds.download()
