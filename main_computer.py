@@ -116,7 +116,29 @@ class Drone:
                 break
             time.sleep(0.5)
 
-    def goto_auto(self, x, y, z, velocity=2):
+    def north_direction(self):
+        self.set_flight_mode_by_pwm(1400)  # pwm signal for GUIDED mode
+        time.sleep(0.1)
+        
+        yaw_angle = 0
+        is_relative = 0
+        clockwise = 0
+        yaw_rate = 0
+
+        yaw_cmd = Command(0, 0, 0, 0,
+                          mavutil.mavlink.MAV_CMD_CONDITION_YAW,
+                          0, 0, yaw_angle, yaw_rate, clockwise, is_relative,
+                          0, 0, 0)
+
+        cmds = self.vehicle.commands
+        cmds.clear()
+        cmds.add(yaw_cmd)
+        cmds.upload()
+
+        self.set_flight_mode_by_pwm(1300)  # pwm signal for AUTO mode
+        time.sleep(2)
+
+    def goto_auto(self, x, y, z, velocity=4):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
@@ -150,7 +172,7 @@ class Drone:
             time.sleep(0.5)
         print("Reached target position")
 
-    def goto_guided(self, x, y, z, velocity=2):
+    def goto_guided(self, x, y, z, velocity=4):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
@@ -202,7 +224,7 @@ class Drone:
 
         print("Landed successfully!")
 
-    # RTL 고도/속도 조절 (추후에 반드시 해야함)
+    # # RTL 고도/속도 조절 (추후에 반드시 해야함)
 
     def RTL(self, h=3, velocity=4):
         target_lat = self.init_lat
@@ -294,8 +316,9 @@ if __name__ == "__main__":
         if len(nums) == 2:
             print(drone.async_result)
             """
-            drone.arm()
-            drone.takeoff(3)
+            drone.arm() # no delay
+            drone.takeoff(3) # no delay
+            drone.north_direction() # no delay
             drone.goto_auto(1, 2, 3, 3)
             time.sleep(3)
             drone.goto_auto(1, 10, 3, 3)
@@ -304,6 +327,7 @@ if __name__ == "__main__":
             
             # drone.RTL()
             """
+
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
