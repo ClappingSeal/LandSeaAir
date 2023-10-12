@@ -8,7 +8,7 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM5', baudrate=57600):
+    def __init__(self, connection_string='COM15', baudrate=57600):
         print('vehicle connecting...')
 
         # Connecting value
@@ -39,11 +39,12 @@ class Drone:
 
     def arm(self):
         try:
-            self.vehicle.channels.overrides['3'] = 1111
+            self.vehicle.channels.overrides['3'] = 1120
             self.vehicle.mode = VehicleMode("STABILIZE")
-            time.sleep(3)
+            time.sleep(0.1)
             self.vehicle.armed = True
-            time.sleep(3)  # Wait for the drone to be armed
+            time.sleep(5.6)  # Wait for the drone to be armed
+
             if self.vehicle.armed:
                 print("Vehicle armed")
             else:
@@ -54,8 +55,9 @@ class Drone:
     def takeoff(self, h):
         self.vehicle.mode = VehicleMode("STABILIZE")
         time.sleep(0.1)
-        self.vehicle.channels.overrides['3'] = 1222
+        self.vehicle.channels.overrides['3'] = 1300
         time.sleep(2)
+        self.vehicle.mode = VehicleMode("GUIDED")
 
         cmds = self.vehicle.commands
         cmds.download()
@@ -71,7 +73,6 @@ class Drone:
 
         while not self.vehicle.armed:
             print("Waiting for arming...")
-            time.sleep(1)
 
         print("Taking off!")
 
@@ -205,11 +206,11 @@ class Drone:
 
     def close_connection(self):
         self.vehicle.close()
-    
+
 
 if __name__ == "__main__":
     # 드론 연결
-    GT = Drone()
+    gt = Drone()
 
     # 드론 행동 블럭
     try:
@@ -219,13 +220,20 @@ if __name__ == "__main__":
 
         # 미션 시작
         if len(nums) == 2:
-            print(GT.receiving_data())
+            print(gt.init_lat, gt.init_lon)
+            print(gt.receiving_data())
             time.sleep(1)
-            GT.takeoff(1.4)
+            gt.arm()
+            gt.takeoff(3)
+            gt.land_by_auto_mode()
+            # 움직임 사이사이 딜레이 조절 코드 넣기
+            # auto vs guided
+            # 속도 10m/s 까지 해보기
+
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
 
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
-        GT.close_connection()
+        gt.close_connection()
