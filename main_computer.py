@@ -56,7 +56,7 @@ class Drone:
         self.vehicle.mode = VehicleMode("STABILIZE")
         time.sleep(0.1)
         self.vehicle.channels.overrides['3'] = 1300
-        time.sleep(2)
+        time.sleep(3)
         self.vehicle.mode = VehicleMode("GUIDED")
 
         cmds = self.vehicle.commands
