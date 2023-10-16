@@ -14,6 +14,7 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
+        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
         self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
