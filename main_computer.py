@@ -1,4 +1,4 @@
-from dronekit import Command, VehicleMode, connect, LocationGlobalRelative, APIException
+from dronekit import connect, VehicleMode, Command, LocationGlobalRelative
 from pymavlink import mavutil
 import time
 import logging
@@ -8,13 +8,13 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM15', baudrate=57600):
+    def __init__(self, connection_string='COM14', baudrate=57600):
         print('vehicle connecting...')
 
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=60)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = None
@@ -32,33 +32,10 @@ class Drone:
     def receiving_data(self):
         return self.received_data
 
-    def close_connection(self):
-        self.vehicle.close()
+    # block
+    def arm_takeoff(self, h):
 
-    # 드론 액션 함수
-
-    def arm(self):
-        try:
-            self.vehicle.channels.overrides['3'] = 1120
-            self.vehicle.mode = VehicleMode("STABILIZE")
-            time.sleep(0.1)
-            self.vehicle.armed = True
-            time.sleep(5.6)  # Wait for the drone to be armed
-
-            if self.vehicle.armed:
-                print("Vehicle armed")
-            else:
-                print("Vehicle armed fail")
-        except APIException as e:
-            print(str(e))
-
-    def takeoff(self, h):
-        self.vehicle.mode = VehicleMode("STABILIZE")
-        time.sleep(0.1)
-        self.vehicle.channels.overrides['3'] = 1300
-        time.sleep(3)
         self.vehicle.mode = VehicleMode("GUIDED")
-
         cmds = self.vehicle.commands
         cmds.download()
         cmds.wait_ready()
@@ -68,141 +45,129 @@ class Drone:
         cmds.add(takeoff_cmd)
         cmds.upload()
 
-        self.vehicle.mode = VehicleMode("AUTO")
         time.sleep(0.1)
-
+        self.vehicle.armed = True
         while not self.vehicle.armed:
             print("Waiting for arming...")
+            time.sleep(1)
 
-        print("Taking off!")
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system, self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_MISSION_START, 0,
+            0, 0, 0, 0, 0, 0, 0, 0)
+        time.sleep(2)
 
-        # Monitoring altitude
+        print("Mission started")
+
         while True:
             print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
             if self.vehicle.location.global_relative_frame.alt >= h * 0.8:
-                print("Reached target altitude")
+                print("Reached target altitude!!!!!!!!!!!!!!!!!!!!")
+                break
+            time.sleep(1)
+
+        self.vehicle.mode = VehicleMode("GUIDED")
+
+    # block
+    def set_yaw_to_north(self):
+        yaw_angle = 0
+        is_relative = False
+
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system, self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
+            yaw_angle, 0, 0, is_relative, 0, 0, 0)
+
+        tolerance = 1  # 단위는 도
+
+        while True:
+            current_yaw = self.vehicle.attitude.yaw
+            current_yaw_deg = math.degrees(current_yaw) % 360
+            angle = abs(current_yaw_deg - yaw_angle) % 360
+
+            if min(angle, 360 - angle) <= tolerance:
+                break
+            print("Yaw : ", min(angle, 360 - angle))
+            time.sleep(0.5)
+
+        print("Setting yaw to face North!!!!!!!!!!!!!!!!!!!!")
+        time.sleep(0.5)
+
+    # non-block
+
+    def goto_location(self, x, y, z):
+        LATITUDE_CONVERSION = 111000
+        LONGITUDE_CONVERSION = 88.649 * 1000
+
+        target_lat = self.init_lat + (y / LATITUDE_CONVERSION)
+        target_lon = self.init_lon + (x / LONGITUDE_CONVERSION)
+        target_alt = z
+
+        if self.vehicle.mode != VehicleMode("GUIDED"):
+            self.vehicle.mode = VehicleMode("GUIDED")
+            time.sleep(0.1)
+
+        target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
+
+        self.vehicle.simple_goto(target_location)
+        print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt}")
+
+    # block
+    def goto_location_block(self, x, y, z):
+        LATITUDE_CONVERSION = 111000
+        LONGITUDE_CONVERSION = 88.649 * 1000
+
+        target_lat = self.init_lat + (y / LATITUDE_CONVERSION)
+        target_lon = self.init_lon + (x / LONGITUDE_CONVERSION)
+        target_alt = z
+
+        def get_distance(lat1, lon1, lat2, lon2):
+            import math
+            R = 6371000  # Earth radius in meters
+
+            d_lat = math.radians(lat2 - lat1)
+            d_lon = math.radians(lon2 - lon1)
+
+            a = (math.sin(d_lat / 2) * math.sin(d_lat / 2) +
+                 math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
+                 math.sin(d_lon / 2) * math.sin(d_lon / 2))
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+            return R * c
+
+        if self.vehicle.mode != VehicleMode("GUIDED"):
+            self.vehicle.mode = VehicleMode("GUIDED")
+            time.sleep(0.1)
+
+        target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
+        self.vehicle.simple_goto(target_location)
+        print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt}")
+
+        while True:
+            current_location = self.vehicle.location.global_relative_frame
+            distance_to_target = get_distance(current_location.lat, current_location.lon, target_lat, target_lon)
+            alt_diff = abs(current_location.alt - target_alt)
+
+            if distance_to_target < 1 and alt_diff < 1:
+                print("Arrived at target location!!!!!!!!!!!!!!!!!!!!!")
                 break
             time.sleep(0.5)
 
-    def goto_auto(self, x, y, z, velocity=4):
-        LATITUDE_CONVERSION = 111000
-        LONGITUDE_CONVERSION = 88.649 * 1000
-
-        base_lat = self.init_lat
-        base_lon = self.init_lon
-
-        target_lat = base_lat + (y / LATITUDE_CONVERSION)
-        target_lon = base_lon + (x / LONGITUDE_CONVERSION)
-
-        self.vehicle.mode = VehicleMode("GUIDED")
-        time.sleep(0.1)
-
-        cmds = self.vehicle.commands
-        cmds.download()
-        cmds.wait_ready()
-        cmds.clear()
-
-        goto_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                           mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, velocity, 0, target_lat, target_lon, z)
-        cmds.add(goto_cmd)
-        cmds.upload()
-
-        self.vehicle.mode = VehicleMode("AUTO")
-
-        # 모니터 링
-        while math.dist([self.vehicle.location.global_relative_frame.lat,
-                         self.vehicle.location.global_relative_frame.lon,
-                         self.vehicle.location.global_relative_frame.alt],
-                        [target_lat, target_lon, z]) > 0.5:  # Adjust as needed
-            print(f"Current Position: {self.vehicle.location.global_relative_frame}")
-            time.sleep(0.5)
-        print("Reached target position")
-
-    def goto_guided(self, x, y, z, velocity=4):
-        LATITUDE_CONVERSION = 111000
-        LONGITUDE_CONVERSION = 88.649 * 1000
-
-        base_lat = self.init_lat
-        base_lon = self.init_lon
-
-        target_lat = base_lat + (y / LATITUDE_CONVERSION)
-        target_lon = base_lon + (x / LONGITUDE_CONVERSION)
-
-        self.vehicle.mode = VehicleMode("GUIDED")
-        time.sleep(0.1)
-
-        # Set target location and velocity in GUIDED mode
-        location = LocationGlobalRelative(target_lat, target_lon, z)
-        self.vehicle.simple_goto(location, groundspeed=velocity)
-
-        # Monitoring the position
-        while math.dist([self.vehicle.location.global_relative_frame.lat,
-                         self.vehicle.location.global_relative_frame.lon,
-                         self.vehicle.location.global_relative_frame.alt],
-                        [target_lat, target_lon, z]) > 0.5:  # Adjust as needed
-            print(f"Current Position: {self.vehicle.location.global_relative_frame}")
-            time.sleep(0.5)
-        print("Reached target position")
-
-    def land_by_auto_mode(self):
-        self.vehicle.mode = VehicleMode("GUIDED")
-        time.sleep(0.1)
-        print("Landing using AUTO mode...")
-        cmds = self.vehicle.commands
-        cmds.download()
-        cmds.wait_ready()
-        cmds.clear()
-
-        land_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                           mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 0, 0, 0, 0, 0,
-                           self.vehicle.location.global_relative_frame.lat,
-                           self.vehicle.location.global_relative_frame.lon, 0)  # 0 for altitude as it's landing
-
-        cmds.add(land_cmd)
-        cmds.upload()
-
-        self.vehicle.mode = VehicleMode("AUTO")
+    # block
+    def land(self):
+        print("Initiating landing sequence")
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system, self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_NAV_LAND, 0,
+            0, 0, 0, 0, 0, 0, 0, 0)
 
         while self.vehicle.location.global_relative_frame.alt > 0.1:
             print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
             time.sleep(1)
+        print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
 
-        print("Landed successfully!")
-
-    # # RTL 고도/속도 조절 (추후에 반드시 해야함)
-
-    def return_to_launch(self, h=3, velocity=4):
-        target_lat = self.init_lat
-        target_lon = self.init_lon
-
-        self.vehicle.mode = VehicleMode("GUIDED")
-        time.sleep(0.1)
-
-        cmds = self.vehicle.commands
-        cmds.download()
-        cmds.wait_ready()
-        cmds.clear()
-
-        goto_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                           mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, velocity, 0, target_lat, target_lon, h)
-        land_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                           mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 0, 0, 0, 0, 0,
-                           self.vehicle.location.global_relative_frame.lat,
-                           self.vehicle.location.global_relative_frame.lon, 0)  # 0 for altitude as it's landing
-        cmds.add(goto_cmd)
-        cmds.add(land_cmd)
-        cmds.upload()
-
-        self.vehicle.mode = VehicleMode("AUTO")
-
-        # 모니터 링
-        while math.dist([self.vehicle.location.global_relative_frame.lat,
-                         self.vehicle.location.global_relative_frame.lon,
-                         self.vehicle.location.global_relative_frame.alt],
-                        [target_lat, target_lon, h]) > 0.5:  # Adjust as needed
-            print(f"Current Position: {self.vehicle.location.global_relative_frame}")
-            time.sleep(0.5)
-        print("Landed successfully!")
+    def battery_state(self):
+        return self.vehicle.battery.voltage
 
     def close_connection(self):
         self.vehicle.close()
@@ -212,23 +177,30 @@ if __name__ == "__main__":
     # 드론 연결
     gt = Drone()
 
-    # 드론 행동 블럭
     try:
         # 입력 (위도, 경도)
-        raw_input = input("두 개의 실수를 입력하세요: ")
-        nums = [float(num.strip()) for num in raw_input.split(",")]
+        # raw_input = input("위도, 경도: ")
 
-        # 미션 시작
+        nums = 1, 1
+        # nums = [float(num.strip()) for num in raw_input.split(",")]
+
+        # 미션 시작1
         if len(nums) == 2:
             print(gt.init_lat, gt.init_lon)
             print(gt.receiving_data())
             time.sleep(1)
-            gt.arm()
-            gt.takeoff(3)
-            gt.land_by_auto_mode()
-            # 움직임 사이사이 딜레이 조절 코드 넣기
-            # auto vs guided
-            # 속도 10m/s 까지 해보기
+            gt.arm_takeoff(5)
+
+            gt.set_yaw_to_north()
+            gt.goto_location_block(10, 0, 2)
+            time.sleep(1)
+            gt.goto_location(-10, 0, 4)
+            time.sleep(1)
+            gt.goto_location_block(10, 0, 2)
+            time.sleep(1)
+
+            gt.set_yaw_to_north()
+            gt.land()
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
