@@ -1,25 +1,25 @@
-import pandas as pd
-from math import radians, cos, sin, asin, sqrt
-
-def haversine(lon1, lat1, lon2, lat2):
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
-    c = 2 * asin(sqrt(a))
-    r = 6371000  # Radius of Earth in meters
-
-    return c * r
-
-def transform_coordinates(df, base_lat=35.2265867, base_lon=126.8397070):
-    df['x'] = df.apply(lambda row: haversine(base_lon, base_lat, row['Longitude'], base_lat), axis=1)
-    df['y'] = df.apply(lambda row: haversine(base_lon, base_lat, base_lon, row['Latitude']), axis=1)
-    df.rename(columns={"Altitude": "z", "Time": "time"}, inplace=True)
-
-    return df[['time', 'x', 'y', 'z']]
-
-def imm_tracking(df, num_steps=2):
+def imm_tracking(data, num_steps=2):
+    
+    def interpolate_missing_data(data):
+        interpolated_data = []
+        for i in range(len(data)-1):
+            t1, x1, y1, z1 = data[i]
+            t2, x2, y2, z2 = data[i+1]
+            
+            interpolated_data.append((t1, x1, y1, z1))
+            
+            for t in range(t1+1, t2):
+                factor = (t - t1) / (t2 - t1)
+                x = x1 + factor * (x2 - x1)
+                y = y1 + factor * (y2 - y1)
+                z = z1 + factor * (z2 - z1)
+                interpolated_data.append((t, x, y, z))
+                
+        interpolated_data.append(data[-1])
+        return interpolated_data
+    
+    data = interpolate_missing_data(data)
+    
     def compute_velocity_and_acceleration(values, times):
         delta_t1 = times[-1] - times[-2]
         delta_t2 = times[-2] - times[-3]
@@ -34,10 +34,10 @@ def imm_tracking(df, num_steps=2):
         w1, w2 = 0.6, 0.4  # 모델 가중치
         return w1 * x_cv + w2 * x_ca
     
-    x_values = df['x'].values
-    y_values = df['y'].values
-    z_values = df['z'].values
-    time_values = df['time'].values
+    time_values = [t for t, x, y, z in data]
+    x_values = [x for t, x, y, z in data]
+    y_values = [y for t, x, y, z in data]
+    z_values = [z for t, x, y, z in data]
     
     vx, ax = compute_velocity_and_acceleration(x_values, time_values)
     vy, ay = compute_velocity_and_acceleration(y_values, time_values)
@@ -60,3 +60,13 @@ def imm_tracking(df, num_steps=2):
         predictions.append((x_next, y_next, z_next))
         
     return predictions
+
+
+# 사용 예시
+
+data = [(1, 0, 0, 0),(2, 1, 1, 1),(3, 2, 2, 2),(4, 3, 3, 3),(5, 4, 4, 4),(6, 5, 5, 5)]
+
+num_steps_to_predict = 2 # 예측할 타임 스텝 수
+
+imm_predictions = imm_tracking(data, num_steps=num_steps_to_predict)
+print(imm_predictions)
