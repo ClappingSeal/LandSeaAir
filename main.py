@@ -12,8 +12,12 @@ class Drone:
         self.baudrate = baudrate
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
         self.camera = cv2.VideoCapture(0)
-        self.is_recording = False
-        self.out = None
+
+        self.is_recording = True
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
+
+
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -78,36 +82,29 @@ class Drone:
     ## 카메라 이미지 관련 함수
     
     def show_camera_stream(self):
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
 
-            if self.is_recording and self.out is not None:
+            cv2.imshow("Camera Stream", frame) 
+
+            if self.is_recording:
                 self.out.write(frame)
 
-            cv2.imshow("Camera Stream", frame)
             key = cv2.waitKey(1) & 0xFF
 
             if key == ord('q'):  # Press 'q' to quit
                 break
-            elif key == ord('s'):  # Press 's' to start recording
-                if not self.is_recording:
-                    self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
-                    self.is_recording = True
-            elif key == ord('e'):  # Press 'e' to end recording
-                if self.is_recording:
-                    self.is_recording = False
-                    if self.out is not None:
-                        self.out.release()
+            elif key == ord('s') and self.is_recording:  # Press 's' to stop recording
+                self.is_recording = False
+                self.out.release()
 
         self.camera.release()
-        if self.out is not None:
-            self.out.release()
         cv2.destroyAllWindows()
+        if self.is_recording:
+            self.out.release()
 
     ## 짐벌 카메라 동작 함수
 
@@ -168,12 +165,16 @@ class Drone:
 
 
 if __name__ == '__main__':
-    drone = Drone()
+    
+    start_command = input("Press 's' to start: ")
+    
+    if start_command == 's':
+        drone = Drone()
 
-    camera_thread = threading.Thread(target=drone.show_camera_stream)
-    camera_thread.start()
-    drone.center()
+        camera_thread = threading.Thread(target=drone.show_camera_stream)
+        camera_thread.start()
+        drone.center()
 
-    while True:
-        drone.send_data([123, 425, 234, 212])
-        time.sleep(0.1)
+        while True:
+            drone.send_data([123, 425, 234, 212])
+            time.sleep(0.1)
