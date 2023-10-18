@@ -82,26 +82,30 @@ class Drone:
 
     ## 카메라 이미지 관련 함수
     
-    def show_camera_stream(self):
+    def show_camera_stream(self, x=1.1):
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
-
-            cv2.imshow("Camera Stream", frame) 
-
+    
+            # 가로로 1.1배 늘리기
+            h, w = frame.shape[:2]
+            res = cv2.resize(frame, (int(w*x), h))
+            
+            cv2.imshow("Camera Stream", res) 
+    
             if self.is_recording:
-                self.out.write(frame)
-
+                self.out.write(res)
+    
             key = cv2.waitKey(1) & 0xFF
-
-            if key == ord('q'):  # Press 'q' to quit
+    
+            if key == ord('q'):  # 'q'를 누르면 종료
                 break
-            elif key == ord('s') and self.is_recording:  # Press 's' to stop recording
+            elif key == ord('s') and self.is_recording:  # 's'를 누르면 녹화 중지
                 self.is_recording = False
                 self.out.release()
-
+    
         self.camera.release()
         cv2.destroyAllWindows()
         if self.is_recording:
