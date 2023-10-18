@@ -12,7 +12,7 @@ class Drone:
         self.baudrate = baudrate
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
         self.camera = cv2.VideoCapture(0)
-        self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)  # 이거 좀 바꿔봐
+        self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
                           0x1231, 0x210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -85,7 +85,7 @@ class Drone:
             if self.is_recording and self.out is not None:
                 self.out.write(frame)
 
-            cv2.imshow("Camera Stream", frame)
+            cv2.imshow("Camera Stream", frame) # 이 부분 삭제 해야함
             key = cv2.waitKey(1) & 0xFF
 
             if key == ord('q'):  # Press 'q' to quit
