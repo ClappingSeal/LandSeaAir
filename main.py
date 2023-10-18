@@ -77,25 +77,16 @@ class Drone:
 
     ## 카메라 이미지 관련 함수
     
-    def start_recording(self):
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
-        self.is_recording = True
-
-    def stop_recording(self):
-        self.is_recording = False
-        if self.out is not None:
-            self.out.release()
-            self.out = None
-
     def show_camera_stream(self):
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
 
-            if self.is_recording:
+            if self.is_recording and self.out is not None:
                 self.out.write(frame)
 
             cv2.imshow("Camera Stream", frame)
@@ -103,10 +94,15 @@ class Drone:
 
             if key == ord('q'):  # Press 'q' to quit
                 break
-            elif key == ord('s') and not self.is_recording:  # Press 's' to start recording
-                self.start_recording()
-            elif key == ord('e') and self.is_recording:  # Press 'e' to end recording
-                self.stop_recording()
+            elif key == ord('s'):  # Press 's' to start recording
+                if not self.is_recording:
+                    self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
+                    self.is_recording = True
+            elif key == ord('e'):  # Press 'e' to end recording
+                if self.is_recording:
+                    self.is_recording = False
+                    if self.out is not None:
+                        self.out.release()
 
         self.camera.release()
         if self.out is not None:
@@ -174,12 +170,15 @@ class Drone:
 if __name__ == '__main__':
     drone = Drone()
 
-    camera_thread = threading.Thread(target=drone.show_camera_stream)
-    camera_thread.start()
-
-    drone.rotate(90, 90, 1)
-    drone.center()
-
     while True:
-        drone.send_data([123, 425, 234, 212])
-        time.sleep(0.1)
+        print("Press 's' to start!")
+        key = input()
+
+        if key == 's':
+            camera_thread = threading.Thread(target=drone.show_camera_stream)
+            camera_thread.start()
+            drone.center()
+
+            while True:
+                drone.send_data([123, 425, 234, 212])
+                time.sleep(0.1)
