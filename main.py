@@ -83,38 +83,39 @@ class Drone:
     ## 카메라 이미지 관련 함수
     
     def show_camera_stream(self):
-        # Load the camera matrix and distortion coefficients
-        mtx = np.load('camera_mtx.npy')
-        dist = np.load('camera_dist.npy')
-    
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
-    
-            # Apply undistortion to the frame
-            h, w = frame.shape[:2]
-            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-            undistorted = cv2.undistort(frame, mtx, dist, None, newcameramtx)
-    
-            cv2.imshow("Camera Stream", undistorted)  # Display the undistorted frame
-    
+
+            cv2.imshow("Camera Stream", frame) 
+
             if self.is_recording:
-                self.out.write(undistorted)  # Save the undistorted frame
-    
+                self.out.write(frame)
+
             key = cv2.waitKey(1) & 0xFF
-    
+
             if key == ord('q'):  # Press 'q' to quit
                 break
             elif key == ord('s') and self.is_recording:  # Press 's' to stop recording
                 self.is_recording = False
                 self.out.release()
-    
+
         self.camera.release()
         cv2.destroyAllWindows()
         if self.is_recording:
             self.out.release()
+
+    ## 짐벌 카메라 동작 함수
+
+    # rotate 과 center 함수 에서 사용됨
+    def CRC16_cal(self, ptr, len_, crc_init=0):
+        crc = crc_init
+        for i in range(len_):
+            temp = (crc >> 8) & 0xff
+            crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
+        return crc
 
 
 
