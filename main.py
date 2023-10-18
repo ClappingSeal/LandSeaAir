@@ -82,29 +82,40 @@ class Drone:
     ## 카메라 이미지 관련 함수
     
     def show_camera_stream(self):
+        # Load the camera matrix and distortion coefficients
+        mtx = np.load('camera_mtx.npy')
+        dist = np.load('camera_dist.npy')
+    
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
-
-            cv2.imshow("Camera Stream", frame) 
-
+    
+            # Apply undistortion to the frame
+            h, w = frame.shape[:2]
+            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+            undistorted = cv2.undistort(frame, mtx, dist, None, newcameramtx)
+    
+            cv2.imshow("Camera Stream", undistorted)  # Display the undistorted frame
+    
             if self.is_recording:
-                self.out.write(frame)
-
+                self.out.write(undistorted)  # Save the undistorted frame
+    
             key = cv2.waitKey(1) & 0xFF
-
+    
             if key == ord('q'):  # Press 'q' to quit
                 break
             elif key == ord('s') and self.is_recording:  # Press 's' to stop recording
                 self.is_recording = False
                 self.out.release()
-
+    
         self.camera.release()
         cv2.destroyAllWindows()
         if self.is_recording:
             self.out.release()
+
+
 
     ## 짐벌 카메라 동작 함수
 
