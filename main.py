@@ -58,6 +58,8 @@ class Drone:
         else:
             print("Error in serial connection!")
 
+    ## 카메라 관련 함수
+
     def send_data(self, data):
         # Packing Data
         packed_data = bytearray()
@@ -72,15 +74,39 @@ class Drone:
         self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
 
     def show_camera_stream(self):
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
 
-            # cv2.imshow("Camera Stream", frame) # delete this line to make process quick
-            if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to quit
+            if self.is_recording and self.out is not None:
+                self.out.write(frame)
+
+            cv2.imshow("Camera Stream", frame)
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == ord('q'):  # Press 'q' to quit
                 break
+            elif key == ord('s'):  # Press 's' to start recording
+                if not self.is_recording:
+                    self.out = cv2.VideoWriter('output.avi', fourcc, 20.0,
+                                               (int(self.camera.get(3)), int(self.camera.get(4))))
+                    self.is_recording = True
+            elif key == ord('e'):  # Press 'e' to end recording
+                if self.is_recording:
+                    self.is_recording = False
+                    if self.out is not None:
+                        self.out.release()
+
+        self.camera.release()
+        if self.out is not None:
+            self.out.release()
+        cv2.destroyAllWindows()
+
+    ## 짐벌 카메라 동작 함수
 
     # rotate 과 center 함수 에서 사용됨
     def CRC16_cal(self, ptr, len_, crc_init=0):
