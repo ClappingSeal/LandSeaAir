@@ -60,7 +60,7 @@ class Drone:
         else:
             print("Error in serial connection!")
 
-    ## 카메라 관련 함수
+    ## 데이터 전송 함수
 
     def send_data(self, data):
         # Packing Data
@@ -75,33 +75,38 @@ class Drone:
         # Sending Data
         self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
 
-    def show_camera_stream(self):
+    ## 카메라 이미지 관련 함수
+    
+    def start_recording(self):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
+        self.is_recording = True
 
+    def stop_recording(self):
+        self.is_recording = False
+        if self.out is not None:
+            self.out.release()
+            self.out = None
+
+    def show_camera_stream(self):
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
 
-            if self.is_recording and self.out is not None:
+            if self.is_recording:
                 self.out.write(frame)
 
-            cv2.imshow("Camera Stream", frame) # 이 부분 삭제 해야함
+            cv2.imshow("Camera Stream", frame)
             key = cv2.waitKey(1) & 0xFF
 
             if key == ord('q'):  # Press 'q' to quit
                 break
-            elif key == ord('s'):  # Press 's' to start recording
-                if not self.is_recording:
-                    self.out = cv2.VideoWriter('output.avi', fourcc, 20.0,
-                                               (int(self.camera.get(3)), int(self.camera.get(4))))
-                    self.is_recording = True
-            elif key == ord('e'):  # Press 'e' to end recording
-                if self.is_recording:
-                    self.is_recording = False
-                    if self.out is not None:
-                        self.out.release()
+            elif key == ord('s') and not self.is_recording:  # Press 's' to start recording
+                self.start_recording()
+            elif key == ord('e') and self.is_recording:  # Press 'e' to end recording
+                self.stop_recording()
 
         self.camera.release()
         if self.out is not None:
