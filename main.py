@@ -170,15 +170,10 @@ class Drone:
 if __name__ == '__main__':
     drone = Drone()
 
+    camera_thread = threading.Thread(target=drone.show_camera_stream)
+    camera_thread.start()
+    drone.center()
+
     while True:
-        print("Press 's' to start!")
-        key = input()
-
-        if key == 's':
-            camera_thread = threading.Thread(target=drone.show_camera_stream)
-            camera_thread.start()
-            drone.center()
-
-            while True:
-                drone.send_data([123, 425, 234, 212])
-                time.sleep(0.1)
+        drone.send_data([123, 425, 234, 212])
+        time.sleep(0.1)
