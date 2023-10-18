@@ -4,6 +4,7 @@ import threading
 import time
 import serial
 import struct
+import numpy
 
 
 class Drone:
