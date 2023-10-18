@@ -82,7 +82,7 @@ class Drone:
 
     ## 카메라 이미지 관련 함수
     
-    def show_camera_stream(self, x=1.1):
+    def show_camera_stream(self, x=2):
         while True:
             ret, frame = self.camera.read()
             if not ret:
