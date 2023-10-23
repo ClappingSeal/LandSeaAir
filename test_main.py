@@ -86,7 +86,6 @@ class Drone:
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
-            return 100000, 1000000
 
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
@@ -101,7 +100,7 @@ class Drone:
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        center = None
+        center = 1000000, 110001010
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
             M = cv2.moments(largest_contour)
