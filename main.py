@@ -1,24 +1,34 @@
-from pymavlink import mavutil
+from dronekit import connect
 import cv2
 import threading
 import time
 import serial
 import struct
-import numpy as np
+import logging
+
+
+logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
+
+        # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
-        self.camera = cv2.VideoCapture(0)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
 
+        # Communication
+        self.received_data = None
+        self.vehicle.add_message_listener('DATA64', self.data64_callback)
+
+        # Camera
+        self.camera = cv2.VideoCapture(0)
         self.is_recording = True
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
 
-
+        # Gimbal
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -53,8 +63,7 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-
-        self.center()
+        self.center() # function used
 
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
@@ -65,55 +74,60 @@ class Drone:
         else:
             print("Error in serial connection!")
 
-    ## 데이터 전송 함수
+    # Receiving 1
+    def data64_callback(self, vehicle, name, message):
+        # Unpacking the received data
+        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
+        self.received_data = data
 
-    def send_data(self, data):
+    # Receiving 2
+    def receiving_data(self):
+        return self.received_data
+
+    # Transmitting
+    def sending_data(self, data):
         # Packing Data
         packed_data = bytearray()
         for item in data:
             packed_data += item.to_bytes(4, 'little')
 
-        # 64byte Padding
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        # Sending Data
-        self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
+        msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
+        self.vehicle.send_mavlink(msg)
 
-    ## 카메라 이미지 관련 함수
-    
+    # Camera
     def show_camera_stream(self, x=1.3275):
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 print("Error: Couldn't read frame.")
                 break
-    
+
             # 가로로 1.1배 늘리기
             h, w = frame.shape[:2]
-            res = cv2.resize(frame, (int(w*x), h))
-            
-            cv2.imshow("Camera Stream", res) 
-    
+            res = cv2.resize(frame, (int(w * x), h))
+
+            cv2.imshow("Camera Stream", res)
+
             if self.is_recording:
                 self.out.write(res)
-    
+
             key = cv2.waitKey(1) & 0xFF
-    
+
             if key == ord('q'):  # 'q'를 누르면 종료
                 break
             elif key == ord('s') and self.is_recording:  # 's'를 누르면 녹화 중지
                 self.is_recording = False
                 self.out.release()
-    
+
         self.camera.release()
         cv2.destroyAllWindows()
         if self.is_recording:
             self.out.release()
 
-    ## 짐벌 카메라 동작 함수
-
-    # rotate 과 center 함수 에서 사용됨
+    # gimbal1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
         for i in range(len_):
@@ -121,19 +135,7 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-
-
-    ## 짐벌 카메라 동작 함수
-
-    # rotate 과 center 함수 에서 사용됨
-    def CRC16_cal(self, ptr, len_, crc_init=0):
-        crc = crc_init
-        for i in range(len_):
-            temp = (crc >> 8) & 0xff
-            crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
-        return crc
-
-    # CRC16_cal 함수 사용
+    # gimbal2
     def rotate(self, x, y, t):
         cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x07'
 
@@ -161,7 +163,7 @@ class Drone:
 
         self.ser.write(command)
 
-    # CRC16_cal 함수 사용
+    # gimbal3 (CRC16_cal 외부 함수 사용)
     def center(self):
         cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x0E'
 
@@ -182,9 +184,9 @@ class Drone:
 
 
 if __name__ == '__main__':
-    
+
     start_command = input("Press 's' to start: ")
-    
+
     if start_command == 's':
         drone = Drone()
 
@@ -193,5 +195,6 @@ if __name__ == '__main__':
         drone.center()
 
         while True:
-            drone.send_data([123, 425, 234, 212])
+            drone.sending_data([123, 425, 234, 212])
+            print(drone.receiving_data())
             time.sleep(0.1)
