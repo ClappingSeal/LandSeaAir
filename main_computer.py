@@ -48,7 +48,7 @@ class Drone:
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
 
-    # block
+    # Drone movement1 block
     def arm_takeoff(self, h):
 
         self.vehicle.mode = VehicleMode("GUIDED")
@@ -84,7 +84,7 @@ class Drone:
 
         self.vehicle.mode = VehicleMode("GUIDED")
 
-    # block
+    # Drone movement2 block
     def set_yaw_to_north(self):
         yaw_angle = 0
         is_relative = False
@@ -109,7 +109,7 @@ class Drone:
         print("Setting yaw to face North!!!!!!!!!!!!!!!!!!!!")
         time.sleep(0.5)
 
-    # non-block
+    # Drone movement3 non-block
     def goto_location(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -127,7 +127,7 @@ class Drone:
         self.vehicle.simple_goto(target_location)
         print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt}")
 
-    # block
+    # Drone movement4 block
     def goto_location_block(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -168,7 +168,7 @@ class Drone:
                 break
             time.sleep(0.5)
 
-    # block
+    # Drone movement5 block
     def land(self):
         print("Initiating landing sequence")
         self.vehicle._master.mav.command_long_send(
@@ -202,9 +202,9 @@ if __name__ == "__main__":
         # 미션 시작1
         if len(nums) == 2:
             while True:
-                gt.sending_data([5, 80, 35, 8])
-                gt.receiving_data()
+                gt.sending_data([7, 80, 35, 8])
                 print(gt.receiving_data())
+                time.sleep()
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
