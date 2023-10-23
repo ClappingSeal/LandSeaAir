@@ -232,6 +232,6 @@ if __name__ == '__main__':
         drone.center()
 
         while True:
-            drone.sending_data([drone.detect_and_find_center()])
+            drone.sending_data(drone.detect_and_find_center())
             # print(drone.receiving_data())
             time.sleep(0.1)
