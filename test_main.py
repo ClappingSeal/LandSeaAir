@@ -16,7 +16,7 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
 
         # Communication
         self.received_data = None
@@ -75,7 +75,7 @@ class Drone:
             print("Error in serial connection!")
 
     # Receiving 1
-    def data64_callback(self, message):
+    def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
         data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
         self.received_data = data
