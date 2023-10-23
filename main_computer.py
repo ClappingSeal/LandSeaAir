@@ -212,6 +212,6 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
-        gt.goto_location(0, 0, 10)
+        gt.goto_location_block(0, 0, 10)
         gt.land()
         gt.close_connection()
