@@ -230,9 +230,6 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-
-        camera_thread = threading.Thread(target=drone.show_camera_stream())
-        camera_thread.start()
         drone.center()
 
         while True:
