@@ -26,7 +26,7 @@ class Drone:
         self.init_lon = self.vehicle.location.global_relative_frame.lon
 
     # Receiving 1
-    def data64_callback(self, vehicle, name, message):
+    def data64_callback(self, message):
         # Unpacking the received data
         data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
         self.received_data = data
@@ -36,7 +36,7 @@ class Drone:
         return self.received_data
 
     # Transmitting
-    def send_data(self, data):
+    def sending_data(self, data):
         # Packing Data
         packed_data = bytearray()
         for item in data:
@@ -202,7 +202,7 @@ if __name__ == "__main__":
         # 미션 시작1
         if len(nums) == 2:
             while True:
-                gt.send_data([567, 890, 345, 678])
+                gt.sending_data([5, 80, 35, 8])
                 gt.receiving_data()
                 print(gt.receiving_data())
 
