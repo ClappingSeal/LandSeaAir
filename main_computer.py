@@ -204,7 +204,7 @@ if __name__ == "__main__":
             while True:
                 gt.sending_data([7, 80, 35, 8])
                 print(gt.receiving_data())
-                time.sleep()
+                time.sleep(0.1)
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
