@@ -26,10 +26,8 @@ class Drone:
         self.is_recording = True
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
-
-
         
-
+        # gimbal motor
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
