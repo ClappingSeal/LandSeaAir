@@ -203,4 +203,4 @@ if __name__ == '__main__':
         while True:
             drone.send_data([123, 425, 234, 212])
             time.sleep(0.1)
-            drone.rpi_received_data()
+            prtin(drone.rpi_received_data())
