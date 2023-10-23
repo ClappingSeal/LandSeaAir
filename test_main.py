@@ -180,6 +180,6 @@ if __name__ == '__main__':
         drone.center()
 
         while True:
-            drone.send_data([123, 425, 234, 212])
+            drone.sending_data([123, 425, 234, 212])
             print(drone.receiving_data())
             time.sleep(0.1)
