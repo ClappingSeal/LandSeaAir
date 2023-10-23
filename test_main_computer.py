@@ -8,14 +8,16 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM14', baudrate=57600):
+    def __init__(self, connection_string='COM17', baudrate=57600):
         print('vehicle connecting...')
 
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        print(self.vehicle)
+        print(dir(self.vehicle))
 
         # Communication
         self.received_data = None
@@ -25,7 +27,8 @@ class Drone:
         self.init_lat = self.vehicle.location.global_relative_frame.lat
         self.init_lon = self.vehicle.location.global_relative_frame.lon
 
-    # 데이터 수신
+
+    # Receiving
 
     def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
@@ -35,7 +38,7 @@ class Drone:
     def receiving_data(self):
         return self.received_data
 
-    # 데이터 송신
+    # Transmitting
 
     def send_data(self, data):
         # Packing Data
@@ -47,8 +50,9 @@ class Drone:
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        # Sending Data
-        self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
+        msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
+
+        self.vehicle.send_mavlink(msg)
 
     # block
     def arm_takeoff(self, h):
@@ -204,7 +208,9 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            gt.send_data([567, 890, 345, 678])
+            while True:
+                gt.send_data([567, 890, 345, 678])
+                gt.receiving_data()
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
