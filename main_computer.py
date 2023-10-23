@@ -26,7 +26,7 @@ class Drone:
         self.init_lon = self.vehicle.location.global_relative_frame.lon
 
     # Receiving 1
-    def data64_callback(self, message):
+    def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
         data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
         self.received_data = data
