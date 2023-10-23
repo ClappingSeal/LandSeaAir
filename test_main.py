@@ -1,4 +1,3 @@
-from dronekit import connect, VehicleMode, Command, LocationGlobalRelative
 from pymavlink import mavutil
 import cv2
 import threading
@@ -10,24 +9,15 @@ import numpy as np
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
-        print('vehicle connecting...')
-        
-        # Connecting
         self.connection_string = connection_string
         self.baudrate = baudrate
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
-
-        # Communication
-        self.rpi_received_data = None
-        self.vehicle.add_message_listener('DATA64', self.rpi_data64_callback)
-
-        # Camera
         self.camera = cv2.VideoCapture(0)
+
         self.is_recording = True
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
-        
-        # gimbal motor
+
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -74,30 +64,25 @@ class Drone:
         else:
             print("Error in serial connection!")
 
-    ## 데이터 전송 함수
-
-    def send_data(self, data):
+    # Transmitting
+    def sending_data(self, data):
         # Packing Data
         packed_data = bytearray()
         for item in data:
             packed_data += item.to_bytes(4, 'little')
 
+        # 64byte Padding
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
-        self.vehicle.send_mavlink(msg)
-
-    def rpi_data64_callback(self, message):
-        # Unpacking the received data
-        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
-        self.rpi_received_data = data
-
-    def rpi_receiving_data(self):
-        return self.rpi_received_data
-
-    ## 카메라 이미지 관련 함수
-
+        # Sending Data
+        self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
+        
+    # Receiving
+    def receiving_data(self):
+        return self.vehicle.recv_match(blocking=False)
+    
+    # Camera
     def show_camera_stream(self, x=1.3275):
         while True:
             ret, frame = self.camera.read()
@@ -127,9 +112,7 @@ class Drone:
         if self.is_recording:
             self.out.release()
 
-    ## 짐벌 카메라 동작 함수
-
-    # rotate 과 center 함수 에서 사용됨
+    # gimbal1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
         for i in range(len_):
@@ -137,17 +120,7 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    ## 짐벌 카메라 동작 함수
-
-    # rotate 과 center 함수 에서 사용됨
-    def CRC16_cal(self, ptr, len_, crc_init=0):
-        crc = crc_init
-        for i in range(len_):
-            temp = (crc >> 8) & 0xff
-            crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
-        return crc
-
-    # CRC16_cal 함수 사용
+    # gimbal2
     def rotate(self, x, y, t):
         cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x07'
 
@@ -175,7 +148,7 @@ class Drone:
 
         self.ser.write(command)
 
-    # CRC16_cal 함수 사용
+    # gimbal3 (CRC16_cal 외부 함수 사용)
     def center(self):
         cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x0E'
 
@@ -208,5 +181,5 @@ if __name__ == '__main__':
 
         while True:
             drone.send_data([123, 425, 234, 212])
+            print(drone.receiving_data())
             time.sleep(0.1)
-            print(drone.rpi_receiving_data())
