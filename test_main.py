@@ -1,23 +1,34 @@
-from pymavlink import mavutil
+from dronekit import connect
 import cv2
 import threading
 import time
 import serial
 import struct
-import numpy as np
+import logging
+
+
+logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
+
+        # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
-        self.camera = cv2.VideoCapture(0)
+        self.vehicle = connect(connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
 
+        # Communication
+        self.received_data = None
+        self.vehicle.add_message_listener('DATA64', self.data64_callback)
+
+        # Camera
+        self.camera = cv2.VideoCapture(0)
         self.is_recording = True
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
 
+        # Gimbal
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -52,8 +63,7 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-
-        self.center()
+        self.center() # function used
 
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
@@ -64,6 +74,16 @@ class Drone:
         else:
             print("Error in serial connection!")
 
+    # Receiving 1
+    def data64_callback(self, message):
+        # Unpacking the received data
+        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
+        self.received_data = data
+
+    # Receiving 2
+    def receiving_data(self):
+        return self.received_data
+
     # Transmitting
     def sending_data(self, data):
         # Packing Data
@@ -71,17 +91,12 @@ class Drone:
         for item in data:
             packed_data += item.to_bytes(4, 'little')
 
-        # 64byte Padding
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        # Sending Data
-        self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
-        
-    # Receiving
-    def receiving_data(self):
-        return self.vehicle.recv_match(blocking=False)
-    
+        msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
+        self.vehicle.send_mavlink(msg)
+
     # Camera
     def show_camera_stream(self, x=1.3275):
         while True:
