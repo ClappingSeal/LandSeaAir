@@ -82,12 +82,11 @@ class Drone:
         for item in data:
             packed_data += item.to_bytes(4, 'little')
 
-        # 64byte Padding
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        # Sending Data
-        self.vehicle.mav.data64_send(0, len(packed_data), packed_data)
+        msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
+        self.vehicle.send_mavlink(msg)
 
     def rpi_data64_callback(self, message):
         # Unpacking the received data
