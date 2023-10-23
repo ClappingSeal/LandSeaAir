@@ -83,11 +83,10 @@ class Drone:
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275):
-        print('abcddssfa')
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
-            return None
+            return None, None
 
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
