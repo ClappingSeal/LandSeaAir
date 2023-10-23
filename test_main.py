@@ -112,10 +112,6 @@ class Drone:
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
 
-        cv2.imshow("Detected Center", res_frame)
-        cv2.waitKey(0)  # Wait for a key press to close the image
-        cv2.destroyAllWindows()
-
         return center
 
     # Receiving 1
