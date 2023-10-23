@@ -83,9 +83,14 @@ class Drone:
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275):
+        ret, frame = self.camera.read()  # Read a frame from the camera
+        if not ret:
+            print("Error: Couldn't read frame.")
+            return None
+
         # Resize frame considering the aspect ratio multiplier
-        h, w = self.frame.shape[:2]
-        res_frame = cv2.resize(self.frame, (int(w * x), h))
+        h, w = frame.shape[:2]
+        res_frame = cv2.resize(frame, (int(w * x), h))
 
         hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
 
@@ -99,15 +104,19 @@ class Drone:
         center = None
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
-
             M = cv2.moments(largest_contour)
             if M["m00"] != 0:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
+                # Draw a circle at the detected center
+                cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
 
-        print(center)
-        return center  # Returning only the center of the detected blue color
+        cv2.imshow("Detected Center", res_frame)
+        cv2.waitKey(0)  # Wait for a key press to close the image
+        cv2.destroyAllWindows()
+
+        return center
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -225,11 +234,12 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
 
-        camera_thread = threading.Thread(target=drone.detect_and_find_center())
+        camera_thread = threading.Thread(target=drone.show_camera_stream())
         camera_thread.start()
         drone.center()
 
         while True:
             drone.sending_data([123, 425, 234, 212])
             print(drone.receiving_data())
+            print(drone.detect_and_find_center())
             time.sleep(0.1)
