@@ -94,9 +94,6 @@ class Drone:
 
         mask = cv2.inRange(hsv, lower_bound, upper_bound)
 
-        # This will show the mask
-        cv2.imshow('Blue Color Mask', mask)
-
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         center = None
@@ -109,12 +106,7 @@ class Drone:
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
 
-                # Drawing the circle at the center
-                cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-
-        # This will show the resized frame with the center of the detected color
-        cv2.imshow('Detected Center in Resized Frame', res_frame)
-        return center
+        return center  # Returning only the center of the detected blue color
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -232,12 +224,14 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
 
-        camera_thread = threading.Thread(target=drone.detect_and_find_center())
+        camera_thread = threading.Thread(target=drone.show_camera_stream())
         camera_thread.start()
         drone.center()
 
         while True:
             drone.sending_data([123, 425, 234, 212])
-            # print(drone.receiving_data())
+            print(drone.receiving_data())
+            print(drone.detect_and_find_center())
             time.sleep(0.1)
+
 
