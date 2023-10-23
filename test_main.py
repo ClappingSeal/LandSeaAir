@@ -86,7 +86,7 @@ class Drone:
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
-            return None, None
+            return 100000, 1000000
 
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
