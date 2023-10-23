@@ -5,7 +5,7 @@ import time
 import serial
 import struct
 import logging
-
+import numpy as np
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -27,6 +27,10 @@ class Drone:
         self.is_recording = True
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
+
+        # Camera_color_test1
+        self.ret, self.frame = self.camera.read()
+        self.base_color = np.array([100, 255, 255])
 
         # Gimbal
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
@@ -63,7 +67,10 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-        self.center() # function used
+        self.center()  # function used
+        self.threshold = 10
+        self.alpha = 0.3
+        self.prev_center = None
 
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
@@ -73,6 +80,41 @@ class Drone:
             print("Connection is established!")
         else:
             print("Error in serial connection!")
+
+    # color camera test1
+    def detect_and_find_center(self, x=1.3275):
+        # Resize frame considering the aspect ratio multiplier
+        h, w = self.frame.shape[:2]
+        res_frame = cv2.resize(self.frame, (int(w * x), h))
+
+        hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
+
+        lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
+        upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
+
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+
+        # This will show the mask
+        cv2.imshow('Blue Color Mask', mask)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        center = None
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+
+            M = cv2.moments(largest_contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                center = (cX, cY)
+
+                # Drawing the circle at the center
+                cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
+
+        # This will show the resized frame with the center of the detected color
+        cv2.imshow('Detected Center in Resized Frame', res_frame)
+        return center
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -190,11 +232,13 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
 
-        camera_thread = threading.Thread(target=drone.show_camera_stream)
+        camera_thread = threading.Thread(target=drone.detect_and_find_center())
         camera_thread.start()
         drone.center()
 
         while True:
             drone.sending_data([123, 425, 234, 212])
             print(drone.receiving_data())
+            print(drone.detect_and_find_center())
             time.sleep(0.1)
+
