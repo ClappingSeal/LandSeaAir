@@ -93,7 +93,7 @@ class Drone:
         data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
         self.rpi_received_data = data
 
-    def rpi_received_data(self):
+    def rpi_receiving_data(self):
         return self.rpi_received_data
 
     ## 카메라 이미지 관련 함수
@@ -209,4 +209,4 @@ if __name__ == '__main__':
         while True:
             drone.send_data([123, 425, 234, 212])
             time.sleep(0.1)
-            print(drone.rpi_received_data())
+            print(drone.rpi_receiving_data())
