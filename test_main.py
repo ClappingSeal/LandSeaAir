@@ -1,3 +1,4 @@
+import dronekit
 from pymavlink import mavutil
 import cv2
 import threading
