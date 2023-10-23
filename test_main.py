@@ -83,6 +83,7 @@ class Drone:
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275):
+        print('abcddssfa')
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
@@ -236,6 +237,6 @@ if __name__ == '__main__':
 
         while True:
             drone.sending_data([123, 425, 234, 212])
-            print(drone.receiving_data())
+            # print(drone.receiving_data())
             print(drone.detect_and_find_center())
             time.sleep(0.1)
