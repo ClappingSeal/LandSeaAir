@@ -8,14 +8,14 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM14', baudrate=57600):
+    def __init__(self, connection_string='COM17', baudrate=57600):
         print('vehicle connecting...')
 
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = None
@@ -25,13 +25,28 @@ class Drone:
         self.init_lat = self.vehicle.location.global_relative_frame.lat
         self.init_lon = self.vehicle.location.global_relative_frame.lon
 
-    def data64_callback(self, vehicle, name, message):
+    # Receiving 1
+    def data64_callback(self, message):
         # Unpacking the received data
         data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
         self.received_data = data
 
+    # Receiving 2
     def receiving_data(self):
         return self.received_data
+
+    # Transmitting
+    def sending_data(self, data):
+        # Packing Data
+        packed_data = bytearray()
+        for item in data:
+            packed_data += item.to_bytes(4, 'little')
+
+        while len(packed_data) < 64:
+            packed_data += b'\x00'
+
+        msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
+        self.vehicle.send_mavlink(msg)
 
     # block
     def arm_takeoff(self, h):
@@ -95,7 +110,6 @@ class Drone:
         time.sleep(0.5)
 
     # non-block
-
     def goto_location(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -187,21 +201,10 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            print(gt.init_lat, gt.init_lon)
-            print(gt.receiving_data())
-            time.sleep(1)
-            gt.arm_takeoff(5)
-
-            gt.set_yaw_to_north()
-            gt.goto_location_block(10, 0, 2)
-            time.sleep(1)
-            gt.goto_location(-10, 0, 4)
-            time.sleep(1)
-            gt.goto_location_block(10, 0, 2)
-            time.sleep(1)
-
-            gt.set_yaw_to_north()
-            gt.land()
+            while True:
+                gt.sending_data([5, 80, 35, 8])
+                gt.receiving_data()
+                print(gt.receiving_data())
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
@@ -209,4 +212,6 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
+        gt.goto_location(0, 0, 10)
+        gt.land()
         gt.close_connection()
