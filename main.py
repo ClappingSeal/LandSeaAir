@@ -194,5 +194,4 @@ if __name__ == '__main__':
 
         while True:
             drone.send_data([123, 425, 234, 212])
-            print(drone.send_data)
             time.sleep(0.1)
