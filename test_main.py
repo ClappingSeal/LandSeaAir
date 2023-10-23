@@ -106,6 +106,7 @@ class Drone:
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
 
+        print(center)
         return center  # Returning only the center of the detected blue color
 
     # Receiving 1
@@ -224,14 +225,11 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
 
-        camera_thread = threading.Thread(target=drone.show_camera_stream())
+        camera_thread = threading.Thread(target=drone.detect_and_find_center())
         camera_thread.start()
         drone.center()
 
         while True:
             drone.sending_data([123, 425, 234, 212])
             print(drone.receiving_data())
-            print(drone.detect_and_find_center())
             time.sleep(0.1)
-
-
