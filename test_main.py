@@ -15,7 +15,7 @@ class Drone:
         self.vehicle = mavutil.mavlink_connection(self.connection_string, baud=self.baudrate)
         self.camera = cv2.VideoCapture(0)
         self.rpi_received_data = None
-        self.vehicle.add_message_listener('DATA64', self.rpi_data64_callback)
+        # self.vehicle.add_message_listener('DATA64', self.rpi_data64_callback)
 
         self.is_recording = True
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
