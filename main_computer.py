@@ -16,8 +16,8 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -127,17 +127,21 @@ class Drone:
             self.vehicle.mode = VehicleMode("GUIDED")
             time.sleep(0.1)
 
-        self.vehicle.parameters['WPNAV_SPEED'] = speed * 100
-
         target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
 
+        # Set the groundspeed before calling simple_goto
+        self.vehicle.groundspeed = speed
+
         self.vehicle.simple_goto(target_location)
+
         print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
 
     # Drone movement4 block (get_pos 함수 사용)
     def goto_location_block(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
+
+        print(self.init_lat, y, LONGITUDE_CONVERSION)
 
         target_lat = self.init_lat + (y / LATITUDE_CONVERSION)
         target_lon = self.init_lon + (x / LONGITUDE_CONVERSION)
@@ -189,7 +193,7 @@ class Drone:
             time.sleep(1)
         print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
 
-    # DRL locking
+    # DRL locking1
     def locking_drone(self, x, y):
         x_conversion = (x / 10) - 42.5
         y_conversion = -(y / 10) + 24
@@ -197,11 +201,21 @@ class Drone:
         action, _ = self.model.predict(obs)
         return -action
 
+    # DRL locking2
     def mul_LD(self, x, y):
         return (abs(425 - x) + abs(240 - y)) / 100
 
     def get_pos(self):
-        return self.vehicle.location.global_relative_frame.lat, self.vehicle.location.global_relative_frame.lon
+        LATITUDE_CONVERSION = 111000
+        LONGITUDE_CONVERSION = 88.649 * 1000
+
+        delta_lat = self.vehicle.location.global_relative_frame.lat - self.init_lat
+        delta_lon = self.vehicle.location.global_relative_frame.lon - self.init_lon
+
+        y = delta_lat * LATITUDE_CONVERSION
+        x = delta_lon * LONGITUDE_CONVERSION
+
+        return x, y
 
     def battery_state(self):
         return self.vehicle.battery.voltage
@@ -224,11 +238,17 @@ if __name__ == "__main__":
         # 미션 시작1
         if len(nums) == 2:
             while True:
-                gt.sending_data([7, 80, 35, 8])
-                receive_arr = np.array(gt.receiving_data())
-                mul = gt.mul_LD(receive_arr[0], receive_arr[1])
-                print(mul * gt.locking_drone(receive_arr[0], receive_arr[1]))
-                print(gt.get_pos())
+                # gt.sending_data([7, 80, 35, 8])
+                # receive_arr = np.array(gt.receiving_data())
+                # mul = gt.mul_LD(receive_arr[0], receive_arr[1])
+                # print(mul * gt.locking_drone(receive_arr[0], receive_arr[1]))
+                # print(gt.get_pos())
+                gt.arm_takeoff(10)
+                gt.set_yaw_to_north()
+                gt.goto_location(10, 10, 10, 15)
+                time.sleep(10)
+                gt.land()
+                break
 
                 time.sleep(0.1)
 
@@ -239,5 +259,6 @@ if __name__ == "__main__":
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
         gt.goto_location_block(0, 0, 10)
+        gt.set_yaw_to_north()
         gt.land()
         gt.close_connection()
