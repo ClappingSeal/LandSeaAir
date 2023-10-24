@@ -3,6 +3,8 @@ from pymavlink import mavutil
 import time
 import logging
 import math
+import numpy as np
+from stable_baselines3 import TD3
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -18,8 +20,11 @@ class Drone:
         # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.received_data = None
+        self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
+
+        # DRL model load
+        self.model = TD3.load("tracking_model_td3_pos_1024.zip")
 
         # Position value
         self.init_lat = self.vehicle.location.global_relative_frame.lat
@@ -181,6 +186,17 @@ class Drone:
             time.sleep(1)
         print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
 
+    # DRL locking
+    def locking_drone(self, x, y):
+        x_conversion = (x / 10) - 42.5
+        y_conversion = -(y / 10) + 24
+        obs = np.array([x_conversion, y_conversion])
+        action, _ = self.model.predict(obs)
+        return -action
+
+    def mul_LD(self, x, y):
+        return (abs(425 - x) + abs(240 - y)) / 100
+
     def battery_state(self):
         return self.vehicle.battery.voltage
 
@@ -203,7 +219,10 @@ if __name__ == "__main__":
         if len(nums) == 2:
             while True:
                 gt.sending_data([7, 80, 35, 8])
-                print(gt.receiving_data())
+                receive_arr = np.array(gt.receiving_data())
+                mul = gt.mul_LD(receive_arr[0], receive_arr[1])
+                print(mul * gt.locking_drone(receive_arr[0], receive_arr[1]))
+
                 time.sleep(0.1)
 
         else:
