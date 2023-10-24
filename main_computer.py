@@ -134,7 +134,7 @@ class Drone:
         self.vehicle.simple_goto(target_location)
         print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
 
-    # Drone movement4 block
+    # Drone movement4 block (get_pos 함수 사용)
     def goto_location_block(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -169,6 +169,7 @@ class Drone:
             current_location = self.vehicle.location.global_relative_frame
             distance_to_target = get_distance(current_location.lat, current_location.lon, target_lat, target_lon)
             alt_diff = abs(current_location.alt - target_alt)
+            print("current pos : ", self.get_pos())
 
             if distance_to_target < 1 and alt_diff < 1:
                 print("Arrived at target location!!!!!!!!!!!!!!!!!!!!!")
@@ -199,6 +200,9 @@ class Drone:
     def mul_LD(self, x, y):
         return (abs(425 - x) + abs(240 - y)) / 100
 
+    def get_pos(self):
+        return self.vehicle.location.global_relative_frame.lat, self.vehicle.location.global_relative_frame.lon
+
     def battery_state(self):
         return self.vehicle.battery.voltage
 
@@ -224,6 +228,7 @@ if __name__ == "__main__":
                 receive_arr = np.array(gt.receiving_data())
                 mul = gt.mul_LD(receive_arr[0], receive_arr[1])
                 print(mul * gt.locking_drone(receive_arr[0], receive_arr[1]))
+                print(gt.get_pos())
 
                 time.sleep(0.1)
 
