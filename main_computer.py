@@ -115,7 +115,7 @@ class Drone:
         time.sleep(0.5)
 
     # Drone movement3 non-block
-    def goto_location(self, x, y, z):
+    def goto_location(self, x, y, z, speed):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
@@ -127,10 +127,12 @@ class Drone:
             self.vehicle.mode = VehicleMode("GUIDED")
             time.sleep(0.1)
 
+        self.vehicle.parameters['WPNAV_SPEED'] = speed * 100
+
         target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
 
         self.vehicle.simple_goto(target_location)
-        print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt}")
+        print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
 
     # Drone movement4 block
     def goto_location_block(self, x, y, z):
