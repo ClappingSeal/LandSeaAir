@@ -129,9 +129,7 @@ class Drone:
 
         target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
 
-        # Set the groundspeed before calling simple_goto
         self.vehicle.groundspeed = speed
-
         self.vehicle.simple_goto(target_location)
 
         print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
