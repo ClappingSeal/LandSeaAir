@@ -84,6 +84,7 @@ class Drone:
     # color camera test1
     def detect_and_find_center(self, x=1.3275):
         ret, frame = self.camera.read()  # Read a frame from the camera
+    
         if not ret:
             print("Error: Couldn't read frame.")
             return (425, 240)
@@ -111,15 +112,17 @@ class Drone:
                 center = (cX, cY)
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-        cv2.imshow("frame", res_frame)
-        
+    
         # Check if recording is enabled and write the frame to the video file
         if self.is_recording:
-            print('recording in progress')
+            print('Recording in progress...')
             self.out.write(res_frame)
     
+        # Display the frame
+        cv2.imshow("Camera Stream", res_frame)
+        cv2.waitKey(1)  # Necessary for OpenCV to update the GUI
+    
         return center
-
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
