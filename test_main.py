@@ -114,6 +114,7 @@ class Drone:
     
         # Check if recording is enabled and write the frame to the video file
         if self.is_recording:
+            print('recording in progress')
             self.out.write(res_frame)
     
         return center
