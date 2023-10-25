@@ -99,7 +99,7 @@ class Drone:
             mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
             yaw_angle, 0, 0, is_relative, 0, 0, 0)
 
-        tolerance = 1  # 단위는 도
+        tolerance = 4  # 단위는 도
 
         while True:
             current_yaw = self.vehicle.attitude.yaw
@@ -132,7 +132,7 @@ class Drone:
         self.vehicle.groundspeed = speed
         self.vehicle.simple_goto(target_location)
 
-        print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
+        # print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
 
     # Drone movement4 block (get_pos 함수 사용)
     def goto_location_block(self, x, y, z):
@@ -191,8 +191,14 @@ class Drone:
             time.sleep(1)
         print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
 
+    # P locking1
+    def locking_p(self, x, y):
+        x_conversion = ((x / 10) - 42.5)/10
+        y_conversion = (-(y / 10) + 24)/10
+        return x_conversion, y_conversion
+
     # DRL locking1
-    def locking_drone(self, x, y):
+    def locking_drl(self, x, y):
         x_conversion = (x / 10) - 42.5
         y_conversion = -(y / 10) + 24
         obs = np.array([x_conversion, y_conversion])
@@ -209,6 +215,7 @@ class Drone:
         y = y_pos + y_action * multiply
         z = self.vehicle.location.global_relative_frame.alt
         speed = np.sqrt(np.sum(np.square([x_action, y_action])))
+        print(x, y, z, speed)
         self.goto_location(x, y, z, speed)
 
     def get_pos(self):
@@ -243,11 +250,14 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
+            gt.arm_takeoff(5)
+            gt.set_yaw_to_north()
+            time.sleep(1)
             while True:
                 gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
-                action = gt.locking_drone(receive_arr[0], receive_arr[1])
-                gt.locking_move(gt.get_pos()[0], gt.get_pos()[1], action[0], action[1], multiply=0.5)
+                action = gt.locking_p(receive_arr[0], receive_arr[1])
+                gt.locking_move(gt.get_pos()[0], gt.get_pos()[1], action[0], action[1], multiply=2)
                 time.sleep(0.1)
 
         else:
@@ -256,7 +266,7 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
-        gt.goto_location_block(0, 0, 10)
+        gt.goto_location_block(0, 0, 5)
         gt.set_yaw_to_north()
         gt.land()
         gt.close_connection()
