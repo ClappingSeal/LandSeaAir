@@ -31,6 +31,7 @@ class Drone:
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
         self.base_color = np.array([100, 255, 255])
+        self.image_count = 0
 
         # Gimbal
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
@@ -82,7 +83,7 @@ class Drone:
             print("Error in serial connection!")
 
     # color camera test1
-    def detect_and_find_center(self, x=1.3275, save_image=False, image_name="captured_image.jpg"):
+    def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
         ret, frame = self.camera.read()
         if not ret:
             print("Error: Couldn't read frame.")
@@ -113,7 +114,8 @@ class Drone:
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
         
         if save_image:
-            cv2.imwrite(image_name, res_frame)
+            self.image_count = self.image_count + 1
+            cv2.imwrite(self.image_count, res_frame)
 
         return center
 
