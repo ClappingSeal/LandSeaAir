@@ -234,7 +234,6 @@ class Drone:
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
     
-        # 파일 이름의 숫자 부분을 기준으로 정렬
         jpg_files.sort(key=lambda x: int(x.split('_')[-1].split('.jpg')[0]))
     
         if not jpg_files:
@@ -248,15 +247,9 @@ class Drone:
     
         height, width, layers = img.shape
     
-        codecs = [
-            ('MJPG', 'avi'),
-            ('XVID', 'avi'),
-            ('MP4V', 'mp4'),
-            ('H264', 'mp4'),
-            ('AVC1', 'mp4')
-        ]
+        combinations = [('XVID', 'avi'), ('MJPG', 'avi'), ('MJPG', 'mp4')]
     
-        for codec, ext in codecs:
+        for codec, ext in combinations:
             fourcc = cv2.VideoWriter_fourcc(*codec)
             output_filename = f"{base_output_filename}_{codec}.{ext}"
             out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
@@ -270,7 +263,6 @@ class Drone:
     
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
-
 
 if __name__ == '__main__':
 
