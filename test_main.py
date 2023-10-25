@@ -85,9 +85,16 @@ class Drone:
     def detect_and_find_center(self, x=1.3275):
         ret, frame = self.camera.read()  # Read a frame from the camera
     
-        if not ret:
+        # Check if frame is read correctly
+        if not ret or frame is None:
             print("Error: Couldn't read frame.")
+            cv2.imshow("Debug: Empty Frame", np.zeros((240, 425, 3), dtype=np.uint8))
+            cv2.waitKey(1)
             return (425, 240)
+    
+        # Display the original frame for debugging
+        cv2.imshow("Debug: Original Frame", frame)
+        cv2.waitKey(1)
     
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
@@ -115,14 +122,14 @@ class Drone:
     
         # Check if recording is enabled and write the frame to the video file
         if self.is_recording:
-            print('Recording in progress...')
+            print('recording in progress')
             self.out.write(res_frame)
     
-        # Display the frame
-        cv2.imshow("Camera Stream", res_frame)
-        cv2.waitKey(1)  # Necessary for OpenCV to update the GUI
+        cv2.imshow("Processed Frame", res_frame)
+        cv2.waitKey(1)
     
         return center
+
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
