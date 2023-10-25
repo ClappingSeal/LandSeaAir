@@ -111,7 +111,8 @@ class Drone:
                 center = (cX, cY)
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-    
+        cv2.imshow("frame", res_frame)
+        
         # Check if recording is enabled and write the frame to the video file
         if self.is_recording:
             print('recording in progress')
