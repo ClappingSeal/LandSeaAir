@@ -114,7 +114,7 @@ class Drone:
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
         
         if save_image:
-            self.image_count = int(self.image_count + 1)
+            self.image_count += 1
             cv2.imwrite(self.image_count, res_frame)
 
         return center
