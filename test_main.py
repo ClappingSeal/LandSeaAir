@@ -234,6 +234,7 @@ if __name__ == '__main__':
 
         while True:
             truth = 0
+            print(drone.detect_and_find_center[1])
             if drone.detect_and_find_center[1] != 240:
                 truth = 1
             sending_data = [drone.detect_and_find_center()[0],drone.detect_and_find_center()[1], truth]
