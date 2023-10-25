@@ -242,7 +242,7 @@ class Drone:
         img = cv2.imread(jpg_files[0])
         height, width, layers = img.shape
     
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
     
         for file in jpg_files:
