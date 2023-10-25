@@ -108,7 +108,7 @@ class Drone:
             if M["m00"] != 0:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
-                center = (cX, cY, 1)
+                center = (cX, cY)
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
 
