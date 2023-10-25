@@ -246,11 +246,11 @@ class Drone:
         out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
     
         for file in jpg_files:
+            print(jpj_files)
             img = cv2.imread(file)
             out.write(img)
             
         out.release()
-
 
 if __name__ == '__main__':
 
