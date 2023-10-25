@@ -24,9 +24,7 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.is_recording = True
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
+        self.frames = []
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
@@ -83,28 +81,20 @@ class Drone:
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275):
-        ret, frame = self.camera.read()  # Read a frame from the camera
-    
+        ret, frame = self.camera.read()
+        
         # Check if frame is read correctly
         if not ret or frame is None:
             print("Error: Couldn't read frame.")
-            cv2.imshow("Debug: Empty Frame", np.zeros((240, 425, 3), dtype=np.uint8))
-            cv2.waitKey(1)
             return (425, 240)
-    
-        # Display the original frame for debugging
-        cv2.imshow("Debug: Original Frame", frame)
-        cv2.waitKey(1)
-    
+        
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
         res_frame = cv2.resize(frame, (int(w * x), h))
     
         hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
-    
         lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
         upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
-    
         mask = cv2.inRange(hsv, lower_bound, upper_bound)
     
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -117,19 +107,27 @@ class Drone:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
-                # Draw a circle at the detected center
-                cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
     
-        # Check if recording is enabled and write the frame to the video file
-        if self.is_recording:
-            print('recording in progress')
-            self.out.write(res_frame)
-    
-        cv2.imshow("Processed Frame", res_frame)
-        cv2.waitKey(1)
-    
+        # 프레임 저장
+        self.frames.append(res_frame)
+        
         return center
 
+    # color camera test2
+    def save_video(self, filename='output.avi', fps=10):
+        # 저장할 비디오의 프레임 크기 확인
+        if not self.frames:
+            print("No frames to save.")
+            return
+
+        h, w = self.frames[0].shape[:2]
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(filename, fourcc, fps, (w, h))
+
+        for frame in self.frames:
+            out.write(frame)
+
+        out.release()
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
