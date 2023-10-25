@@ -16,8 +16,8 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        # self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
-        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -115,7 +115,7 @@ class Drone:
         time.sleep(0.5)
 
     # Drone movement3 non-block
-    def goto_location(self, x, y, z, speed):
+    def goto_location(self, x, y, z, speed=10):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
@@ -203,6 +203,14 @@ class Drone:
     def mul_LD(self, x, y):
         return (abs(425 - x) + abs(240 - y)) / 100
 
+    # DRL locking3 (goto_location 함수 사용)
+    def locking_move(self, x_pos, y_pos, x_action, y_action, multiply=1):
+        x = x_pos + x_action * multiply
+        y = y_pos + y_action * multiply
+        z = self.vehicle.location.global_relative_frame.alt
+        speed = np.sqrt(np.sum(np.square([x_action, y_action])))
+        self.goto_location(x, y, z, speed)
+
     def get_pos(self):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -236,18 +244,10 @@ if __name__ == "__main__":
         # 미션 시작1
         if len(nums) == 2:
             while True:
-                # gt.sending_data([7, 80, 35, 8])
-                # receive_arr = np.array(gt.receiving_data())
-                # mul = gt.mul_LD(receive_arr[0], receive_arr[1])
-                # print(mul * gt.locking_drone(receive_arr[0], receive_arr[1]))
-                # print(gt.get_pos())
-                gt.arm_takeoff(10)
-                gt.set_yaw_to_north()
-                gt.goto_location(10, 10, 10, 15)
-                time.sleep(10)
-                gt.land()
-                break
-
+                gt.sending_data([7, 80, 35, 8])
+                receive_arr = np.array(gt.receiving_data())
+                action = gt.locking_drone(receive_arr[0], receive_arr[1])
+                gt.locking_move(gt.get_pos()[0], gt.get_pos()[1], action[0], action[1], multiply=0.5)
                 time.sleep(0.1)
 
         else:
