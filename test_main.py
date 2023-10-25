@@ -237,7 +237,13 @@ if __name__ == '__main__':
         drone = Drone()
         drone.center()
 
-        while True:
-            drone.sending_data([drone.detect_and_find_center()[0],drone.detect_and_find_center()[1]])
-            # print(drone.receiving_data())
-            time.sleep(0.1)
+        try:
+            while True:
+                drone.sending_data([drone.detect_and_find_center()[0],drone.detect_and_find_center()[1]])
+                # print(drone.receiving_data())
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print("saving video...")
+        finally:
+            drone.out.release()
+            
