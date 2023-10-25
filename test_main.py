@@ -25,9 +25,6 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.is_recording = True
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
@@ -144,36 +141,6 @@ class Drone:
 
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
-
-    # Camera
-    def show_camera_stream(self, x=1.3275):
-        while True:
-            ret, frame = self.camera.read()
-            if not ret:
-                print("Error: Couldn't read frame.")
-                break
-
-            # 가로로 1.1배 늘리기
-            h, w = frame.shape[:2]
-            res = cv2.resize(frame, (int(w * x), h))
-
-            cv2.imshow("Camera Stream", res)
-
-            if self.is_recording:
-                self.out.write(res)
-
-            key = cv2.waitKey(1) & 0xFF
-
-            if key == ord('q'):  # 'q'를 누르면 종료
-                break
-            elif key == ord('s') and self.is_recording:  # 's'를 누르면 녹화 중지
-                self.is_recording = False
-                self.out.release()
-
-        self.camera.release()
-        cv2.destroyAllWindows()
-        if self.is_recording:
-            self.out.release()
 
     # gimbal1
     def CRC16_cal(self, ptr, len_, crc_init=0):
