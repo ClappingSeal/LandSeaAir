@@ -112,8 +112,6 @@ class Drone:
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
 
-        print(center)
-
         return center
 
 
@@ -238,6 +236,9 @@ if __name__ == '__main__':
             truth = 0
             if drone.detect_and_find_center[1] != 240:
                 truth = 1
-            drone.sending_data([drone.detect_and_find_center()[0],drone.detect_and_find_center()[1]], truth)
+            sending_data = [drone.detect_and_find_center()[0],drone.detect_and_find_center()[1], truth]
+            print(sending_data)
+            drone.sending_data(sending_data)
+            
             # print(drone.receiving_data())
             time.sleep(0.1)
