@@ -230,7 +230,7 @@ class Drone:
     def close_connection(self):
         self.vehicle.close()
 
-    def images_to_avi(self, image_prefix, output_filename, fps=10):
+    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
     
@@ -248,17 +248,29 @@ class Drone:
     
         height, width, layers = img.shape
     
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
+        codecs = [
+            ('MJPG', 'avi'),
+            ('XVID', 'avi'),
+            ('MP4V', 'mp4'),
+            ('H264', 'mp4'),
+            ('AVC1', 'mp4')
+        ]
     
-        for file in jpg_files:
-            img = cv2.imread(file)
-            if img is not None:
-                out.write(img)
-            else:
-                print(f"Error reading the image: {file}")
+        for codec, ext in codecs:
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            output_filename = f"{base_output_filename}_{codec}.{ext}"
+            out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
     
-        out.release()
+            for file in jpg_files:
+                img = cv2.imread(file)
+                if img is not None:
+                    out.write(img)
+                else:
+                    print(f"Error reading the image: {file}")
+    
+            out.release()
+            print(f"Saved video with {codec} codec to {output_filename}")
+
 
 if __name__ == '__main__':
 
