@@ -6,6 +6,7 @@ import serial
 import struct
 import logging
 import numpy as np
+import os
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -115,7 +116,7 @@ class Drone:
         
         if save_image:
             self.image_count += 1
-            image_name = f"{self.image_count}.jpg"
+            image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
         return center
@@ -229,6 +230,27 @@ class Drone:
     def close_connection(self):
         self.vehicle.close()
 
+    def images_to_avi(self, image_prefix, output_filename, fps=10):
+        files = os.listdir()
+        jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
+        jpg_files.sort()
+    
+        if not jpg_files:
+            print("No jpg files found with the given prefix.")
+            return
+            
+        img = cv2.imread(jpg_files[0])
+        height, width, layers = img.shape
+    
+        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+        out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
+    
+        for file in jpg_files:
+            img = cv2.imread(file)
+            out.write(img)
+            
+        out.release()
+
 
 if __name__ == '__main__':
 
@@ -239,12 +261,18 @@ if __name__ == '__main__':
         drone.center()
 
         while True:
+            sending_array = drone.detect_and_find_center()
             truth = 0
-            if drone.detect_and_find_center()[1] != 240:
+            if sending_array[1] != 240:
                 truth = 1
-            sending_data = [drone.detect_and_find_center()[0], drone.detect_and_find_center()[1], truth]
+            sending_data = [sending_array[0], sending_array[1], truth]
+            
             print(sending_data)
             drone.sending_data(sending_data)
             
             # print(drone.receiving_data())
             time.sleep(0.1)
+            
+        except KeyboardInterrupt:
+            images_to_avi("captured_image", "output.avi")
+            print("Video saved as output.avi")
