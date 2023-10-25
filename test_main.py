@@ -233,23 +233,31 @@ class Drone:
     def images_to_avi(self, image_prefix, output_filename, fps=10):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
-        jpg_files.sort()
+    
+        # 파일 이름의 숫자 부분을 기준으로 정렬
+        jpg_files.sort(key=lambda x: int(x.split('_')[-1].split('.jpg')[0]))
     
         if not jpg_files:
             print("No jpg files found with the given prefix.")
             return
-            
+    
         img = cv2.imread(jpg_files[0])
+        if img is None:
+            print(f"Error reading the image: {jpg_files[0]}")
+            return
+    
         height, width, layers = img.shape
     
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
     
         for file in jpg_files:
-            print(jpg_files)
             img = cv2.imread(file)
-            out.write(img)
-            
+            if img is not None:
+                out.write(img)
+            else:
+                print(f"Error reading the image: {file}")
+    
         out.release()
 
 if __name__ == '__main__':
