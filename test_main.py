@@ -260,19 +260,20 @@ if __name__ == '__main__':
         drone = Drone()
         drone.center()
 
-        while True:
-            sending_array = drone.detect_and_find_center()
-            truth = 0
-            if sending_array[1] != 240:
-                truth = 1
-            sending_data = [sending_array[0], sending_array[1], truth]
-            
-            print(sending_data)
-            drone.sending_data(sending_data)
-            
-            # print(drone.receiving_data())
-            time.sleep(0.1)
-            
+        try:
+            while True:
+                sending_array = drone.detect_and_find_center()
+                truth = 0
+                if sending_array[1] != 240:
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth]
+                
+                print(sending_data)
+                drone.sending_data(sending_data)
+                
+                # print(drone.receiving_data())
+                time.sleep(0.1)
+                
         except KeyboardInterrupt:
             images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
