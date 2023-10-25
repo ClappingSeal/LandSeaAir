@@ -82,42 +82,25 @@ class Drone:
             print("Error in serial connection!")
 
     # color camera test1
-    def start_recording(self):
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        if not self.camera.isOpened():
-            print("Error: Camera not initialized.")
-            return
-
-        width = int(self.camera.get(3) * 1.3275)
-        height = int(self.camera.get(4))
-
-        self.out = cv2.VideoWriter('output.avi', fourcc, 10.0, (width, height))
-        self.is_recording = True
-
-    # color camera test2
-    def stop_recording(self):
-        if self.is_recording:
-            self.out.release()
-            self.is_recording = False
-
-    # color camera test3
     def detect_and_find_center(self, x=1.3275):
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
             return (425, 240)
-    
+
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
         res_frame = cv2.resize(frame, (int(w * x), h))
-    
+
         hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
+
         lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
         upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
-    
+
         mask = cv2.inRange(hsv, lower_bound, upper_bound)
+
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+
         center = (425, 240)
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
@@ -128,12 +111,6 @@ class Drone:
                 center = (cX, cY)
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-    
-        if self.is_recording:
-            try:
-                self.out.write(res_frame)
-            except Exception as e:
-                print(f"Error writing to video: {e}")
 
         return center
 
