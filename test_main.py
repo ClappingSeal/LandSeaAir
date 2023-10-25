@@ -108,14 +108,15 @@ class Drone:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
-                # Draw a circle at the detected center
-                cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-        
+    
+        # Always draw the circle at the detected center (or default if no center detected)
+        cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
+    
         if save_image:
             self.image_count += 1
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
-
+    
         return center
 
 
