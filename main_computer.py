@@ -5,6 +5,7 @@ import logging
 import math
 import numpy as np
 from stable_baselines3 import TD3
+import random
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -16,8 +17,8 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -29,6 +30,11 @@ class Drone:
         # Position value
         self.init_lat = self.vehicle.location.global_relative_frame.lat
         self.init_lon = self.vehicle.location.global_relative_frame.lon
+        if self.init_lat is None or self.init_lon is None:
+            raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
+        print(self.init_lat, self.init_lon)
+
+        self.past_pos_data = np.zeros((20, 2))
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -56,7 +62,7 @@ class Drone:
     # Drone movement1 block
     def arm_takeoff(self, h):
 
-        self.vehicle.mode = VehicleMode("GUIDED")
+        self.vehicle.mode = VehicleMode("STABILIZE")
         cmds = self.vehicle.commands
         cmds.download()
         cmds.wait_ready()
@@ -68,6 +74,7 @@ class Drone:
 
         time.sleep(0.1)
         self.vehicle.armed = True
+        time.sleep(0.1)
         while not self.vehicle.armed:
             print("Waiting for arming...")
             time.sleep(1)
@@ -113,6 +120,38 @@ class Drone:
 
         print("Setting yaw to face North!!!!!!!!!!!!!!!!!!!!")
         time.sleep(0.5)
+
+    def velocity(self, vx, vy, vz):
+        if self.vehicle.mode != VehicleMode("GUIDED"):
+            self.vehicle.mode = VehicleMode("GUIDED")
+            time.sleep(0.1)
+
+        msg = self.vehicle.message_factory.set_position_target_local_ned_encode(
+            0,  # boot time
+            0, 0,  # target system, target component
+            mavutil.mavlink.MAV_FRAME_LOCAL_NED,  # coordinate frame
+            0b0000111111000111,  # type mask (enabling only velocity)
+            0, 0, 0,  # x, y, z 위치
+            vy, vx, vz,  # x, y, z 속도
+            0, 0, 0,  # x, y, z 가속도
+            0, 0)  # yaw, yaw_rate
+        self.vehicle.send_mavlink(msg)
+
+    def velocity_pid(self, target_x, target_y, history_positions, proportional=0.6, integral=0.001, derivative=0.5):
+        pos_x, pos_y = self.get_pos()
+
+        error_x = target_x - pos_x
+        error_y = target_y - pos_y
+        cumulative_error_x = sum([target_x - pos[0] for pos in history_positions])
+        cumulative_error_y = sum([target_y - pos[1] for pos in history_positions])
+        previous_error_x = target_x - history_positions[-10][0]
+        previous_error_y = target_y - history_positions[-10][1]
+        error_delta_x = error_x - previous_error_x
+        error_delta_y = error_y - previous_error_y
+
+        velocity_x = proportional * error_x + integral * cumulative_error_x + derivative * error_delta_x
+        velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
+        self.velocity(velocity_x, velocity_y, 0)
 
     # Drone movement3 non-block
     def goto_location(self, x, y, z, speed=10):
@@ -193,8 +232,8 @@ class Drone:
 
     # P locking1
     def locking_p(self, x, y):
-        x_conversion = ((x / 10) - 42.5)/10
-        y_conversion = (-(y / 10) + 24)/10
+        x_conversion = ((x / 10) - 42.5) / 10
+        y_conversion = (-(y / 10) + 24) / 10
         return x_conversion, y_conversion
 
     # DRL locking1
@@ -205,17 +244,12 @@ class Drone:
         action, _ = self.model.predict(obs)
         return -action
 
-    # DRL locking2
-    def mul_LD(self, x, y):
-        return (abs(425 - x) + abs(240 - y)) / 100
-
     # DRL locking3 (goto_location 함수 사용)
     def locking_move(self, x_pos, y_pos, x_action, y_action, multiply=1):
         x = x_pos + x_action * multiply
         y = y_pos + y_action * multiply
         z = self.vehicle.location.global_relative_frame.alt
         speed = np.sqrt(np.sum(np.square([x_action, y_action])))
-        print(x, y, z, speed)
         self.goto_location(x, y, z, speed)
 
     def get_pos(self):
@@ -230,6 +264,10 @@ class Drone:
 
         return x, y
 
+    def update_past_pos_data(self):
+        self.past_pos_data = np.roll(self.past_pos_data, shift=-1, axis=0)
+        self.past_pos_data[-1] = self.get_pos()
+
     def battery_state(self):
         return self.vehicle.battery.voltage
 
@@ -238,11 +276,9 @@ class Drone:
 
 
 if __name__ == "__main__":
-    # 드론 연결
     gt = Drone()
 
     try:
-        # 입력 (위도, 경도)
         # raw_input = input("위도, 경도: ")
 
         nums = 1, 1
@@ -250,14 +286,23 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            gt.arm_takeoff(5)
+            gt.arm_takeoff(1)
             gt.set_yaw_to_north()
             time.sleep(1)
+            print('a')
+            a = 1
+            b = 1
             while True:
                 gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
                 action = gt.locking_p(receive_arr[0], receive_arr[1])
-                gt.locking_move(gt.get_pos()[0], gt.get_pos()[1], action[0], action[1], multiply=2)
+                gt.update_past_pos_data()
+
+                gt.velocity_pid(a, b, gt.past_pos_data)
+                a = a + random.random()
+
+                b = b + random.random()
+
                 time.sleep(0.1)
 
         else:
@@ -266,7 +311,7 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
-        gt.goto_location_block(0, 0, 5)
-        gt.set_yaw_to_north()
+        # gt.goto_location_block(0, 0, 5)
+        # gt.set_yaw_to_north()
         gt.land()
         gt.close_connection()
