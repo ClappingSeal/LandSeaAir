@@ -82,7 +82,7 @@ class Drone:
             print("Error in serial connection!")
 
     # color camera test1
-    def detect_and_record(self, x=1.3275):
+    def detect_and_find_center(self, x=1.3275):
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
