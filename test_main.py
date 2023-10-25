@@ -82,25 +82,25 @@ class Drone:
             print("Error in serial connection!")
 
     # color camera test1
-    def detect_and_find_center(self, x=1.3275):
+    def detect_and_find_center(self, x=1.3275, save_image=False, image_name="captured_image.jpg"):
         ret, frame = self.camera.read()  # Read a frame from the camera
         if not ret:
             print("Error: Couldn't read frame.")
             return (425, 240)
-
+    
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
         res_frame = cv2.resize(frame, (int(w * x), h))
-
+    
         hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
-
+    
         lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
         upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
-
+    
         mask = cv2.inRange(hsv, lower_bound, upper_bound)
-
+    
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+    
         center = (425, 240)
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
@@ -111,7 +111,11 @@ class Drone:
                 center = (cX, cY)
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-        return center
+        
+        if save_image:
+            cv2.imwrite(image_name, res_frame)  # Save the processed frame
+    
+    return center
 
 
     # Receiving 1
