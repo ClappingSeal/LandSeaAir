@@ -10,7 +10,7 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM17', baudrate=57600):
+    def __init__(self, connection_string='COM14', baudrate=57600):
         print('vehicle connecting...')
 
         # Connecting value
@@ -218,6 +218,15 @@ class Drone:
                 break
             time.sleep(0.5)
 
+    # locking 1 (get_pos 함수, velocity_pid 함수 사용)
+    def locking_easy(self, x, y):
+        x_conversion = (x - 425) / 50
+        y_conversion = (y - 240) / 50
+        target_x = self.get_pos()[0] + x_conversion
+        target_y = self.get_pos()[1] + y_conversion
+        self.velocity_pid(target_x, target_y, self.past_pos_data)
+        print(target_x, target_y)
+
     # Drone movement7 block
     def land(self):
         print("Initiating landing sequence")
@@ -230,22 +239,6 @@ class Drone:
             print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
             time.sleep(1)
         print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
-
-    # DRL locking1
-    def locking_drl(self, x, y):
-        x_conversion = (x / 10) - 42.5
-        y_conversion = -(y / 10) + 24
-        obs = np.array([x_conversion, y_conversion])
-        action, _ = self.model.predict(obs)
-        return -action
-
-    # DRL locking2 (goto_location 함수 사용, 추후 수정 해야 함)
-    def locking_move(self, x_pos, y_pos, x_action, y_action, multiply=1):
-        x = x_pos + x_action * multiply
-        y = y_pos + y_action * multiply
-        z = self.vehicle.location.global_relative_frame.alt
-        speed = np.sqrt(np.sum(np.square([x_action, y_action])))
-        self.goto_location(x, y, z, speed)
 
     # get position (m)
     def get_pos(self):
@@ -276,7 +269,7 @@ class Drone:
 
 if __name__ == "__main__":
     gt = Drone()
-    
+
     try:
         # raw_input = input("위도, 경도: ")
 
@@ -285,16 +278,17 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            gt.arm_takeoff(1)
-            gt.set_yaw_to_north()
-            time.sleep(0.1)
-            
+            # gt.arm_takeoff(1)
+            # gt.set_yaw_to_north()
+            # time.sleep(0.1)
+
             while True:
                 gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
-
+                gt.locking_easy(receive_arr[0], receive_arr[1])
                 gt.update_past_pos_data()
                 time.sleep(0.1)
+                print(gt.battery_state())
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
