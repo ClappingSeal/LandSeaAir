@@ -25,6 +25,8 @@ class Drone:
         # Camera
         self.camera = cv2.VideoCapture(0)
         self.frames = []
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
