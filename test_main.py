@@ -111,7 +111,6 @@ class Drone:
                 center = (cX, cY)
                 # Draw a circle at the detected center
                 cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
-        print(center)
         return center
 
 
