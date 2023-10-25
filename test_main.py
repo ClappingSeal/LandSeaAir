@@ -115,7 +115,8 @@ class Drone:
         
         if save_image:
             self.image_count += 1
-            cv2.imwrite(self.image_count, res_frame)
+            image_name = f"{self.image_count}.jpg"
+            cv2.imwrite(image_name, res_frame)
 
         return center
 
