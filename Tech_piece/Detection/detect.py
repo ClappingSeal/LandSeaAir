@@ -1,14 +1,6 @@
-import datetime
-from ultralytics import YOLO
 import cv2
-import time
-
-from sahi.utils.yolov8 import download_yolov8s_model
 from sahi import AutoDetectionModel
-from sahi.utils.cv import read_image
-from sahi.utils.file import download_from_url
-from sahi.predict import get_prediction, get_sliced_prediction, predict
-from pathlib import Path
+from sahi.predict import get_prediction, get_sliced_prediction
 
 
 class Drone:
@@ -16,16 +8,17 @@ class Drone:
 
         self.detection_model = AutoDetectionModel.from_pretrained(
             model_type='yolov8',
-            model_path='runs/detect/train/weights/best.pt',
+            model_path='runs/detect/best2  .pt',
             confidence_threshold=0.3,
             device='cpu'
         )
 
         self.cap = cv2.VideoCapture('dji0088.mp4')
 
-#max tracking frame
         self.tracker = None
         self.success = False
+
+        #max tracking frame
         self.maxtrack = 180
         self.tframe = 0
         self.prevx = []
@@ -45,6 +38,8 @@ class Drone:
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
             detection = get_prediction(frame, self.detection_model)
+            #Sliced inference
+            #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.to_coco_annotations()[:3]:
                 confidence = float(data['score'])
                 if (confidence > conf) and (data['bbox'][2] < 100) and (data['bbox'][3] < 100):
@@ -56,16 +51,17 @@ class Drone:
             try:
                 self.prevx.append(xmid)
                 self.prevy.append(ymid)
-                cprevx = self.prevx[:10]
-                cprevy = self.prevy[:10]
-                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 9:
+                cprevx = self.prevx[:6]
+                cprevy = self.prevy[:6]
+                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
                     roi = (xmin, ymin, xlen, ylen)
                     self.prevx = []
                     self.prevy = []
-                self.tracker = cv2.TrackerKCF_create()
+                self.tracker = cv2.TrackerCSRT_create()
                 self.tracker.init(frame, roi)
                 self.tframe = 0
-            except:
+            except Exception as e: 
+                #print(e)
                 self.tracker = None
                 pass
 
@@ -75,12 +71,16 @@ class Drone:
             self.tframe += 1
             if self.success:
                 (x, y, w, h) = tuple(map(int, roi))
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                #cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                if (x+w/2 < 5) or (x+w/2 > self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
+                    print('out of frame')
+                    self.tracker = None
                 loc = [x+w/2, y+h/2, self.label]
                 return loc
             else:
                 self.tracker = None
-        except:
+        except Exception as e:
+            #print(e)
             pass
 
 
@@ -94,6 +94,7 @@ if __name__ == '__main__':
 
         while True:
             re = drone.detect_and_find_center()
+            #cv2.imshow('frame', drone.frame)
             print(re)
             if cv2.waitKey(1) == ord('q'):
                 break
