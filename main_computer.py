@@ -219,9 +219,9 @@ class Drone:
             time.sleep(0.5)
 
     # locking 1 (get_pos 함수, velocity_pid 함수 사용)
-    def locking_easy(self, x, y):
-        x_conversion = (x - 425) / 50
-        y_conversion = (y - 240) / 50
+    def locking_easy(self, x, y, num):
+        x_conversion = (x - 425) / num
+        y_conversion = (y - 240) / num
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
         self.velocity_pid(target_x, target_y, self.past_pos_data)
@@ -285,7 +285,7 @@ if __name__ == "__main__":
             while True:
                 gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
-                gt.locking_easy(receive_arr[0], receive_arr[1])
+                gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                 gt.update_past_pos_data()
                 time.sleep(0.1)
                 print(gt.battery_state())
