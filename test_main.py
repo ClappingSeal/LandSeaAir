@@ -38,7 +38,7 @@ class Drone:
         self.current_pitch = -90
         self.frame_width = 850
         self.frame_height = 480
-        self.max_yaw = 5
+        self.max_yaw = 10
         self.max_pitch = 10
         self.min_pitch = -10
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -180,19 +180,11 @@ class Drone:
         diff_x = target_x - center_x
         diff_y = target_y - center_y
 
-        # If the difference is zero, then there's no need to adjust
-        if diff_x == 0 and diff_y == 0:
-            print("Target is at the center. No adjustment needed.")
-            return
+        yaw_adjustment = self.current_yaw + diff_x
+        pitch_adjustment = self.current_pitch - diff_y
 
-        scale_factor_yaw = self.max_yaw / center_x
-        scale_factor_pitch = (self.max_pitch - self.min_pitch) / center_y
-
-        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
-        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
-
-        yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
-        pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
+        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
+        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
         self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
         print(target_x, target_y)
