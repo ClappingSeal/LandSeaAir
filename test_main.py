@@ -266,11 +266,10 @@ if __name__ == '__main__':
             y_conversion = y - 240
             r = (abs(x_conversion) + abs(y_conversion)) / 10
 
-            print(r, x_conversion, y_conversion)
             theta = math.atan(float(x_conversion + 0.1) / float(y_conversion + 1))
-            print(theta)
             if y_conversion < 0:
                 r = -r
+            
             return theta, r
 
 
