@@ -275,7 +275,7 @@ if __name__ == '__main__':
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
-                time.sleep(0.1)
+                time.sleep(0.2)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
