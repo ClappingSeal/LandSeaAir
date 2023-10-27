@@ -318,14 +318,13 @@ if __name__ == '__main__':
                 x_conversion = sending_array[0] - 425
                 y_conversion = sending_array[1] - 240
 
-                yaw_change, pitch_change = f(yaw, pitch, x_conversion, y_conversion)
-                yaw += yaw_change
-                pitch += pitch_change
-                
+                yaw, pitch = f(yaw, pitch, x_conversion, y_conversion)
+
                 if step % 20 == 1:
                     drone.set_gimbal_angle(yaw, pitch)
-                    print(x_conversion, y_conversion, yaw, pitch ,yaw_change, pitch_change)
+                    print(x_conversion, y_conversion, yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
