@@ -300,6 +300,8 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 yaw, pitch = determine_case(sending_array[0], sending_array[1])
+                
+                print(yaw, pitch)
 
                 drone.set_gimbal_angle(yaw, pitch)
 
