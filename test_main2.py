@@ -1,17 +1,17 @@
 from dronekit import connect
 import cv2
-import threading
 import time
 import serial
 import struct
 import logging
-
+import numpy as np
+import os
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM11', baudrate=115200):
+    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
 
         # Connecting value
         self.connection_string = connection_string
@@ -24,12 +24,23 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.is_recording = True
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
+
+        # Camera_color_test1
+        self.ret, self.frame = self.camera.read()
+        self.base_color = np.array([0, 255, 255])
+        self.image_count = 0
+        self.threshold = 10
+        self.alpha = 0.3
 
         # Gimbal
-        self.ser = serial.Serial('COM11', 115200, timeout=3)
+        self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
+        self.current_yaw = 0
+        self.current_pitch = -90
+        self.frame_width = 850
+        self.frame_height = 480
+        self.max_yaw = 10
+        self.max_pitch = 10
+        self.min_pitch = -10
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
                           0x1231, 0x210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -63,16 +74,63 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-        self.center() # function used
 
+        # PID 
+        self.kp_yaw, self.ki_yaw, self.kd_yaw = 0.5, 0.01, 0.1
+        self.kp_pitch, self.ki_pitch, self.kd_pitch = 0.5, 0.01, 0.1
+
+        self.prev_error_yaw = 0
+        self.prev_error_pitch = 0
+        self.integral_yaw = 0
+        self.integral_pitch = 0
+        
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
 
-        if self.ser.isOpen():
+        if self.serial_port.isOpen():
             print("Connection is established!")
         else:
             print("Error in serial connection!")
+
+    # color camera test1
+    def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
+        ret, frame = self.camera.read()
+        if not ret:
+            print("Error: Couldn't read frame.")
+            return (425, 240)
+
+        # Resize frame considering the aspect ratio multiplier
+        h, w = frame.shape[:2]
+        res_frame = cv2.resize(frame, (int(w * x), h))
+
+        hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
+
+        lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
+        upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
+
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        center = (425, 240)
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            M = cv2.moments(largest_contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                center = (cX, cY)
+
+        # Always draw the circle at the detected center (or default if no center detected)
+        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
+
+        if save_image:
+            self.image_count += 1
+            image_name = f"captured_image_{self.image_count}.jpg"
+            cv2.imwrite(image_name, res_frame)
+
+        return center
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -97,37 +155,7 @@ class Drone:
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
 
-    # Camera
-    def show_camera_stream(self, x=1.3275):
-        while True:
-            ret, frame = self.camera.read()
-            if not ret:
-                print("Error: Couldn't read frame.")
-                break
-
-            # 가로로 1.1배 늘리기
-            h, w = frame.shape[:2]
-            res = cv2.resize(frame, (int(w * x), h))
-
-            cv2.imshow("Camera Stream", res)
-
-            if self.is_recording:
-                self.out.write(res)
-
-            key = cv2.waitKey(1) & 0xFF
-
-            if key == ord('q'):  # 'q'를 누르면 종료
-                break
-            elif key == ord('s') and self.is_recording:  # 's'를 누르면 녹화 중지
-                self.is_recording = False
-                self.out.release()
-
-        self.camera.release()
-        cv2.destroyAllWindows()
-        if self.is_recording:
-            self.out.release()
-
-    # gimbal1
+    # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
         for i in range(len_):
@@ -135,52 +163,108 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal2
-    def rotate(self, x, y, t):
-        cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x07'
-
-        x_byte = struct.pack('b', x)
-        y_byte = struct.pack('b', y)
-
-        data_to_checksum = cmd_header + x_byte + y_byte
+    # gimbal 2
+    def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
+        cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
+        yaw_bytes = struct.pack('<h', int(yaw * 10))
+        pitch_bytes = struct.pack('<h', int(pitch * 10))
+        data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
-
         command = data_to_checksum + checksum_bytes
+        self.send_command_to_gimbal(command)
 
-        self.ser.write(command)
+        self.current_yaw = yaw
+        self.current_pitch = pitch
 
-        time.sleep(t)
+    # gimbal 3
+    def send_command_to_gimbal(self, command_bytes):
+        self.serial_port.write(command_bytes)
 
-        x_byte = struct.pack('b', 0)
-        y_byte = struct.pack('b', 0)
+    # gimbal 4
+    def adjust_gimbal_relative_to_current(self, target_x, target_y): # 상대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
 
-        data_to_checksum = cmd_header + x_byte + y_byte
-        calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
-        checksum_bytes = struct.pack('<H', calculated_checksum)
+        error_x = target_x - center_x
+        error_y = target_y - center_y
 
-        command = data_to_checksum + checksum_bytes
+        # If the difference is zero, then there's no need to adjust
+        if error_x == 0 and error_y == 0:
+            print("Target is at the center. No adjustment needed.")
+            return
+        
+        delta_time = 0.1
 
-        self.ser.write(command)
+        # Yaw adjustment using PID
+        self.integral_yaw += error_x * delta_time
+        derivative_yaw = (error_x - self.prev_error_yaw) / delta_time
+        yaw_adjustment = self.current_yaw + self.kp_yaw * error_x + self.ki_yaw * self.integral_yaw + self.kd_yaw * derivative_yaw
+        self.prev_error_yaw = error_x
 
-    # gimbal3 (CRC16_cal 외부 함수 사용)
-    def center(self):
-        cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x0E'
+        # Pitch adjustment using PID
+        self.integral_pitch += error_y * delta_time
+        derivative_pitch = (error_y - self.prev_error_pitch) / delta_time
+        pitch_adjustment = self.current_pitch - (self.kp_pitch * error_y + self.ki_pitch * self.integral_pitch + self.kd_pitch * derivative_pitch)
+        self.prev_error_pitch = error_y
 
-        x_byte = struct.pack('b', 0)
-        y_byte = struct.pack('b', 0)
+        self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
 
-        data_to_checksum = cmd_header + x_byte + y_byte
-        calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
-        checksum_bytes = struct.pack('<H', calculated_checksum)
+    # gimbal 5
+    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
 
-        command = data_to_checksum + checksum_bytes
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
 
-        self.ser.write(command)
-        time.sleep(2)
+        scale_factor_yaw = 135 / center_x
+        scale_factor_pitch = (25 + 90) / center_y
+
+        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
+        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
+
+        yaw_adjustment = max(-135, min(135, yaw_adjustment))
+        pitch_adjustment = max(-90, min(25, pitch_adjustment))
+
+        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
 
     def close_connection(self):
         self.vehicle.close()
+
+    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
+        files = os.listdir()
+        jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
+
+        jpg_files.sort(key=lambda x: int(x.split('_')[-1].split('.jpg')[0]))
+
+        if not jpg_files:
+            print("No jpg files found with the given prefix.")
+            return
+
+        img = cv2.imread(jpg_files[0])
+        if img is None:
+            print(f"Error reading the image: {jpg_files[0]}")
+            return
+
+        height, width, layers = img.shape
+
+        combinations = [('XVID', 'avi')]
+
+        for codec, ext in combinations:
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            output_filename = f"{base_output_filename}_{codec}.{ext}"
+            out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
+
+            for file in jpg_files:
+                img = cv2.imread(file)
+                if img is not None:
+                    out.write(img)
+                else:
+                    print(f"Error reading the image: {file}")
+
+            out.release()
+            print(f"Saved video with {codec} codec to {output_filename}")
 
 
 if __name__ == '__main__':
@@ -189,12 +273,26 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+        drone.adjust_gimbal(425, 480)
+        time.sleep(0.1)
+        step = 0
 
-        camera_thread = threading.Thread(target=drone.show_camera_stream)
-        camera_thread.start()
-        drone.center()
+        try:
+            while True:
+                step += 1
+                sending_array = drone.detect_and_find_center()
+                truth = 0
+                if sending_array[1] != 240:
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth]
 
-        while True:
-            drone.sending_data([123, 425, 234, 212])
-            print(drone.receiving_data())
-            time.sleep(0.1)
+                drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
+
+                drone.sending_data(sending_data)
+                print(sending_data)
+                # print(drone.receiving_data())
+                time.sleep(0.1)
+
+        except KeyboardInterrupt:
+            drone.images_to_avi("captured_image", "output.avi")
+            print("Video saved as output.avi")
