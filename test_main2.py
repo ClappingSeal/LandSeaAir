@@ -289,45 +289,44 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(10,-90)
+        drone.set_gimbal_angle(0,-90)
         time.sleep(2)
         step = 0
-        drone.test123()
-        # asdf
-        # response = drone.accquire_data()
-        # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-        # print("Yaw:", yaw)
-        # print("Pitch:", pitch)
-        # print("Roll:", roll)
-        # print("Yaw Velocity:", yaw_velocity)
-        # print("Pitch Velocity:", pitch_velocity)
-        # print("Roll Velocity:", roll_velocity)
+        
+        response = drone.accquire_data()
+        yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+        print("Yaw:", yaw)
+        print("Pitch:", pitch)
+        print("Roll:", roll)
+        print("Yaw Velocity:", yaw_velocity)
+        print("Pitch Velocity:", pitch_velocity)
+        print("Roll Velocity:", roll_velocity)
+        asdf
         try:
             while True:
-                
                 step += 1
                 sending_array = drone.detect_and_find_center()
-                # truth = 0
-                # if sending_array[1] != 240:
-                #     truth = 1
-                # sending_data = [sending_array[0], sending_array[1], truth]
+                truth = 0
+                if sending_array[1] != 240:
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth]
 
-                # drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
+                drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
 
-                # drone.sending_data(sending_data)
-                # print(sending_data)
-                # # print(drone.receiving_data())
-                # startTime = time.time()
-                # response = drone.accquire_data()
-                # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-                # endTime = time.time()
-                # print(endTime-startTime)
-                # print("Yaw:", yaw)
-                # print("Pitch:", pitch)
-                # print("Roll:", roll)
-                # print("Yaw Velocity:", yaw_velocity)
-                # print("Pitch Velocity:", pitch_velocity)
-                # print("Roll Velocity:", roll_velocity)
+                drone.sending_data(sending_data)
+                print(sending_data)
+                # print(drone.receiving_data())
+                startTime = time.time()
+                response = drone.accquire_data()
+                yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+                endTime = time.time()
+                print(endTime-startTime)
+                print("Yaw:", yaw)
+                print("Pitch:", pitch)
+                print("Roll:", roll)
+                print("Yaw Velocity:", yaw_velocity)
+                print("Pitch Velocity:", pitch_velocity)
+                print("Roll Velocity:", roll_velocity)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
