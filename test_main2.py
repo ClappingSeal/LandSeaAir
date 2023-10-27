@@ -214,6 +214,28 @@ class Drone:
         response = self.serial_port.read(100)
         print("Received:", response)
         return response
+    
+    def acquire_attitude(self,response):
+        # CMD ID를 찾습니다.
+        index_0d = response.find(b'\x0D')
+
+        # Yaw, Pitch, Roll 데이터를 추출합니다.
+        data_06 = response[index_0d+1:index_0d+7]
+        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
+
+        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
+        data_0c = response[index_0d+7:index_0d+15]
+        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
+
+        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
+        yaw = yaw_raw / 10.0
+        pitch = pitch_raw / 10.0
+        roll = roll_raw / 10.0
+        yaw_velocity = yaw_velocity_raw / 10.0
+        pitch_velocity = pitch_velocity_raw / 10.0
+        roll_velocity = roll_velocity_raw / 10.0
+
+        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
 
     def close_connection(self):
         self.vehicle.close()
@@ -252,27 +274,7 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
-    def acquire_attitude(self,response):
-        # CMD ID를 찾습니다.
-        index_0d = response.find(b'\x0D')
 
-        # Yaw, Pitch, Roll 데이터를 추출합니다.
-        data_06 = response[index_0d+1:index_0d+7]
-        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
-
-        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-        data_0c = response[index_0d+7:index_0d+15]
-        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
-
-        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
-        yaw = yaw_raw / 10.0
-        pitch = pitch_raw / 10.0
-        roll = roll_raw / 10.0
-        yaw_velocity = yaw_velocity_raw / 10.0
-        pitch_velocity = pitch_velocity_raw / 10.0
-        roll_velocity = roll_velocity_raw / 10.0
-
-        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
 
         
 if __name__ == '__main__':
@@ -306,6 +308,17 @@ if __name__ == '__main__':
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
+                startTime = time.time()
+                response = drone.accquire_data()
+                yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+                endTime = time.time()
+                print(endTime-startTime)
+                print("Yaw:", yaw)
+                print("Pitch:", pitch)
+                print("Roll:", roll)
+                print("Yaw Velocity:", yaw_velocity)
+                print("Pitch Velocity:", pitch_velocity)
+                print("Roll Velocity:", roll_velocity)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
