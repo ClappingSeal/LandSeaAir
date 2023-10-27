@@ -204,14 +204,14 @@ class Drone:
         diff_x = target_x - center_x
         diff_y = target_y - center_y
 
-        scale_factor_yaw = self.max_yaw / center_x
-        scale_factor_pitch = (self.max_pitch - self.min_pitch) / center_y
+        scale_factor_yaw = 135 / center_x
+        scale_factor_pitch = (25 + 90) / center_y
 
         yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
         pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
 
-        yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
-        pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
+        yaw_adjustment = max(-135, min(135, yaw_adjustment))
+        pitch_adjustment = max(-90, min(25, pitch_adjustment))
 
         self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
 
