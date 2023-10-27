@@ -285,7 +285,6 @@ if __name__ == '__main__':
         time.sleep(2)
         step = 0
         response = drone.accquire_data()
-        time.sleep(3)
         yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
         print("Yaw:", yaw)
         print("Pitch:", pitch)
