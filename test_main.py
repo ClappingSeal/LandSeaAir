@@ -267,11 +267,12 @@ if __name__ == '__main__':
 
                 x_conversion1 = (sending_array[0]-425)/20
                 y_conversion1 = (sending_array[1]-240)/20
-                
-                drone.set_gimbal_angle(x_conversion1, y_conversion1)
-                
+
                 yaw += x_conversion1
                 pitch += y_conversion1
+
+                drone.set_gimbal_angle(yaw, pitch)
+                print(sending_array[0], sending_array[1], yaw, pitch)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
