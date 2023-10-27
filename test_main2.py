@@ -6,6 +6,7 @@ import struct
 import logging
 import numpy as np
 import os
+import math
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -121,7 +122,7 @@ class Drone:
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
-        return center
+        return (center[0], 480 - center[1])
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -194,7 +195,9 @@ class Drone:
         yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
         pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
+        # self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
+        print(target_x, target_y)
+        print(yaw_adjustment, -pitch_adjustment)
 
     def close_connection(self):
         self.vehicle.close()
@@ -263,3 +266,5 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
+
