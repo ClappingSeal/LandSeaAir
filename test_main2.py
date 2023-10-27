@@ -28,7 +28,7 @@ class Drone:
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([0, 255, 255])
+        self.base_color = np.array([100, 255, 255])
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
@@ -174,7 +174,7 @@ class Drone:
         self.serial_port.write(command_bytes)
 
     # gimbal 4
-    def adjust_gimbal_relative_to_current(self, target_x, target_y): # 상대 각도
+    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
         center_x = self.frame_width // 2
         center_y = self.frame_height // 2
 
@@ -186,18 +186,28 @@ class Drone:
             print("Target is at the center. No adjustment needed.")
             return
 
-        scale_factor_yaw = self.max_yaw / center_x
-        scale_factor_pitch = (self.max_pitch - self.min_pitch) / center_y
+        # Adjust yaw by 1 degree based on direction
+        if diff_x > 0:  # target is to the right of center
+            yaw_adjustment = self.current_yaw + 1
+        elif diff_x < 0:  # target is to the left of center
+            yaw_adjustment = self.current_yaw - 1
+        else:
+            yaw_adjustment = self.current_yaw  # No change
 
-        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
-        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
+        # Adjust pitch by 1 degree based on direction
+        if diff_y > 0:  # target is below the center
+            pitch_adjustment = self.current_pitch - 1
+        elif diff_y < 0:  # target is above the center
+            pitch_adjustment = self.current_pitch + 1
+        else:
+            pitch_adjustment = self.current_pitch  # No change
 
-        yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
-        pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
+        # Limiting the yaw and pitch angles to the given absolute ranges
+        yaw_adjustment = max(-135, min(135, yaw_adjustment))
+        pitch_adjustment = max(-90, min(25, pitch_adjustment))
 
-        # self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
-        print(target_x, target_y)
-        print(yaw_adjustment, -pitch_adjustment)
+        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
+
 
     def close_connection(self):
         self.vehicle.close()
