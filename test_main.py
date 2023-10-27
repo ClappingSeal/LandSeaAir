@@ -274,7 +274,8 @@ if __name__ == '__main__':
                 theta = math.atan(x_conversion1 / (y_conversion1 + 0.0001))
 
                 if step % 10 == 1:
-                    drone.set_gimbal_angle(r/40, theta)
+                    drone.set_gimbal_angle(r / 40, theta)
+                    print(r / 40, theta)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
