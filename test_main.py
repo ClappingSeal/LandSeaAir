@@ -279,9 +279,9 @@ if __name__ == '__main__':
             elif (x > 100) and (-100 < y < 100):
                 return 90, -60
             elif (-100 < x < 100) and (-100 < y < 100):
-                return 0, 0
+                return 0, -90
             else:
-                return 0, 0
+                return 0, -90
 
 
         try:
