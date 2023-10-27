@@ -38,7 +38,7 @@ class Drone:
         self.current_pitch = -90
         self.frame_width = 850
         self.frame_height = 480
-        self.max_yaw = 10
+        self.max_yaw = 5
         self.max_pitch = 10
         self.min_pitch = -10
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -194,7 +194,7 @@ class Drone:
         yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
         pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
+        self.set_gimbal_angle(-yaw_adjustment, -pitch_adjustment)
 
     # gimbal 5
     def adjust_gimbal(self, target_x, target_y):  # 절대 각도
@@ -272,7 +272,7 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                if step % 10 == 0:
+                if step % 5 == 0:
                     drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
 
                 drone.sending_data(sending_data)
