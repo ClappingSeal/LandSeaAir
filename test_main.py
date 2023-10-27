@@ -256,9 +256,11 @@ if __name__ == '__main__':
         time.sleep(0.1)
         yaw = 0
         pitch = -90
+        step = 0
 
         try:
             while True:
+                step += 1
                 sending_array = drone.detect_and_find_center()
                 truth = 0
                 if sending_array[1] != 240:
@@ -270,9 +272,9 @@ if __name__ == '__main__':
 
                 yaw += x_conversion1
                 pitch += y_conversion1
-
-                drone.set_gimbal_angle(yaw, pitch)
-                print(x_conversion1, y_conversion1)
+                if step % 10 == 1:
+                    drone.set_gimbal_angle(yaw, pitch)
+                    print(x_conversion1, y_conversion1)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
