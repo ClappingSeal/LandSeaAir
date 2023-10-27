@@ -238,7 +238,7 @@ class Drone:
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
 
     def test123(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x01\x00\x00\x00\x0c\x03\x57\fe')
+        self.send_command_to_gimbal(b'\x55\x66\x01\x01\x00\x00\x00\x0c\x03\x57\xfe')
         response = self.serial_port.read(100)
         print("Received:", response)
 
