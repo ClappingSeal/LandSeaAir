@@ -171,11 +171,6 @@ class Drone:
     # gimbal 3
     def send_command_to_gimbal(self, command_bytes):
         self.serial_port.write(command_bytes)
-        response = self.serial_port.read(10)
-        if response:
-            print("Received:", response)
-        else:
-            print("No response from gimbal.")
 
     # gimbal 4
     def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
@@ -280,7 +275,7 @@ if __name__ == '__main__':
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
-                time.sleep(0.1)
+                time.sleep(0.5)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
