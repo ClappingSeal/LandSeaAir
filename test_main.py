@@ -31,7 +31,7 @@ class Drone:
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
-        
+
         # Gimbal
         self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
@@ -79,7 +79,7 @@ class Drone:
             print("Error: Couldn't open the camera.")
             return
 
-        if self.ser.isOpen():
+        if self.serial_port.isOpen():
             print("Connection is established!")
         else:
             print("Error in serial connection!")
@@ -219,7 +219,7 @@ class Drone:
         pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
         self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
-    
+
     def close_connection(self):
         self.vehicle.close()
 
@@ -274,12 +274,12 @@ if __name__ == '__main__':
                 if sending_array[1] != 240:
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
-                
+
                 drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
 
                 drone.sending_data(sending_data)
                 print(sending_data)
-                
+-
                 # print(drone.receiving_data())
                 time.sleep(0.1)
 
