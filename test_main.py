@@ -268,8 +268,8 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                if step % 10 == 1:
-                    y_conversion1 = (sending_array[1] - 240) / 5
+                if step % 5 == 1:
+                    y_conversion1 = (sending_array[1] - 240) / 10
                     pitch = pitch + y_conversion1
                     if pitch < -90:
                         pitch = -90
@@ -284,4 +284,3 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
