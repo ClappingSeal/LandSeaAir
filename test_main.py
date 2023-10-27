@@ -268,10 +268,10 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                y_conversion1 = (sending_array[1] - 240)
+                y_conversion1 = (sending_array[1] - 240) / 10
 
-                drone.set_gimbal_angle(0, -90)
-                print(y_conversion1 / 10)
+                drone.set_gimbal_angle(0, -90 + y_conversion1)
+                print(y_conversion1)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
