@@ -221,9 +221,14 @@ class Drone:
 
     def accquire_data(self):
         self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
-        response = self.serial_port.read(100)
-        print("Received:", response)
-        return response
+        
+        try:
+            response, addr = self.udp_socket.recvfrom(1024) 
+            print("Received:", response)
+            return response
+        except socket.error as e:
+            print(f"Error receiving data via UDP: {e}")
+            return None
     
     def acquire_attitude(self,response):
         # CMD ID를 찾습니다.
@@ -298,14 +303,14 @@ if __name__ == '__main__':
         print('hello')
 
         step = 0
-        # response = drone.accquire_data()
-        # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-        # print("Yaw:", yaw)
-        # print("Pitch:", pitch)
-        # print("Roll:", roll)
-        # print("Yaw Velocity:", yaw_velocity)
-        # print("Pitch Velocity:", pitch_velocity)
-        # print("Roll Velocity:", roll_velocity)
+        response = drone.accquire_data()
+        yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+        print("Yaw:", yaw)
+        print("Pitch:", pitch)
+        print("Roll:", roll)
+        print("Yaw Velocity:", yaw_velocity)
+        print("Pitch Velocity:", pitch_velocity)
+        print("Roll Velocity:", roll_velocity)
         try:
             while True:
                 step += 1
@@ -320,17 +325,17 @@ if __name__ == '__main__':
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
-                # startTime = time.time()
-                # response = drone.accquire_data()
-                # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-                # endTime = time.time()
-                # print(endTime-startTime)
-                # print("Yaw:", yaw)
-                # print("Pitch:", pitch)
-                # print("Roll:", roll)
-                # print("Yaw Velocity:", yaw_velocity)
-                # print("Pitch Velocity:", pitch_velocity)
-                # print("Roll Velocity:", roll_velocity)
+                startTime = time.time()
+                response = drone.accquire_data()
+                yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+                endTime = time.time()
+                print(endTime-startTime)
+                print("Yaw:", yaw)
+                print("Pitch:", pitch)
+                print("Roll:", roll)
+                print("Yaw Velocity:", yaw_velocity)
+                print("Pitch Velocity:", pitch_velocity)
+                print("Roll Velocity:", roll_velocity)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
