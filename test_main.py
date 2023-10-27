@@ -272,6 +272,7 @@ if __name__ == '__main__':
 
                 if step % 10 == 1:
                     drone.set_gimbal_angle(0, y_conversion1/10)
+                    print(y_conversion1/10)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
