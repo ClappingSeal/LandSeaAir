@@ -177,8 +177,8 @@ class Drone:
         center_x = self.frame_width // 2
         center_y = self.frame_height // 2
 
-        diff_x = - target_x - center_x
-        diff_y = -target_y - center_y
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
 
         # If the difference is zero, then there's no need to adjust
         if diff_x == 0 and diff_y == 0:
@@ -194,15 +194,15 @@ class Drone:
         yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
         pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
+        self.set_gimbal_angle(-yaw_adjustment, -pitch_adjustment)
 
     # gimbal 5
     def adjust_gimbal(self, target_x, target_y):  # 절대 각도
         center_x = self.frame_width // 2
         center_y = self.frame_height // 2
 
-        diff_x = -target_x - center_x
-        diff_y = -target_y - center_y
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
 
         scale_factor_yaw = self.max_yaw / center_x
         scale_factor_pitch = (self.max_pitch - self.min_pitch) / center_y
