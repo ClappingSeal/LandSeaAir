@@ -298,11 +298,11 @@ if __name__ == '__main__':
                 print(sending_data)
                 # print(drone.receiving_data())
                 time.sleep(0.1)
-                
+
                 x_conversion = sending_array[0]-425
                 y_conversion = sending_array[1]-240
 
-                yaw, pitch = determine_case(sending_array[0], sending_array[1])
+                yaw, pitch = determine_case(x_conversion, y_conversion)
 
                 print(yaw, pitch)
                 if step % 10 == 1:
@@ -311,3 +311,4 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
