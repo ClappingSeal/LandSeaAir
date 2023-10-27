@@ -194,7 +194,7 @@ class Drone:
         yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
         pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        self.set_gimbal_angle(-yaw_adjustment, -pitch_adjustment)
+        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
 
     # gimbal 5
     def adjust_gimbal(self, target_x, target_y):  # 절대 각도
