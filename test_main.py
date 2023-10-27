@@ -261,27 +261,43 @@ if __name__ == '__main__':
         time.sleep(1)
 
 
-        def determine_case(x, y):
-            if x > 100 and y > 100:
+        def action_selector(a, b):
+            if a > 100 and b > 100:
                 return -45, 30
-            elif (-100 < x < 100) and (y > 100):
-                return 0, -60
-            elif (x < -100) and (y > 100):
-                return 45, -60
-            elif (x < -100) and (-100 < y < 100):
-                return 90, -60
-            elif (x < -100) and (y < -100):
-                return 135, -60
-            elif (-100 < x < 100) and (y < -100):
-                return 0, -60
-            elif (x > 100) and (y < -100):
-                return -135, -60
-            elif (x > 100) and (-100 < y < 100):
-                return -90, -60
-            elif (-100 < x < 100) and (-100 < y < 100):
-                return 0, -90
+            elif -100 < a < 100 and b > 100:
+                return 0, 30
+            elif a < -100 and b > 100:
+                return 45, 30
+            elif a < -100 and -100 < b < 100:
+                return 90, 30
+            elif a < -100 and b < -100:
+                return -45, -30
+            elif -100 < a < 100 and b < -100:
+                return 0, -30
+            elif a > 100 and b < -100:
+                return 45, -30
+            elif a > 100 and -100 < b < 100:
+                return -90, 30
+            elif -100 < a < 100 and -100 < b < 100:
+                return 0, 0
             else:
-                return 0, -90
+                return 0, 0
+
+
+        # a가 yaw, b가 pitch
+        def f(x, y, a, b):
+            action_x, action_y = action_selector(a, b)
+
+            new_x = x + action_x
+            new_y = y + action_y
+
+            # state 범위를 벗어나면 원래 값을 유지
+            if new_x not in [-90, -45, 0, 45, 90]:
+                new_x = x
+            if new_y not in [-30, -60, -90]:
+                new_y = y
+
+            return new_x, new_y
 
 
         try:
@@ -299,14 +315,16 @@ if __name__ == '__main__':
                 # print(drone.receiving_data())
                 time.sleep(0.1)
 
-                x_conversion = sending_array[0]-425
-                y_conversion = sending_array[1]-240
+                x_conversion = sending_array[0] - 425
+                y_conversion = sending_array[1] - 240
 
-                yaw, pitch = determine_case(x_conversion, y_conversion)
-
-                print(x_conversion, y_conversion, yaw, pitch)
-                if step % 10 == 1:
+                yaw_change, pitch_change = f(yaw, pitch, x_conversion, y_conversion)
+                yaw += yaw_change
+                pitch += pitch_change
+                
+                if step % 20 == 1:
                     drone.set_gimbal_angle(yaw, pitch)
+                    print(x_conversion, y_conversion, yaw, pitch ,yaw_change, pitch_change)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
