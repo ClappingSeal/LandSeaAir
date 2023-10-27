@@ -12,7 +12,7 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="192.168.144.25", udp_port=5005):
+    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="192.168.144.25", udp_port=37260):
 
         # Connecting value
         self.connection_string = connection_string
