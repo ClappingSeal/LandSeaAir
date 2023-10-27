@@ -270,9 +270,8 @@ if __name__ == '__main__':
 
                 y_conversion1 = (sending_array[1] - 240)
 
-                if step % 10 == 1:
-                    drone.set_gimbal_angle(0, y_conversion1/10)
-                    print(y_conversion1/10)
+                drone.set_gimbal_angle(0, -90)
+                print(y_conversion1/10)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
@@ -282,4 +281,3 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
