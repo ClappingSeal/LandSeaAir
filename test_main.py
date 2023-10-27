@@ -38,9 +38,9 @@ class Drone:
         self.current_pitch = -90
         self.frame_width = 850
         self.frame_height = 480
-        self.max_yaw = 135
-        self.max_pitch = 25
-        self.min_pitch = -90
+        self.max_yaw = 45
+        self.max_pitch = 45
+        self.min_pitch = -45
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
                           0x1231, 0x210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -114,7 +114,7 @@ class Drone:
                 center = (cX, cY)
 
         # Always draw the circle at the detected center (or default if no center detected)
-        cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
+        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
 
         if save_image:
             self.image_count += 1
