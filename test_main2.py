@@ -206,7 +206,7 @@ class Drone:
         yaw_adjustment = max(-135, min(135, yaw_adjustment))
         pitch_adjustment = max(-90, min(25, pitch_adjustment))
 
-        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
+        self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
 
 
     def close_connection(self):
@@ -266,8 +266,12 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
-
+                # drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
+                drone.set_gimbal_angle(0,-90)
+                time.sleep(0.1)
+                drone.set_gimbal_angle(0, 0)
+                time.sleep(0.1)
+                drone.set_gimbal_angle(0,-90)
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
