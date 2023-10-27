@@ -201,8 +201,8 @@ class Drone:
         center_x = self.frame_width // 2
         center_y = self.frame_height // 2
 
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
+        diff_x = -target_x - center_x
+        diff_y = -target_y - center_y
 
         scale_factor_yaw = self.max_yaw / center_x
         scale_factor_pitch = (self.max_pitch - self.min_pitch) / center_y
