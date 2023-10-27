@@ -264,8 +264,8 @@ class Drone:
         # 두 번째 패킷 (Uf\x02\x0c)에서 yaw_velocity, pitch_velocity, roll_velocity 값을 추출
         idx_0c = response.find(b'Uf\x02\x0c')
         if idx_0c != -1:
-            data_0c = response[idx_0c+5:idx_0c+11]  # 6바이트 만큼만 추출 (이전에는 12바이트로 설정되어 있었음)
-            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw = struct.unpack('<hhh', data_0c)
+            data_0c = response[idx_0c+5:idx_0c+17] # CMD_ID 및 데이터 길이를 건너뛴 위치에서 데이터 추출
+            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
         else:
             raise ValueError("Invalid response format for Uf\x02\x0c")
 
