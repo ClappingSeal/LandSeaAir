@@ -210,7 +210,7 @@ class Drone:
         print(yaw_adjustment, -pitch_adjustment)
 
     def test2(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x01\x00\x00\x00\x08\x01\xd1\x12')
+        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
         response = self.serial_port.read(100)
         print("Received:", response)
 
