@@ -261,44 +261,28 @@ if __name__ == '__main__':
         time.sleep(1)
 
 
-        def action_selector(a, b):
-            if a > 100 and b > 100:
-                return -45, 30
-            elif -100 < a < 100 and b > 100:
-                return 0, 30
-            elif a < -100 and b > 100:
-                return 45, 30
-            elif a < -100 and -100 < b < 100:
-                return 90, 30
-            elif a < -100 and b < -100:
-                return -45, -30
-            elif -100 < a < 100 and b < -100:
-                return 0, -30
-            elif a > 100 and b < -100:
-                return 45, -30
-            elif a > 100 and -100 < b < 100:
-                return -90, 30
-            elif -100 < a < 100 and -100 < b < 100:
-                return 0, 0
-            else:
-                return 0, 0
+        def calculate_angles(x, y):
+            # 중앙점을 0, 0으로 설정
+            x -= 425
+            y -= 240
+
+            # Yaw 각도 계산 (화면 가로 길이에 대한 비례식 사용)
+            yaw_angle = -135 * (x / 425)
+
+            # Pitch 각도 계산 (화면 세로 길이에 대한 비례식 사용)
+            pitch_angle = -90 * (y / 240)
+
+            # 각도 범위 조정
+            yaw_angle = max(min(yaw_angle, 135), -135)
+            pitch_angle = max(min(pitch_angle, 0), -90)
+
+            return yaw_angle, pitch_angle
 
 
-        # a가 yaw, b가 pitch
-        def f(x, y, a, b):
-            action_x, action_y = action_selector(a, b)
-
-            new_x = x + action_x
-            new_y = y + action_y
-
-            # state 범위를 벗어나면 원래 값을 유지
-            if new_x not in [-90, -45, 0, 45, 90]:
-                new_x = x
-            if new_y not in [-30, -60, -90]:
-                new_y = y
-
-            return new_x, new_y
-
+        # 예시 사용
+        x, y = 850, 480
+        yaw, pitch = calculate_angles(x, y)
+        print("Yaw:", yaw, "Pitch:", pitch)
 
         try:
             while True:
@@ -318,11 +302,11 @@ if __name__ == '__main__':
                 x_conversion = sending_array[0] - 425
                 y_conversion = sending_array[1] - 240
 
-                yaw, pitch = f(yaw, pitch, x_conversion, y_conversion)
+                yaw, pitch = calculate_angles(sending_array[0], sending_array[1])
 
                 if step % 10 == 1:
                     drone.set_gimbal_angle(yaw, pitch)
-                    print(truth, x_conversion, y_conversion, yaw, pitch)
+                    print(truth, yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
