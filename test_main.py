@@ -298,6 +298,9 @@ if __name__ == '__main__':
                 print(sending_data)
                 # print(drone.receiving_data())
                 time.sleep(0.1)
+                
+                x_conversion = sending_array[0]-425
+                y_conversion = sending_array[1]-240
 
                 yaw, pitch = determine_case(sending_array[0], sending_array[1])
 
