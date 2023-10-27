@@ -265,8 +265,8 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                x_conversion1 = (sending_array[0] - 425) / 40
-                y_conversion1 = (sending_array[1] - 240) / 40
+                x_conversion1 = (sending_array[0] - 425) / 8
+                y_conversion1 = (sending_array[1] - 240) / 8
 
                 yaw += x_conversion1
                 pitch += y_conversion1
