@@ -258,6 +258,7 @@ if __name__ == '__main__':
         yaw = 0
         pitch = -90
         step = 0
+        drone.set_gimbal_angle(0, -90)
 
         try:
             while True:
@@ -267,10 +268,10 @@ if __name__ == '__main__':
                 if sending_array[1] != 240:
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
-                
+
                 print(sending_data)
 
-                if step % 100 == 1:
+                if step % 200 == 1:
                     drone.set_gimbal_angle(0, -60)
                     print(sending_data[0], sending_data[1])
 
