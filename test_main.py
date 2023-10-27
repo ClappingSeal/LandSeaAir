@@ -268,8 +268,8 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                if step % 5 == 1:
-                    y_conversion1 = (sending_array[1] - 240) / 10
+                if step % 3 == 1:
+                    y_conversion1 = (sending_array[1] - 240) / 5
                     pitch = pitch + y_conversion1
                     if pitch < -90:
                         pitch = -90
