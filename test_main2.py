@@ -252,7 +252,7 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
-    def acquire_attitude(response):
+    def acquire_attitude(self,response):
         idx = response.find(b'Uf\x02')
         if idx == -1:
             raise ValueError("Invalid response format")
