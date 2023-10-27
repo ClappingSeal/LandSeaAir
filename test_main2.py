@@ -266,15 +266,11 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                # drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
-                for i in range(10):
-                    drone.set_gimbal_angle(0,-90+i)
-                    print('1')
-                    time.sleep(1)
+                drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
+
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
-                time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
