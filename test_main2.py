@@ -261,7 +261,7 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(0,-90)
         time.sleep(2)
         step = 0
-        drone.auto_centering
+        drone.test2()
         time.sleep(3)
         asdf
         try:
