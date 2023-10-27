@@ -209,10 +209,11 @@ class Drone:
         self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
         print(yaw_adjustment, -pitch_adjustment)
 
-    def test2(self):
+    def accquire_data(self):
         self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
         response = self.serial_port.read(100)
         print("Received:", response)
+        return response
 
     def close_connection(self):
         self.vehicle.close()
@@ -251,7 +252,25 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
+    def acquire_attitude(response):
+        idx = response.find(b'Uf\x02')
+        if idx == -1:
+            raise ValueError("Invalid response format")
+        
+        # 해당 오프셋부터의 데이터를 추출합니다.
+        data = response[idx+4:idx+16]  # idx+4(명령 코드와 데이터 길이를 건너뛴 위치)에서 시작
 
+        yaw_raw, pitch_raw, roll_raw, yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw = struct.unpack('<hhhhhh', data)
+
+        yaw = yaw_raw / 10.0
+        pitch = pitch_raw / 10.0
+        roll = roll_raw / 10.0
+        yaw_velocity = yaw_velocity_raw / 10.0
+        pitch_velocity = pitch_velocity_raw / 10.0
+        roll_velocity = roll_velocity_raw / 10.0
+
+        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+    
 if __name__ == '__main__':
 
     start_command = input("Press 's' to start: ")
@@ -261,8 +280,16 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(0,-90)
         time.sleep(2)
         step = 0
-        drone.test2()
+        response = drone.accquire_data()
         time.sleep(3)
+        yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+        print("Yaw:", yaw)
+        print("Pitch:", pitch)
+        print("Roll:", roll)
+        print("Yaw Velocity:", yaw_velocity)
+        print("Pitch Velocity:", pitch_velocity)
+        print("Roll Velocity:", roll_velocity)
+
         asdf
         try:
             while True:
