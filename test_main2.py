@@ -268,10 +268,13 @@ if __name__ == '__main__':
 
                 # drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
                 drone.set_gimbal_angle(0,-90)
+                print('1')
                 time.sleep(0.1)
                 drone.set_gimbal_angle(0, 0)
+                print('2')
                 time.sleep(0.1)
                 drone.set_gimbal_angle(0,-90)
+                print('3')
                 drone.sending_data(sending_data)
                 print(sending_data)
                 # print(drone.receiving_data())
