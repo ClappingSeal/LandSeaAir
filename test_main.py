@@ -265,7 +265,7 @@ if __name__ == '__main__':
             x_conversion = x - 425
             y_conversion = y - 240
             r = (abs(x_conversion) + abs(y_conversion)) / 10
-            theta = -math.atan(x_conversion / y_conversion + 1) * 60
+            theta = math.atan(x_conversion + 0.1 / y_conversion + 1) * -60
             if y_conversion < 0:
                 r = -r
             return theta, r
