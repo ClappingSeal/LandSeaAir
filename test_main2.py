@@ -209,7 +209,10 @@ class Drone:
         self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
         print(yaw_adjustment, -pitch_adjustment)
 
-
+    def acquire_attitude_data():
+        data = bytearray([0x55, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x0d, 0xe8, 0x05])
+        return data
+    
     def close_connection(self):
         self.vehicle.close()
 
@@ -257,7 +260,9 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(0,-90)
         time.sleep(2)
         step = 0
-
+        attitude_data = drone.acquire_attitude_data()
+        print(attitude_data)
+        asdf
         try:
             while True:
                 step += 1
