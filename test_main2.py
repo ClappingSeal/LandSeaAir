@@ -236,12 +236,6 @@ class Drone:
         roll_velocity = roll_velocity_raw / 10.0
 
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
-
-    def test123(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x04\x01\xbc\x57')
-        response = self.serial_port.read(100)
-        print("Received:", response)
-
     
     def close_connection(self):
         self.vehicle.close()
@@ -289,10 +283,9 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(0,-90)
+        drone.set_gimbal_angle(10,-90)
         time.sleep(2)
         step = 0
-        
         response = drone.accquire_data()
         yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
         print("Yaw:", yaw)
@@ -301,7 +294,6 @@ if __name__ == '__main__':
         print("Yaw Velocity:", yaw_velocity)
         print("Pitch Velocity:", pitch_velocity)
         print("Roll Velocity:", roll_velocity)
-        asdf
         try:
             while True:
                 step += 1
@@ -320,7 +312,6 @@ if __name__ == '__main__':
                 response = drone.accquire_data()
                 yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
                 endTime = time.time()
-                print(endTime-startTime)
                 print("Yaw:", yaw)
                 print("Pitch:", pitch)
                 print("Roll:", roll)
