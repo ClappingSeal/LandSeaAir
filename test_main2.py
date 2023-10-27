@@ -238,7 +238,7 @@ class Drone:
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
 
     def test123(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x01\x00\x00\x00\x0c\x03\x57\xfe')
+        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x04\x01\xbc\x57')
         response = self.serial_port.read(100)
         print("Received:", response)
 
@@ -292,7 +292,7 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(10,-90)
         time.sleep(2)
         step = 0
-        drone.test123()
+        
         # asdf
         # response = drone.accquire_data()
         # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
@@ -302,8 +302,9 @@ if __name__ == '__main__':
         # print("Yaw Velocity:", yaw_velocity)
         # print("Pitch Velocity:", pitch_velocity)
         # print("Roll Velocity:", roll_velocity)
-        # try:
-        #     while True:
+        try:
+            while True:
+                drone.test123()
         #         step += 1
         #         sending_array = drone.detect_and_find_center()
         #         truth = 0
@@ -328,8 +329,8 @@ if __name__ == '__main__':
         #         print("Pitch Velocity:", pitch_velocity)
         #         print("Roll Velocity:", roll_velocity)
 
-        # except KeyboardInterrupt:
-        #     drone.images_to_avi("captured_image", "output.avi")
-        #     print("Video saved as output.avi")
+        except KeyboardInterrupt:
+            drone.images_to_avi("captured_image", "output.avi")
+            print("Video saved as output.avi")
 
 
