@@ -252,11 +252,11 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
-    def acquire_attitude(self,response):
+    def acquire_attitude(self, response):
         # 첫 번째 패킷 (Uf\x02\x06)에서 yaw, pitch, roll 값을 추출
         idx_06 = response.find(b'Uf\x02\x06')
         if idx_06 != -1:
-            data_06 = response[idx_06+5:idx_06+11] # CMD_ID 및 데이터 길이를 건너뛴 위치에서 데이터 추출
+            data_06 = response[idx_06+5:idx_06+11] 
             yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
         else:
             raise ValueError("Invalid response format for Uf\x02\x06")
@@ -264,8 +264,8 @@ class Drone:
         # 두 번째 패킷 (Uf\x02\x0c)에서 yaw_velocity, pitch_velocity, roll_velocity 값을 추출
         idx_0c = response.find(b'Uf\x02\x0c')
         if idx_0c != -1:
-            data_0c = response[idx_0c+5:idx_0c+17] # CMD_ID 및 데이터 길이를 건너뛴 위치에서 데이터 추출
-            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw = struct.unpack('<hhh', data_0c[:6])
+            data_0c = response[idx_0c+5:idx_0c+11]  # 6바이트 만큼만 추출 (이전에는 12바이트로 설정되어 있었음)
+            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw = struct.unpack('<hhh', data_0c)
         else:
             raise ValueError("Invalid response format for Uf\x02\x0c")
 
@@ -275,8 +275,6 @@ class Drone:
         yaw_velocity = yaw_velocity_raw / 10.0
         pitch_velocity = pitch_velocity_raw / 10.0
         roll_velocity = roll_velocity_raw / 10.0
-
-        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
 
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
         
