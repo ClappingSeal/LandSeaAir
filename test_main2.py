@@ -260,6 +260,7 @@ if __name__ == '__main__':
         time.sleep(2)
         step = 0
         drone.auto_centering
+        time.sleep(3)
         asdf
         try:
             while True:
