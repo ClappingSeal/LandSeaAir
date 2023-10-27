@@ -293,9 +293,9 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                print(sending_data)
+                # print(sending_data)
                 drone.sending_data(sending_data)
-                print(sending_data)
+                # print(sending_data)
                 # print(drone.receiving_data())
                 time.sleep(0.1)
 
@@ -303,12 +303,13 @@ if __name__ == '__main__':
                 y_conversion = sending_array[1]-240
 
                 yaw, pitch = determine_case(x_conversion, y_conversion)
-
-                print(yaw, pitch)
+                
+                print(x_conversion, y_conversion, yaw, pitch)
                 if step % 10 == 1:
                     drone.set_gimbal_angle(yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
 
