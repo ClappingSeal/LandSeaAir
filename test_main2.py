@@ -43,7 +43,6 @@ class Drone:
         except socket.error as e:
             print(f"Error binding UDP socket: {e}")
             return
-        asd
         # Gimbal
         # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
