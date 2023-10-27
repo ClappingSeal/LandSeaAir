@@ -265,10 +265,11 @@ if __name__ == '__main__':
             x_conversion = x - 425
             y_conversion = y - 240
             r = (abs(x_conversion) + abs(y_conversion)) / 10
-            theta = -math.atan(x_conversion / y_conversion) * 60
+            theta = -math.atan(x_conversion / y_conversion + 0.001) * 60
             if y_conversion < 0:
                 r = -r
             return theta, r
+
 
         try:
             while True:
@@ -286,7 +287,9 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 if step % 10 == 1:
-                    yaw, pitch = yaw_pitch(sending_array[0], sending_array[1])
+                    yc, pc = yaw_pitch(sending_array[0], sending_array[1])
+                    yaw = yaw + yc
+                    pitch = pitch + pc
                     drone.set_gimbal_angle(yaw, pitch)
                     print(truth, yaw, pitch)
 
