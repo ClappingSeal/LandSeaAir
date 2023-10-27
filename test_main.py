@@ -28,7 +28,7 @@ class Drone:
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([100, 255, 255])
+        self.base_color = np.array([0, 255, 255])
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
@@ -268,13 +268,13 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                y_conversion1 = (sending_array[1] - 240) / 10
-
-                pitch = pitch + y_conversion1
-                if pitch < -90:
-                    pitch = -90
-                drone.set_gimbal_angle(0, pitch)
-                print(y_conversion1)
+                if step % 10 == 1:
+                    y_conversion1 = (sending_array[1] - 240) / 5
+                    pitch = pitch + y_conversion1
+                    if pitch < -90:
+                        pitch = -90
+                    drone.set_gimbal_angle(0, pitch)
+                    print(y_conversion1)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
@@ -284,3 +284,4 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
