@@ -271,7 +271,6 @@ if __name__ == '__main__':
                 y_conversion1 = (sending_array[1] - 240)
 
                 drone.set_gimbal_angle(0, -90)
-                print(y_conversion1/10)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
