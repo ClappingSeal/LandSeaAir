@@ -265,9 +265,9 @@ if __name__ == '__main__':
             x_conversion = x - 425
             y_conversion = y - 240
             r = (abs(x_conversion) + abs(y_conversion)) / 10
-            
+
             print(r, x_conversion, y_conversion)
-            theta = math.atan(x_conversion + 0.1 / y_conversion + 1)
+            theta = math.atan(float(x_conversion + 0.1) / float(y_conversion + 1))
             print(theta)
             if y_conversion < 0:
                 r = -r
@@ -299,3 +299,4 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
