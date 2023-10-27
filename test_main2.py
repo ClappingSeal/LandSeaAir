@@ -207,6 +207,7 @@ class Drone:
         pitch_adjustment = max(-90, min(25, pitch_adjustment))
 
         self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
+        print(yaw_adjustment, -pitch_adjustment)
 
 
     def close_connection(self):
@@ -254,7 +255,7 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
         drone.set_gimbal_angle(0,-90)
-        time.sleep(0.1)
+        time.sleep(2)
         step = 0
 
         try:
