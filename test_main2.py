@@ -75,15 +75,6 @@ class Drone:
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
 
-        # PID 
-        self.kp_yaw, self.ki_yaw, self.kd_yaw = 0.5, 0.01, 0.1
-        self.kp_pitch, self.ki_pitch, self.kd_pitch = 0.5, 0.01, 0.1
-
-        self.prev_error_yaw = 0
-        self.prev_error_pitch = 0
-        self.integral_yaw = 0
-        self.integral_pitch = 0
-        
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
@@ -186,48 +177,24 @@ class Drone:
         center_x = self.frame_width // 2
         center_y = self.frame_height // 2
 
-        error_x = target_x - center_x
-        error_y = target_y - center_y
-
-        # If the difference is zero, then there's no need to adjust
-        if error_x == 0 and error_y == 0:
-            print("Target is at the center. No adjustment needed.")
-            return
-        
-        delta_time = 0.1
-
-        # Yaw adjustment using PID
-        self.integral_yaw += error_x * delta_time
-        derivative_yaw = (error_x - self.prev_error_yaw) / delta_time
-        yaw_adjustment = self.current_yaw + self.kp_yaw * error_x + self.ki_yaw * self.integral_yaw + self.kd_yaw * derivative_yaw
-        self.prev_error_yaw = error_x
-
-        # Pitch adjustment using PID
-        self.integral_pitch += error_y * delta_time
-        derivative_pitch = (error_y - self.prev_error_pitch) / delta_time
-        pitch_adjustment = self.current_pitch - (self.kp_pitch * error_y + self.ki_pitch * self.integral_pitch + self.kd_pitch * derivative_pitch)
-        self.prev_error_pitch = error_y
-
-        self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
-
-    # gimbal 5
-    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
-
         diff_x = target_x - center_x
         diff_y = target_y - center_y
 
-        scale_factor_yaw = 135 / center_x
-        scale_factor_pitch = (25 + 90) / center_y
+        # If the difference is zero, then there's no need to adjust
+        if diff_x == 0 and diff_y == 0:
+            print("Target is at the center. No adjustment needed.")
+            return
+
+        scale_factor_yaw = self.max_yaw / center_x
+        scale_factor_pitch = (self.max_pitch - self.min_pitch) / center_y
 
         yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
         pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
 
-        yaw_adjustment = max(-135, min(135, yaw_adjustment))
-        pitch_adjustment = max(-90, min(25, pitch_adjustment))
+        yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
+        pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
+        self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
 
     def close_connection(self):
         self.vehicle.close()
@@ -273,7 +240,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.adjust_gimbal(425, 240)
+        drone.set_gimbal_angle(0,-90)
         time.sleep(0.1)
         step = 0
 
