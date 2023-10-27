@@ -209,9 +209,11 @@ class Drone:
         self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
         print(yaw_adjustment, -pitch_adjustment)
 
-    def auto_centering(self):
+    def test2(self):
         self.send_command_to_gimbal(b'\x55\x66\x01\x01\x00\x00\x00\x08\x01\xd1\x12')
-    
+        response = self.serial_port.read(100)
+        print("Received:", response)
+
     def close_connection(self):
         self.vehicle.close()
 
