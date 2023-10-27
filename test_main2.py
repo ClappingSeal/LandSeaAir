@@ -209,9 +209,9 @@ class Drone:
         self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
         print(yaw_adjustment, -pitch_adjustment)
 
-    def acquire_attitude_data():
-        data = bytearray([0x55, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x0d, 0xe8, 0x05])
-        return data
+    def acquire_attitude_data(self):
+        command_bytes = bytearray([0x55, 0x66, 0x01, 0x00, 0x00, 0x00, 0x00, 0x0d, 0xe8, 0x05])
+        self.serial_port.write(command_bytes)
     
     def close_connection(self):
         self.vehicle.close()
