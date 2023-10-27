@@ -178,7 +178,7 @@ class Drone:
         center_y = self.frame_height // 2
 
         diff_x = - target_x - center_x
-        diff_y = - target_y - center_y
+        diff_y = -target_y - center_y
 
         # If the difference is zero, then there's no need to adjust
         if diff_x == 0 and diff_y == 0:
