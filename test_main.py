@@ -122,6 +122,8 @@ class Drone:
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
+        center = (cX, 480 - cY)
+
         return center
 
     # Receiving 1
@@ -271,6 +273,7 @@ if __name__ == '__main__':
                 y_conversion1 = (sending_array[1] - 240)
 
                 drone.set_gimbal_angle(0, -90)
+                print(y_conversion1 / 10)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
@@ -280,3 +283,4 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
