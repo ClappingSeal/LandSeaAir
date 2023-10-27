@@ -237,15 +237,10 @@ class Drone:
 
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
 
-    def send_auto_focus_command(self):
-        # CMD_ID for Auto Focus
-        cmd_id = b'\x04'
-        # Value for auto_focus to start it
-        auto_focus_value = struct.pack('<B', 1)
-        
-        # Combine CMD_ID and auto_focus value
-        command = cmd_id + auto_focus_value
-        self.send_command_to_gimbal(command)
+    def test123(self):
+        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x04\x01\xbc\x57')
+        response = self.serial_port.read(100)
+        print("Received:", response)
 
     
     def close_connection(self):
@@ -309,7 +304,7 @@ if __name__ == '__main__':
         # print("Roll Velocity:", roll_velocity)
         try:
             while True:
-                drone.send_auto_focus_command()
+                drone.test123()
         #         step += 1
         #         sending_array = drone.detect_and_find_center()
         #         truth = 0
