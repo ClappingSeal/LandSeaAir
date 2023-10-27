@@ -292,7 +292,7 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(10,-90)
         time.sleep(2)
         step = 0
-        
+        drone.test123()
         # asdf
         # response = drone.accquire_data()
         # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
@@ -304,7 +304,7 @@ if __name__ == '__main__':
         # print("Roll Velocity:", roll_velocity)
         try:
             while True:
-                drone.test123()
+                
                 step += 1
                 sending_array = drone.detect_and_find_center()
                 # truth = 0
