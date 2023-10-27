@@ -270,7 +270,11 @@ if __name__ == '__main__':
                 sending_data = [sending_array[0], sending_array[1], truth]
 
                 print(sending_data)
-
+                
+                if step % 200 == 100:
+                    drone.set_gimbal_angle(0, -90)
+                    print(sending_data[0], sending_data[1])
+                
                 if step % 200 == 1:
                     drone.set_gimbal_angle(0, -60)
                     print(sending_data[0], sending_data[1])
