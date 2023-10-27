@@ -122,9 +122,7 @@ class Drone:
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
-        center = (cX, 480 - cY)
-
-        return center
+        return (center[0], 480 - center[1])
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -283,4 +281,3 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
