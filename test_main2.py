@@ -1,7 +1,7 @@
 from dronekit import connect
 import cv2
 import time
-import serial
+import socket
 import struct
 import logging
 import numpy as np
@@ -12,7 +12,7 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
+    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="192.168.144.25", udp_port=5005):
 
         # Connecting value
         self.connection_string = connection_string
@@ -33,8 +33,19 @@ class Drone:
         self.threshold = 10
         self.alpha = 0.3
 
+        # Gimbal UDP Settings
+        self.udp_ip = udp_ip
+        self.udp_port = udp_port
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            self.udp_socket.bind((self.udp_ip, self.udp_port))
+            print("UDP socket bound successfully!")
+        except socket.error as e:
+            print(f"Error binding UDP socket: {e}")
+            return
+        asd
         # Gimbal
-        self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
+        # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
         self.current_pitch = -90
         self.frame_width = 850
