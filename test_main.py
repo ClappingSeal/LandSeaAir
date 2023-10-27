@@ -261,28 +261,14 @@ if __name__ == '__main__':
         time.sleep(1)
 
 
-        def calculate_angles(x, y):
-            # 중앙점을 0, 0으로 설정
-            x -= 425
-            y -= 240
-
-            # Yaw 각도 계산 (화면 가로 길이에 대한 비례식 사용)
-            yaw_angle = -135 * (x / 425)
-
-            # Pitch 각도 계산 (화면 세로 길이에 대한 비례식 사용)
-            pitch_angle = -90 * (y / 240)
-
-            # 각도 범위 조정
-            yaw_angle = max(min(yaw_angle, 135), -135)
-            pitch_angle = max(min(pitch_angle, 0), -90)
-
-            return yaw_angle, pitch_angle
-
-
-        # 예시 사용
-        x, y = 850, 480
-        yaw, pitch = calculate_angles(x, y)
-        print("Yaw:", yaw, "Pitch:", pitch)
+        def yaw_pitch(x, y):
+            x_conversion = x - 425
+            y_conversion = y - 240
+            r = (abs(x_conversion) + abs(y_conversion)) / 10
+            theta = -math.atan(x_conversion / y_conversion) * 60
+            if y_conversion < 0:
+                r = -r
+            return theta, r
 
         try:
             while True:
@@ -299,12 +285,8 @@ if __name__ == '__main__':
                 # print(drone.receiving_data())
                 time.sleep(0.1)
 
-                x_conversion = sending_array[0] - 425
-                y_conversion = sending_array[1] - 240
-
-                yaw, pitch = calculate_angles(sending_array[0], sending_array[1])
-
                 if step % 10 == 1:
+                    yaw, pitch = yaw_pitch(sending_array[0], sending_array[1])
                     drone.set_gimbal_angle(yaw, pitch)
                     print(truth, yaw, pitch)
 
