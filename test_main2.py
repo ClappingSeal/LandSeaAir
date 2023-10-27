@@ -253,12 +253,19 @@ class Drone:
             print(f"Saved video with {codec} codec to {output_filename}")
 
     def acquire_attitude(self,response):
-        idx = response.find(b'Uf\x02')
-        if idx == -1:
+        # 'Uf\x02\x06' 및 'Uf\x02\x0c' 패턴을 찾습니다.
+        idx_06 = response.find(b'Uf\x02\x06')
+        idx_0c = response.find(b'Uf\x02\x0c')
+
+        if idx_0c != -1:
+            idx = idx_0c
+        elif idx_06 != -1:
+            idx = idx_06
+        else:
             raise ValueError("Invalid response format")
-        
-        # 해당 오프셋부터의 데이터를 추출합니다.
-        data = response[idx+4:idx+16]  # idx+4(명령 코드와 데이터 길이를 건너뛴 위치)에서 시작
+
+        # 해당 위치에서의 데이터를 추출합니다.
+        data = response[idx+5:idx+17]  # idx+5에서 시작 (CMD_ID 및 데이터 길이를 건너뛴 위치)
 
         yaw_raw, pitch_raw, roll_raw, yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw = struct.unpack('<hhhhhh', data)
 
@@ -270,7 +277,7 @@ class Drone:
         roll_velocity = roll_velocity_raw / 10.0
 
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
-    
+        
 if __name__ == '__main__':
 
     start_command = input("Press 's' to start: ")
