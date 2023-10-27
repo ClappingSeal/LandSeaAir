@@ -256,7 +256,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        # drone.set_gimbal_angle(0,-90)
+        drone.set_gimbal_angle(0,-90)
         time.sleep(2)
         step = 0
         drone.auto_centering
