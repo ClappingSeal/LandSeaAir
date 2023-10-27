@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.adjust_gimbal(425, 480)
+        drone.adjust_gimbal(425, 240)
         time.sleep(0.1)
         step = 0
 
