@@ -260,25 +260,29 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(0, -90)
         time.sleep(1)
 
+
         def determine_case(x, y):
             if x > 100 and y > 100:
                 return 45, 30
             elif (-100 < x < 100) and (y > 100):
-                return 0, 30
+                return 0, -60
             elif (x < -100) and (y > 100):
-                return -45, 30
+                return -45, -60
             elif (x < -100) and (-100 < y < 100):
-                return -90, 30
+                return -90, -60
             elif (x < -100) and (y < -100):
-                return -135, 30
+                return -135, -60
+            elif (-100 < x < 100) and (y < -100):
+                return 0, -60
             elif (x > 100) and (y < -100):
-                return 135, 30
+                return 135, -60
             elif (x > 100) and (-100 < y < 100):
-                return 90, 30
+                return 90, -60
             elif (-100 < x < 100) and (-100 < y < 100):
                 return 0, 0
             else:
                 return 0, 0
+
 
         try:
             while True:
@@ -296,9 +300,9 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 yaw, pitch = determine_case(sending_array[0], sending_array[1])
+
                 drone.set_gimbal_angle(yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
