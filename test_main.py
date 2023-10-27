@@ -267,16 +267,12 @@ if __name__ == '__main__':
                 if sending_array[1] != 240:
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
+                
+                print(sending_data)
 
-                if step % 3 == 1:
-                    y_conversion1 = (sending_array[1] - 240) / 20
-                    pitch = pitch + y_conversion1
-                    if pitch < -90:
-                        pitch = -90
-                    if pitch > 90:
-                        pitch = 90
-                    drone.set_gimbal_angle(0, pitch)
-                    print(y_conversion1)
+                if step % 100 == 1:
+                    drone.set_gimbal_angle(0, -60)
+                    print(sending_data[0], sending_data[1])
 
                 drone.sending_data(sending_data)
                 print(sending_data)
