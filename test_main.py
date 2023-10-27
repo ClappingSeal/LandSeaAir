@@ -265,14 +265,14 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                x_conversion1 = (sending_array[0]-425)/20
-                y_conversion1 = (sending_array[1]-240)/20
+                x_conversion1 = (sending_array[0] - 425) / 40
+                y_conversion1 = (sending_array[1] - 240) / 40
 
                 yaw += x_conversion1
                 pitch += y_conversion1
 
                 drone.set_gimbal_angle(yaw, pitch)
-                print(sending_array[0], sending_array[1], yaw, pitch)
+                print(x_conversion1, y_conversion1)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
