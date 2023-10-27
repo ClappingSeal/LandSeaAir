@@ -6,6 +6,7 @@ import struct
 import logging
 import numpy as np
 import os
+import math
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -267,14 +268,13 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                x_conversion1 = (sending_array[0] - 425) / 8
-                y_conversion1 = (sending_array[1] - 240) / 8
+                x_conversion1 = (sending_array[0] - 425)
+                y_conversion1 = (sending_array[1] - 240)
+                r = (x_conversion1 + y_conversion1)
+                theta = math.atan(x_conversion1 / (y_conversion1 + 0.0001))
 
-                yaw += x_conversion1
-                pitch += y_conversion1
                 if step % 10 == 1:
-                    drone.set_gimbal_angle(yaw, pitch)
-                    print(x_conversion1, y_conversion1)
+                    drone.set_gimbal_angle(r/40, theta)
 
                 drone.sending_data(sending_data)
                 print(sending_data)
