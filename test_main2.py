@@ -179,7 +179,7 @@ class Drone:
         # UDP를 사용하여 gimbal에 명령 전송
         try:
             self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
-            print("Command sent successfully!")
+            # print("Command sent successfully!")
         except socket.error as e:
             print(f"Error sending command via UDP: {e}")
 
@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(10,-90)
+        drone.set_gimbal_angle(0,-90)
         time.sleep(2)
         print('hello')
 
@@ -321,7 +321,7 @@ if __name__ == '__main__':
                 sending_data = [sending_array[0], sending_array[1], truth]
 
                 drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
-
+                time.sleep(1)
                 # drone.sending_data(sending_data)
                 # print(sending_data)
                 # # print(drone.receiving_data())
