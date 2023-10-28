@@ -303,8 +303,21 @@ class Drone:
     
     # server 3
     def send_data(self, data):
-        self.conn.sendall(data.encode('utf-8'))
-
+        try:
+            self.conn.sendall(data.encode('utf-8'))
+        except ConnectionResetError:
+            print("Connection was reset by peer.")
+            print("Attempting to reconnect...")
+            
+            # 연결을 닫고 다시 시작합니다.
+            self.conn.close()
+            self.setup_connection()
+            
+            # 재연결 후 다시 데이터를 전송해볼 수 있습니다.
+            try:
+                self.conn.sendall(data.encode('utf-8'))
+            except Exception as e:
+                print("Failed to send data after reconnection:", e)
     # server 4
     def close_connection(self):
         if self.conn:
