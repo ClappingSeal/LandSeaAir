@@ -8,7 +8,7 @@ class Drone:
 
         self.detection_model = AutoDetectionModel.from_pretrained(
             model_type='yolov8',
-            model_path='runs/detect/best2  .pt',
+            model_path='runs/detect/best2.pt',
             confidence_threshold=0.3,
             device='cpu'
         )
