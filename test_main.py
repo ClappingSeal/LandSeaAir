@@ -1,7 +1,7 @@
 from dronekit import connect
 import cv2
 import time
-import serial
+import socket
 import struct
 import logging
 import numpy as np
@@ -12,7 +12,7 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
+    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="0.0.0.0", udp_port=37260):
 
         # Connecting value
         self.connection_string = connection_string
@@ -33,8 +33,18 @@ class Drone:
         self.threshold = 10
         self.alpha = 0.3
 
+        # Gimbal UDP Settings
+        self.udp_ip = udp_ip
+        self.udp_port = udp_port
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            self.udp_socket.bind((self.udp_ip, self.udp_port))
+            print("UDP socket bound successfully!")
+        except socket.error as e:
+            print(f"Error binding UDP socket: {e}")
+            return
         # Gimbal
-        self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
+        # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
         self.current_pitch = -90
         self.frame_width = 850
@@ -171,7 +181,11 @@ class Drone:
 
     # gimbal 3
     def send_command_to_gimbal(self, command_bytes):
-        self.serial_port.write(command_bytes)
+        try:
+            self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
+            # print("Command sent successfully!")
+        except socket.error as e:
+            print(f"Error sending command via UDP: {e}")
 
     # gimbal 4
     def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
@@ -257,20 +271,29 @@ if __name__ == '__main__':
         yaw = 0
         pitch = -90
         step = 0
-        drone.set_gimbal_angle(0, -90)
-        time.sleep(1)
+        drone.set_gimbal_angle(yaw, pitch)
+        time.sleep(1.5)
+        drone.set_gimbal_angle(0, 0)
+        time.sleep(1.5)
 
 
-        def yaw_pitch(x, y):
+        def yaw_pitch(x, y, threshold=50, movement=5):
             x_conversion = x - 425
             y_conversion = y - 240
-            r = (abs(x_conversion) + abs(y_conversion)) / 30
+            if x_conversion > threshold:
+                yaw_change = -movement
+            elif x_conversion < -threshold:
+                yaw_change = movement
+            else:
+                yaw_change = 0
 
-            theta = math.atan(float(x_conversion + 0.1) / float(y_conversion + 1))
-            if y_conversion < 0:
-                r = -r
-
-            return theta, r
+            if y_conversion > threshold:
+                pitch_change = 10
+            elif y_conversion < -threshold:
+                pitch_change = -10
+            else:
+                pitch_change = 0
+            return yaw_change, pitch_change
 
 
         try:
@@ -282,16 +305,15 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                # print(sending_data)
                 drone.sending_data(sending_data)
                 # print(sending_data)
-                # print(drone.receiving_data())
                 time.sleep(0.1)
 
                 if step % 10 == 1:
-                    yc, pc = yaw_pitch(sending_array[0], sending_array[1])
-                    yaw = yaw + yc
-                    pitch = pitch + pc
+                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1])
+                    yaw += yaw_change
+                    pitch_change += pitch_change
+
                     drone.set_gimbal_angle(yaw, pitch)
                     print(truth, yaw, pitch)
 
