@@ -264,9 +264,9 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
         yaw = 0
-        pitch = -90
+        pitch = 0
         step = 0
-        drone.set_gimbal_angle(yaw, pitch)
+        drone.set_gimbal_angle0, -90)
         time.sleep(1.5)
         drone.set_gimbal_angle(0, 0)
         time.sleep(1.5)
