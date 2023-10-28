@@ -312,10 +312,6 @@ class Drone:
 if __name__ == "__main__":
     gt = Drone()
 
-    # 시뮬레이션 데이터 저장을 위한 리스트
-    target_positions = []
-    actual_positions = []
-
     try:
         nums = 1, 1
 
