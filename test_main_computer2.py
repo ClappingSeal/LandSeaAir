@@ -299,7 +299,7 @@ class Drone:
 if __name__ == "__main__":
     gt = Drone()
 
-    gt.set_connection() # client
+    
 
     try:
         # raw_input = input("위도, 경도: ")
@@ -309,10 +309,11 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            # gt.arm_takeoff(2)
+            gt.arm_takeoff(2)
             # gt.set_yaw_to_north()
-            # time.sleep(0.1)
-
+            time.sleep(0.1)
+            gt.set_connection() # client
+            
             while True:
                 # client data receive
                 data_received = gt.receive_data()
