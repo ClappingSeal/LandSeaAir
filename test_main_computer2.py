@@ -311,9 +311,9 @@ if __name__ == "__main__":
         if len(nums) == 2:
             gt.arm_takeoff(2)
             # gt.set_yaw_to_north()
-            time.sleep(0.1)
+            time.sleep(3)
             gt.set_connection() # client
-            
+
             while True:
                 # client data receive
                 data_received = gt.receive_data()
