@@ -272,7 +272,7 @@ if __name__ == '__main__':
         time.sleep(1.5)
 
 
-        def yaw_pitch(x, y, threshold=50, movement=5):
+        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=50, movement=5):
             x_conversion = x - 425
             y_conversion = y - 240
             if x_conversion > threshold:
@@ -283,11 +283,17 @@ if __name__ == '__main__':
                 yaw_change = 0
 
             if y_conversion > threshold:
-                pitch_change = 10
+                pitch_change = movement
             elif y_conversion < -threshold:
-                pitch_change = -10
+                pitch_change = -movement
             else:
                 pitch_change = 0
+
+            if (current_yaw > 134) or (current_yaw < -134):
+                yaw_change = 0
+            if (current_pitch > 1) or (current_pitch < -89):
+                pitch_change = 0
+
             return yaw_change, pitch_change
 
 
@@ -304,10 +310,10 @@ if __name__ == '__main__':
                 # print(sending_data)
                 time.sleep(0.1)
 
-                if step % 10 == 1:
-                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1])
+                if step % 5 == 1:
+                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
-                    pitch_change += pitch_change
+                    pitch += pitch_change
 
                     drone.set_gimbal_angle(yaw, pitch)
                     print(truth, yaw, pitch)
