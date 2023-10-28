@@ -37,6 +37,9 @@ class Drone:
         print(self.init_lat, self.init_lon)
 
         self.past_pos_data = np.zeros((20, 2))
+        
+        # client setup
+        self.client_socket = None
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -274,41 +277,39 @@ class Drone:
         obs = np.array([x_frame, y_frame])
         action, _ = self.model.predict(obs)
         return -action
-    
-    # def ssh_to_ras(self):
-    #     print('connecting ra')
-    #     ssh = paramiko.SSHClient()
-    #     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    #     ssh.connect('192.168.144.26', username='GISTracker', password='gistracker')
 
-    #     stdin, stdout, stderr = ssh.exec_command('test2')
-    #     data = stdout.read()
-    #     print(data)
-    #     print('received data')
-
-
-
+    # client 1
+    def set_connection(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect(("192.168.0.31",12345))
+    # client 2
+    def receive_data(self):
+        data = self.client_socket.recv(1024).decode('utf-8')
+        return data
+    # client 3
+    def send_data(self, data_to_send):
+        self.client_socket.send(data_to_send.encode('utf-8'))
+        reply = self.client_socket.recv(1024).decode('utf-8')
+        return reply
+    # client 4
+    def close_connection(self):
+        if self.client_socket:
+            self.client_socket.close()
 
 if __name__ == "__main__":
     gt = Drone()
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("192.168.0.31",12345))
 
-    #Lets loop awaiting for your input
-    while True:
-            command = input('Enter your command: ')
-            s.send(command.encode('utf-8'))
-            reply = s.recv(1024)
-            if reply == 'Terminate':
-                    break
-            print(reply)
+    gt.set_connection()
+    data = gt.receive_data()
+    print(data)
     asdf
+
     try:
         # raw_input = input("위도, 경도: ")
 
         nums = 1, 1
         # nums = [float(num.strip()) for num in raw_input.split(",")]
-        gt.ssh_to_ras()
+
         dd
         # 미션 시작1
         if len(nums) == 2:
