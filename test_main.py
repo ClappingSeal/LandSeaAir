@@ -304,9 +304,9 @@ if __name__ == '__main__':
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-                sending_data = [sending_array[0], sending_array[1], truth]
+                sending_array[2] = truth
 
-                drone.sending_data(sending_data)
+                drone.sending_data(sending_array)
                 # print(sending_data)
                 time.sleep(0.1)
 
