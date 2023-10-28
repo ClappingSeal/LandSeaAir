@@ -305,7 +305,7 @@ if __name__ == '__main__':
                 if sending_array[1] != 240:
                     truth = 1
 
-                sending_data = np.array([sending_array[0], sending_array[1], truth])
+                sending_data = [sending_array[0], sending_array[1], truth]
 
                 drone.sending_data(sending_data)
                 # print(sending_data)
