@@ -184,38 +184,27 @@ class Drone:
             print(f"Error sending command via UDP: {e}")
 
     # gimbal 4
-    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
+    def adjust_gimbal_relative_to_current(self, current_yaw, current_pitch, target_x, target_y, frame_width=850, frame_height=480, max_yaw=135, max_pitch=25, min_pitch=-90):
+        # 중앙 좌표 계산
+        center_x = frame_width // 2
+        center_y = frame_height // 2
 
+        # 좌표 차이 계산
         diff_x = target_x - center_x
         diff_y = target_y - center_y
 
-        # If the difference is zero, then there's no need to adjust
-        if diff_x == 0 and diff_y == 0:
-            print("Target is at the center. No adjustment needed.")
-            return
+        # 각도 조절값 계산 (이 부분은 조정이 필요할 수 있습니다. scale_factor는 실험적으로 최적의 값을 찾아야 합니다.)
+        scale_factor_yaw = max_yaw / center_x
+        scale_factor_pitch = (max_pitch - min_pitch) / center_y
+        
+        yaw_adjustment = current_yaw + diff_x * scale_factor_yaw
+        pitch_adjustment = current_pitch - diff_y * scale_factor_pitch  # y 좌표는 위에서 아래로 증가하기 때문에 반대 방향으로 조절
 
-        # Adjust yaw by 1 degree based on direction
-        if diff_x > 0:  # target is to the right of center
-            yaw_adjustment = self.current_yaw + 1
-        elif diff_x < 0:  # target is to the left of center
-            yaw_adjustment = self.current_yaw - 1
-        else:
-            yaw_adjustment = self.current_yaw  # No change
+        # 최대/최소 각도 범위를 초과하지 않도록 조절
+        yaw_adjustment = max(-max_yaw, min(max_yaw, yaw_adjustment))
+        pitch_adjustment = max(min_pitch, min(max_pitch, pitch_adjustment))
 
-        # Adjust pitch by 1 degree based on direction
-        if diff_y > 0:  # target is below the center
-            pitch_adjustment = self.current_pitch - 1
-        elif diff_y < 0:  # target is above the center
-            pitch_adjustment = self.current_pitch + 1
-        else:
-            pitch_adjustment = self.current_pitch  # No change
-
-        # Limiting the yaw and pitch angles to the given absolute ranges
-        yaw_adjustment = max(-135, min(135, yaw_adjustment))
-        pitch_adjustment = max(-90, min(25, pitch_adjustment))
-
+        # Gimbal 각도 설정
         self.set_gimbal_angle(yaw_adjustment, -pitch_adjustment)
         print(yaw_adjustment, -pitch_adjustment)
 
