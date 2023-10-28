@@ -309,7 +309,7 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            gt.arm_takeoff(2)
+            # gt.arm_takeoff(2)
             # gt.set_yaw_to_north()
             # time.sleep(0.1)
 
