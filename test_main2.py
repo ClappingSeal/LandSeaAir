@@ -303,7 +303,8 @@ if __name__ == '__main__':
             server_socket.listen(1)
 
             print("Waiting for connection...")
-            
+            client_socket, addr = server_socket.accept()
+
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
@@ -324,14 +325,12 @@ if __name__ == '__main__':
 
                     drone.set_gimbal_angle(yaw, pitch)
 
-
-                client_socket, addr = server_socket.accept()
-
                 data_to_send = "Data from Raspberry Pi"
                 client_socket.sendall(data_to_send.encode())
-                # client_socket.close()
+                
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+            client_socket.close()
 
