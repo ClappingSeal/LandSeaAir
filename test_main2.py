@@ -176,7 +176,6 @@ class Drone:
 
     # gimbal 3
     def send_command_to_gimbal(self, command_bytes):
-        # UDP를 사용하여 gimbal에 명령 전송
         try:
             self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
             # print("Command sent successfully!")
@@ -191,56 +190,34 @@ class Drone:
         diff_x = target_x - center_x
         diff_y = target_y - center_y
 
-        # If the difference is zero, then there's no need to adjust
-        if diff_x == 0 and diff_y == 0:
-            print("Target is at the center. No adjustment needed.")
-            return
+        yaw_adjustment = self.current_yaw + diff_x
+        pitch_adjustment = self.current_pitch - diff_y
 
-        # Calculate adjustment proportional to the difference, with a max limit of 5 degrees
-        yaw_adjustment = self.current_yaw + int(max(-5, min(5, diff_x / 40)))  # assuming 40 is a scaling factor
-        pitch_adjustment = self.current_pitch - int(max(-5, min(5, diff_y / 40)))  # assuming 40 is a scaling factor
+        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
+        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        # Limiting the yaw and pitch angles to the given absolute ranges
+        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
+        print(target_x, target_y)
+        print(yaw_adjustment, -pitch_adjustment)
+
+    # gimbal 5
+    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
+
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
+
+        scale_factor_yaw = 135 / center_x
+        scale_factor_pitch = (25 + 90) / center_y
+
+        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
+        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
+
         yaw_adjustment = max(-135, min(135, yaw_adjustment))
         pitch_adjustment = max(-90, min(25, pitch_adjustment))
 
-        self.set_gimbal_angle(-yaw_adjustment, -pitch_adjustment)
-        print(target_x, target_y)
-        print(-yaw_adjustment, -pitch_adjustment)
-
-
-    def accquire_data(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
-        
-        try:
-            response, addr = self.udp_socket.recvfrom(1024) 
-            print("Received:", response)
-            return response
-        except socket.error as e:
-            print(f"Error receiving data via UDP: {e}")
-            return None
-    
-    def acquire_attitude(self,response):
-        # CMD ID를 찾습니다.
-        index_0d = response.find(b'\x0D')
-
-        # Yaw, Pitch, Roll 데이터를 추출합니다.
-        data_06 = response[index_0d+1:index_0d+7]
-        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
-
-        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-        data_0c = response[index_0d+7:index_0d+15]
-        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
-
-        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
-        yaw = yaw_raw / 10.0
-        pitch = pitch_raw / 10.0
-        roll = roll_raw / 10.0
-        yaw_velocity = yaw_velocity_raw / 10.0
-        pitch_velocity = pitch_velocity_raw / 10.0
-        roll_velocity = roll_velocity_raw / 10.0
-
-        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
 
     def close_connection(self):
         self.vehicle.close()
@@ -280,27 +257,46 @@ class Drone:
             print(f"Saved video with {codec} codec to {output_filename}")
 
 
-
-        
 if __name__ == '__main__':
 
     start_command = input("Press 's' to start: ")
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(0,0)
-        time.sleep(2)
-        print('hello')
-
+        yaw = 0
+        pitch = 0
         step = 0
-        # response = drone.accquire_data()
-        # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-        # print("Yaw:", yaw)
-        # print("Pitch:", pitch)
-        # print("Roll:", roll)
-        # print("Yaw Velocity:", yaw_velocity)
-        # print("Pitch Velocity:", pitch_velocity)
-        # print("Roll Velocity:", roll_velocity)
+        drone.set_gimbal_angle(0, -90)
+        time.sleep(1.5)
+        drone.set_gimbal_angle(0, 0)
+        time.sleep(1.5)
+
+
+        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=100, movement=4):
+            x_conversion = x - 425
+            y_conversion = y - 240
+            if x_conversion > threshold:
+                yaw_change = -movement
+            elif x_conversion < -threshold:
+                yaw_change = movement
+            else:
+                yaw_change = 0
+
+            if y_conversion > threshold:
+                pitch_change = movement
+            elif y_conversion < -threshold:
+                pitch_change = -movement
+            else:
+                pitch_change = 0
+
+            if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
+                yaw_change = 0
+            if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+                pitch_change = 0
+
+            return yaw_change, pitch_change
+
+
         try:
             while True:
                 step += 1
@@ -310,25 +306,30 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
-                time.sleep(1)
-                # drone.sending_data(sending_data)
+                drone.sending_data(sending_data)
                 # print(sending_data)
-                # # print(drone.receiving_data())
-                # startTime = time.time()
-                # response = drone.accquire_data()
-                # yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-                # endTime = time.time()
-                # print(endTime-startTime)
-                # print("Yaw:", yaw)
-                # print("Pitch:", pitch)
-                # print("Roll:", roll)
-                # print("Yaw Velocity:", yaw_velocity)
-                # print("Pitch Velocity:", pitch_velocity)
-                # print("Roll Velocity:", roll_velocity)
+                time.sleep(0.1)
 
+                if step % 2 == 1:
+                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                    yaw += yaw_change
+                    pitch += pitch_change
+                    print(truth, yaw, pitch, yaw_change, pitch_change)
+
+                    drone.set_gimbal_angle(yaw, pitch)
+
+                server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server_socket.bind(('0.0.0.0', 12345))
+                server_socket.listen(1)
+
+                print("Waiting for connection...")
+                client_socket, addr = server_socket.accept()
+
+                data_to_send = "Data from Raspberry Pi"
+                client_socket.sendall(data_to_send.encode())
+                client_socket.close()
+                
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
 
