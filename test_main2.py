@@ -304,7 +304,7 @@ if __name__ == '__main__':
 
             print("Waiting for connection...")
             client_socket, addr = server_socket.accept()
-
+            print("Wasdasd")
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
