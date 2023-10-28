@@ -300,9 +300,6 @@ if __name__ == "__main__":
     gt = Drone()
 
     gt.set_connection()
-    data = gt.receive_data()
-    print(data)
-    asdf
 
     try:
         # raw_input = input("위도, 경도: ")
@@ -310,7 +307,6 @@ if __name__ == "__main__":
         nums = 1, 1
         # nums = [float(num.strip()) for num in raw_input.split(",")]
 
-        dd
         # 미션 시작1
         if len(nums) == 2:
             gt.arm_takeoff(2)
@@ -318,6 +314,10 @@ if __name__ == "__main__":
             # time.sleep(0.1)
 
             while True:
+                # client data receive
+                data = gt.receive_data()
+                print(data)
+
                 gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
                 print(receive_arr)
