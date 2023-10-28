@@ -272,7 +272,7 @@ if __name__ == '__main__':
         time.sleep(1.5)
 
 
-        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=100, movement=4):
+        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=50, movement=2):
             x_conversion = x - 425
             y_conversion = y - 240
             if x_conversion > threshold:
