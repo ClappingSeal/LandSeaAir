@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(0,-90)
+        drone.set_gimbal_angle(0,0)
         time.sleep(2)
         print('hello')
 
@@ -321,7 +321,14 @@ if __name__ == '__main__':
                 sending_data = [sending_array[0], sending_array[1], truth]
 
                 # drone.adjust_gimbal_relative_to_current(sending_array[0], sending_array[1])
-                # time.sleep(0.1)
+                drone.adjust_gimbal_relative_to_current(425,240)
+                time.sleep(3)
+                drone.adjust_gimbal_relative_to_current(425,120)
+                time.sleep(3)
+                drone.adjust_gimbal_relative_to_current(425,240)
+                time.sleep(3)
+                drone.adjust_gimbal_relative_to_current(425,120)
+                time.sleep(3)
                 # drone.sending_data(sending_data)
                 # print(sending_data)
                 # # print(drone.receiving_data())
