@@ -90,11 +90,6 @@ class Drone:
             print("Error: Couldn't open the camera.")
             return
 
-        if self.serial_port.isOpen():
-            print("Connection is established!")
-        else:
-            print("Error in serial connection!")
-
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
         ret, frame = self.camera.read()
