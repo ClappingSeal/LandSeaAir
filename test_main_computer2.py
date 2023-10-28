@@ -7,7 +7,7 @@ import numpy as np
 from stable_baselines3 import PPO
 import paramiko
 import socket
-
+import json
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -299,7 +299,7 @@ class Drone:
 if __name__ == "__main__":
     gt = Drone()
 
-    gt.set_connection()
+    gt.set_connection() # client
 
     try:
         # raw_input = input("위도, 경도: ")
@@ -315,8 +315,10 @@ if __name__ == "__main__":
 
             while True:
                 # client data receive
-                data = gt.receive_data()
-                print(data)
+                data_received = gt.receive_data()
+                data_list = json.load(data_received)
+                print("data_received")
+                print(data_list)
 
                 gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
