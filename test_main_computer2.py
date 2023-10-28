@@ -27,7 +27,7 @@ class Drone:
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
         # DRL model load
-        self.model = PPO.load("ppo_best_model")
+        self.model = PPO.load("ppo_model")
 
         # Position value
         self.init_lat = self.vehicle.location.global_relative_frame.lat
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     #Lets loop awaiting for your input
     while True:
             command = input('Enter your command: ')
-            s.send(command)
+            s.send(command.encode('utf-8'))
             reply = s.recv(1024)
             if reply == 'Terminate':
                     break
