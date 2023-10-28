@@ -323,7 +323,7 @@ if __name__ == "__main__":
                 print(receive_arr)
                 gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                 gt.update_past_pos_data()
-                time.sleep(1)
+                time.sleep(0.1)
                 # print(gt.battery_state())
 
         else:
