@@ -316,7 +316,7 @@ if __name__ == "__main__":
             while True:
                 # client data receive
                 data_received = gt.receive_data()
-                data_list = json.load(data_received)
+                data_list = json.loads(data_received)
                 print("data_received")
                 print(data_list)
 
