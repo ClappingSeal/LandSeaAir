@@ -257,6 +257,7 @@ if __name__ == '__main__':
         pitch = 0
         step = 0
         drone.set_gimbal_angle(0, -90)
+        print('start')
         time.sleep(2)
 
         try:
@@ -271,16 +272,15 @@ if __name__ == '__main__':
                 print(sending_data)
 
                 drone.sending_data(sending_data)
-                """
-                if step % 2 == 1:
-                    yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
-                    yaw += yaw_change
-                    pitch += pitch_change
-                    drone.set_gimbal_angle(yaw, pitch)
-                """
+
+                #if step % 2 == 1:
+                    #yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                    #yaw += yaw_change
+                    #pitch += pitch_change
+                    #drone.set_gimbal_angle(yaw, pitch)
+
                 time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
