@@ -9,9 +9,6 @@ import os
 import math
 import json
 
-from sahi import AutoDetectionModel
-from sahi.predict import get_prediction, get_sliced_prediction
-
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
@@ -98,21 +95,6 @@ class Drone:
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
-        
-        #detection requirements
-        self.detection_model = AutoDetectionModel.from_pretrained(
-            model_type='yolov8',
-            model_path='runs/detect/best2.pt',
-            confidence_threshold=0.3,
-            #device='cpu'
-        )
-        self.tracker = None
-        self.success = False
-        self.maxtrack = 180
-        self.tframe = 0
-        self.prevx = []
-        self.prevy = []
-        self.label = None
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
@@ -152,64 +134,6 @@ class Drone:
             cv2.imwrite(image_name, res_frame)
 
         return (center[0], 480 - center[1])
-
-    #drone detection return [x, y, label] None if not detected
-    def detect(self):
-        ret, frame = self.camera.read()
-        conf = 0
-
-        #cam check
-        if not ret:
-            print('Cam Error')
-            return None
-
-        #Detection
-        if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = get_prediction(frame, self.detection_model)
-            #Sliced inference
-            #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
-            for data in detection.to_coco_annotations()[:3]:
-                confidence = float(data['score'])
-                if (confidence > conf) and (data['bbox'][2] < 100) and (data['bbox'][3] < 100):
-                    xmin, ymin, xlen, ylen = int(data['bbox'][0]), int(data['bbox'][1]), int(data['bbox'][2]), int(data['bbox'][3])
-                    xmid = xmin+xlen/2
-                    ymid = ymin+ylen/2
-                    conf = confidence
-                    self.label = data['category_name']
-            try:
-                self.prevx.append(xmid)
-                self.prevy.append(ymid)
-                cprevx = self.prevx[:6]
-                cprevy = self.prevy[:6]
-                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
-                    roi = (xmin, ymin, xlen, ylen)
-                    self.prevx = []
-                    self.prevy = []
-                self.tracker = cv2.TrackerCSRT_create()
-                self.tracker.init(frame, roi)
-                self.tframe = 0
-            except Exception as e: 
-                #print(e)
-                self.tracker = None
-                pass
-
-        #tracking
-        try:
-            self.success, roi = self.tracker.update(frame)
-            self.tframe += 1
-            if self.success:
-                (x, y, w, h) = tuple(map(int, roi))
-                #cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                if (x+w/2 < 5) or (x+w/2 > self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
-                    print('out of frame')
-                    self.tracker = None
-                loc = [x+w/2, y+h/2, self.label]
-                return loc
-            else:
-                self.tracker = None
-        except Exception as e:
-            #print(e)
-            pass
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -421,6 +345,8 @@ if __name__ == '__main__':
                 data_string = json.dumps(data_list)
                 drone.send_data(data_string)
                 print("data sending...")
+                print(data_list)
+                print(data_string)
 
                 drone.sending_data(sending_data)
                 # print(sending_data)
@@ -430,7 +356,7 @@ if __name__ == '__main__':
                     yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
-                    print(truth, yaw, pitch, yaw_change, pitch_change)
+                    # print(truth, yaw, pitch, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(yaw, pitch)
 
