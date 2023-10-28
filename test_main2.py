@@ -301,11 +301,11 @@ if __name__ == '__main__':
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.bind(('192.168.0.31', 12345))
             server_socket.listen(1)
-            server_socket.sendall("Test message".encode())
-            
+
             print("Waiting for connection...")
             client_socket, addr = server_socket.accept()
-            print("Wasdasd")
+            print("Client connected:", addr)
+            
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
@@ -326,8 +326,13 @@ if __name__ == '__main__':
 
                     drone.set_gimbal_angle(yaw, pitch)
 
-                data_to_send = "Data from Raspberry Pi"
-                client_socket.sendall(data_to_send.encode())
+                try:
+                    data_to_send = "Data from Raspberry Pi"
+                    client_socket.sendall(data_to_send.encode())
+                except socket.error:
+                    print("Connection lost. Waiting for new connection...")
+                    client_socket, addr = server_socket.accept()
+                    print("Client connected:", addr)
                 
 
         except KeyboardInterrupt:
