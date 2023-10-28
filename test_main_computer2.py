@@ -6,6 +6,7 @@ import math
 import numpy as np
 from stable_baselines3 import PPO
 import paramiko
+import socket
 
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
@@ -273,20 +274,35 @@ class Drone:
         obs = np.array([x_frame, y_frame])
         action, _ = self.model.predict(obs)
         return -action
-    def ssh_to_ras(self):
-        print('connecting ra')
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect('192.168.144.26', username='GISTracker', password='gistracker')
+    
+    # def ssh_to_ras(self):
+    #     print('connecting ra')
+    #     ssh = paramiko.SSHClient()
+    #     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    #     ssh.connect('192.168.144.26', username='GISTracker', password='gistracker')
 
-        stdin, stdout, stderr = ssh.exec_command('your_command_to_get_data')
-        data = stdout.read()
-        print(data)
-        print('received data')
+    #     stdin, stdout, stderr = ssh.exec_command('test2')
+    #     data = stdout.read()
+    #     print(data)
+    #     print('received data')
+
+
+
 
 if __name__ == "__main__":
     gt = Drone()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("192.168.0.31",12345))
 
+    #Lets loop awaiting for your input
+    while True:
+            command = input('Enter your command: ')
+            s.send(command)
+            reply = s.recv(1024)
+            if reply == 'Terminate':
+                    break
+            print(reply)
+    asdf
     try:
         # raw_input = input("위도, 경도: ")
 
