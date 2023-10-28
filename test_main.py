@@ -145,6 +145,7 @@ class Drone:
                     print('out of frame')
                     self.tracker = None
                 loc = [x + w / 2, y + h / 2, self.label]
+                print(loc)
                 return loc
             else:
                 self.tracker = None
