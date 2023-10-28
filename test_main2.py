@@ -300,12 +300,32 @@ if __name__ == '__main__':
         try:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.bind(('192.168.0.31', 12345))
-            server_socket.listen(1)
-
+            server_socket.listen(5)
             print("Waiting for connection...")
-            client_socket, addr = server_socket.accept()
-            print("Client connected:", addr)
-            
+            (conn, addr) = server_socket.accept()
+            print("connected")
+            # awaiting for message
+            while True:
+                data = conn.recv(1024)
+                print('I sent a message back in response to: ' + data)
+                reply = ''
+
+                # process your message
+                if data == 'Hello':
+                    reply = 'Hi, back!'
+                elif data == 'This is important':
+                    reply = 'OK, I have done the important thing you have asked me!'
+                #and so on and on until...
+                elif data == 'quit':
+                    conn.send('Terminating')
+                    break
+                else:
+                    reply = 'Unknown command'
+
+                # Sending reply
+                conn.send(reply)
+            conn.close()
+            asdf
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
@@ -326,17 +346,8 @@ if __name__ == '__main__':
 
                     drone.set_gimbal_angle(yaw, pitch)
 
-                try:
-                    data_to_send = "Data from Raspberry Pi"
-                    client_socket.sendall(data_to_send.encode())
-                except socket.error:
-                    print("Connection lost. Waiting for new connection...")
-                    client_socket, addr = server_socket.accept()
-                    print("Client connected:", addr)
-                
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-            client_socket.close()
 
