@@ -310,7 +310,7 @@ if __name__ == '__main__':
                 # print(sending_data)
                 time.sleep(0.1)
 
-                if 1 == 1:
+                if step % 2 == 1:
                     yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
