@@ -16,8 +16,8 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        # self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
-        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -316,25 +316,18 @@ if __name__ == "__main__":
         nums = 1, 1
 
         if len(nums) == 2:
-            gt.arm_takeoff(1)
+            gt.arm_takeoff(5)
             gt.set_yaw_to_north()
-            x, y = 0, 0
-            step = 0
+
             time.sleep(0.1)
 
-            while True:  # 예시로 100회 반복
+            while True:
                 receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
+
+                gt.locking_easy(receive_arr[0], receive_arr[1], 1000)
+
                 time.sleep(0.1)
-
-                a = 1.5 * random.random()
-                b = 1.5 - 1.5 * random.random()
-                x += a
-                y += b
-                gt.velocity_pid(x, y, gt.past_pos_data)
-                print(x, y)
-                print(gt.imm_tracking(gt.past_pos_data))
-
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
