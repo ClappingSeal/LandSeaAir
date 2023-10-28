@@ -85,6 +85,11 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
+        
+        # server data send & receive
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.conn = None
+        self.addr = None
 
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
@@ -256,6 +261,56 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
+    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=4):
+        x_conversion = x - 425
+        y_conversion = y - 240
+        if x_conversion > threshold:
+            yaw_change = -movement
+        elif x_conversion < -threshold:
+            yaw_change = movement
+        else:
+            yaw_change = 0
+
+        if y_conversion > threshold:
+            pitch_change = movement
+        elif y_conversion < -threshold:
+            pitch_change = -movement
+        else:
+            pitch_change = 0
+
+        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
+            yaw_change = 0
+        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+            pitch_change = 0
+
+        return yaw_change, pitch_change
+    
+    # server 1
+    def setup_connection(self):
+        self.server_socket.bind(('192.168.0.31', 12345))
+        self.server_socket.listen(5)
+        print("Waiting for connection...")
+        self.conn, self.addr = self.server_socket.accept()
+        print("Connected by", self.addr)
+
+    # server 2
+    def receive_data(self):
+        data = self.conn.recv(1024)
+        decoded_data = data.decode('utf-8')
+        print('Received message:', decoded_data)
+        return decoded_data
+    
+    # server 3
+    def send_data(self, data):
+        self.conn.sendall(data.encode('utf-8'))
+
+    # server 4
+    def close_connection(self):
+        if self.conn:
+            self.conn.close()
+        self.server_socket.close()
+        
+
 
 if __name__ == '__main__':
 
@@ -263,6 +318,12 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+
+        drone.setup_connection() 
+        # received_data = drone.receive_data()
+        drone.send_data('data')
+        print("data sending...")
+        asdf
         yaw = 0
         pitch = 0
         step = 0
@@ -271,61 +332,7 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(0, 0)
         time.sleep(1.5)
 
-
-        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=100, movement=4):
-            x_conversion = x - 425
-            y_conversion = y - 240
-            if x_conversion > threshold:
-                yaw_change = -movement
-            elif x_conversion < -threshold:
-                yaw_change = movement
-            else:
-                yaw_change = 0
-
-            if y_conversion > threshold:
-                pitch_change = movement
-            elif y_conversion < -threshold:
-                pitch_change = -movement
-            else:
-                pitch_change = 0
-
-            if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
-                yaw_change = 0
-            if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
-                pitch_change = 0
-
-            return yaw_change, pitch_change
-
-
         try:
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.bind(('192.168.0.31', 12345))
-            server_socket.listen(5)
-            print("Waiting for connection...")
-            (conn, addr) = server_socket.accept()
-            print("connected")
-            # awaiting for message
-            while True:
-                data = conn.recv(1024)
-                print('I sent a message back in response to: ' + data.decode('utf-8'))
-                reply = ''
-
-                # process your message
-                if data == 'Hello':
-                    reply = 'Hi, back!'
-                elif data == 'This is important':
-                    reply = 'OK, I have done the important thing you have asked me!'
-                #and so on and on until...
-                elif data == 'quit':
-                    conn.send('Terminating')
-                    break
-                else:
-                    reply = 'Unknown command'
-
-                # Sending reply
-                conn.send(reply.encode('utf-8'))
-            conn.close()
-            asdf
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
@@ -339,15 +346,14 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 if step % 2 == 1:
-                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                    yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
                     print(truth, yaw, pitch, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(yaw, pitch)
 
-
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
+            drone.close_connection()
