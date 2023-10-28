@@ -323,7 +323,7 @@ if __name__ == '__main__':
                     reply = 'Unknown command'
 
                 # Sending reply
-                conn.send(reply)
+                conn.send(reply.encode('utf-8'))
             conn.close()
             asdf
             while True:
