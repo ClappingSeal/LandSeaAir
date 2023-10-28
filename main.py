@@ -256,7 +256,7 @@ if __name__ == '__main__':
         yaw = 0
         pitch = 0
         step = 0
-        drone.set_gimbal_angle(0, -90)
+        drone.set_gimbal_angle(10, -40)
         print('start')
         time.sleep(2)
 
