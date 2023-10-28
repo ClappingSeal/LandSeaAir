@@ -7,6 +7,7 @@ import logging
 import numpy as np
 import os
 import math
+import json
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -340,7 +341,9 @@ if __name__ == '__main__':
                 sending_data = [sending_array[0], sending_array[1], truth]
                 
                 # server data send
-                drone.send_data('data')
+                data_list = [sending_array[0], sending_array[1], truth]
+                data_string = json.dump(data_list)
+                drone.send_data(data_string)
                 print("data sending...")
 
                 drone.sending_data(sending_data)
