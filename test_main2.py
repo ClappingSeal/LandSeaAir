@@ -307,7 +307,7 @@ if __name__ == '__main__':
             # awaiting for message
             while True:
                 data = conn.recv(1024)
-                print('I sent a message back in response to: ' + data)
+                print('I sent a message back in response to: ' + data.decode('utf-8'))
                 reply = ''
 
                 # process your message
