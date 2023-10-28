@@ -342,7 +342,7 @@ if __name__ == '__main__':
                 
                 # server data send
                 data_list = [sending_array[0], sending_array[1], truth]
-                data_string = json.dump(data_list)
+                data_string = json.dumps(data_list)
                 drone.send_data(data_string)
                 print("data sending...")
 
