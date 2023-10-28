@@ -272,7 +272,7 @@ if __name__ == '__main__':
         time.sleep(1.5)
 
 
-        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=50, movement=3):
+        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=50, movement=1):
             x_conversion = x - 425
             y_conversion = y - 240
             if x_conversion > threshold:
@@ -310,7 +310,7 @@ if __name__ == '__main__':
                 # print(sending_data)
                 time.sleep(0.1)
 
-                if step % 2 == 1:
+                if 1 == 1:
                     yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
@@ -321,4 +321,3 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
