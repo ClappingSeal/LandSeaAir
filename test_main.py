@@ -127,8 +127,8 @@ class Drone:
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
-        return (center[0], 480 - center[1])
-
+        return center
+        
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
