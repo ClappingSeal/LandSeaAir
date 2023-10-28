@@ -329,7 +329,7 @@ if __name__ == '__main__':
 
                 data_to_send = "Data from Raspberry Pi"
                 client_socket.sendall(data_to_send.encode())
-                client_socket.close()
+                # client_socket.close()
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
