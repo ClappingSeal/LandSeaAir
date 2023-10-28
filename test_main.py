@@ -289,9 +289,9 @@ if __name__ == '__main__':
             else:
                 pitch_change = 0
 
-            if (current_yaw > 134) or (current_yaw < -134):
+            if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
                 yaw_change = 0
-            if (current_pitch > 0) or (current_pitch < -89):
+            if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
                 pitch_change = 0
 
             return yaw_change, pitch_change
@@ -310,14 +310,15 @@ if __name__ == '__main__':
                 # print(sending_data)
                 time.sleep(0.1)
 
-                if step % 2 == 1:
+                if step % 3 == 1:
                     yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
+                    print(truth, yaw, pitch, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(yaw, pitch)
-                    print(truth, yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+
