@@ -299,9 +299,10 @@ if __name__ == '__main__':
 
         try:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.bind(('0.0.0.0', 12345))
+            server_socket.bind(('192.168.0.31', 12345))
             server_socket.listen(1)
-
+            server_socket.sendall("Test message".encode())
+            
             print("Waiting for connection...")
             client_socket, addr = server_socket.accept()
             print("Wasdasd")
