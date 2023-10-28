@@ -104,7 +104,7 @@ class Drone:
             model_type='yolov8',
             model_path='runs/detect/best2.pt',
             confidence_threshold=0.3,
-            device='cpu'
+            #device='cpu'
         )
         self.tracker = None
         self.success = False
