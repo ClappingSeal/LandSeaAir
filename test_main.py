@@ -90,46 +90,65 @@ class Drone:
             print("Error: Couldn't open the camera.")
             return
 
-    # color camera test1
-    def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
-        ret, frame = self.camera.read()
+    # drone detect camera frame
+    def detect_and_find_center(self):
+        ret, frame = self.cap.read()
+        conf = 0
+    
+        # cam check
         if not ret:
-            print("Error: Couldn't read frame.")
-            return np.array(425, 240)
-
-        # Resize frame considering the aspect ratio multiplier
-        h, w = frame.shape[:2]
-        res_frame = cv2.resize(frame, (int(w * x), h))
-
-        hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
-
-        lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
-        upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
-
-        mask = cv2.inRange(hsv, lower_bound, upper_bound)
-
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        center = (425, 240)
-        if contours:
-            largest_contour = max(contours, key=cv2.contourArea)
-            M = cv2.moments(largest_contour)
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-                center = (cX, cY)
-
-        # Always draw the circle at the detected center (or default if no center detected)
-        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
-
-        if save_image:
-            self.image_count += 1
-            image_name = f"captured_image_{self.image_count}.jpg"
-            cv2.imwrite(image_name, res_frame)
-
-        array = np.array(center)
-
-        return int(array[0]), int(480-array[1])
+            print('Cam Error')
+            return None
+    
+        # Detection
+        if (self.tracker is None) or (self.tframe > self.maxtrack):
+            detection = get_prediction(frame, self.detection_model)
+            # Sliced inference
+            # detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
+            for data in detection.to_coco_annotations()[:3]:
+                confidence = float(data['score'])
+                if (confidence > conf) and (data['bbox'][2] < 100) and (data['bbox'][3] < 100):
+                    xmin, ymin, xlen, ylen = int(data['bbox'][0]), int(data['bbox'][1]), int(data['bbox'][2]), int(
+                        data['bbox'][3])
+                    xmid = xmin + xlen / 2
+                    ymid = ymin + ylen / 2
+                    conf = confidence
+                    self.label = data['category_name']
+            try:
+                self.prevx.append(xmid)
+                self.prevy.append(ymid)
+                cprevx = self.prevx[:6]
+                cprevy = self.prevy[:6]
+                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
+                    roi = (xmin, ymin, xlen, ylen)
+                    self.prevx = []
+                    self.prevy = []
+                self.tracker = cv2.TrackerCSRT_create()
+                self.tracker.init(frame, roi)
+                self.tframe = 0
+            except Exception as e:
+                # print(e)
+                self.tracker = None
+                pass
+    
+        # tracking
+        try:
+            self.success, roi = self.tracker.update(frame)
+            self.tframe += 1
+            if self.success:
+                (x, y, w, h) = tuple(map(int, roi))
+                # cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                if (x + w / 2 < 5) or (x + w / 2 > self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y + h / 2 < 5) or (
+                        y + h / 2 > self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
+                    print('out of frame')
+                    self.tracker = None
+                loc = [x + w / 2, y + h / 2, self.label]
+                return loc
+            else:
+                self.tracker = None
+        except Exception as e:
+            # print(e)
+            pass
         
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
