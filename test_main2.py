@@ -321,9 +321,7 @@ if __name__ == '__main__':
 
         drone.setup_connection() 
         # received_data = drone.receive_data()
-        drone.send_data('data')
-        print("data sending...")
-        asdf
+
         yaw = 0
         pitch = 0
         step = 0
@@ -340,6 +338,10 @@ if __name__ == '__main__':
                 if sending_array[1] != 240:
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
+                
+                # server data send
+                drone.send_data('data')
+                print("data sending...")
 
                 drone.sending_data(sending_data)
                 # print(sending_data)
