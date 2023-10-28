@@ -129,7 +129,7 @@ class Drone:
 
         array = np.array(center)
 
-        return int(array[0]), int(480-array[1])
+        return np.array(int(array[0]), int(480-array[1]))
         
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
