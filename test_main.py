@@ -266,7 +266,7 @@ if __name__ == '__main__':
         yaw = 0
         pitch = 0
         step = 0
-        drone.set_gimbal_angle(0, -90)
+        drone.set_gimbal_angle(0, -88)
         time.sleep(1.5)
         drone.set_gimbal_angle(0, 0)
         time.sleep(1.5)
@@ -291,7 +291,7 @@ if __name__ == '__main__':
 
             if (current_yaw > 134) or (current_yaw < -134):
                 yaw_change = 0
-            if (current_pitch > 1) or (current_pitch < -89):
+            if (current_pitch > 0) or (current_pitch < -89):
                 pitch_change = 0
 
             return yaw_change, pitch_change
@@ -321,4 +321,3 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
