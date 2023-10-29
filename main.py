@@ -30,7 +30,7 @@ class Drone:
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([100, 255, 255])
+        self.base_color = np.array([0, 255, 255])
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
@@ -108,7 +108,7 @@ class Drone:
         self.recheck_interval = 10  # 드론 재확인 간격
 
     # color camera test1
-    def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
+    def detect_and_find_center(self, x=1.3275, save_image=True):
         ret, frame = self.camera.read()
         if not ret:
             print("Error: Couldn't read frame.")
@@ -135,6 +135,7 @@ class Drone:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
+                print('sadf')
 
         # Always draw the circle at the detected center (or default if no center detected)
         cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
@@ -374,7 +375,7 @@ if __name__ == '__main__':
         yaw = 0
         pitch = -90
         drone.set_gimbal_angle(yaw, pitch)
-        
+
         time.sleep(1.5)
 
         try:
@@ -393,14 +394,14 @@ if __name__ == '__main__':
                 drone.sending_data(sending_data)
 
                 # camera angle
-                
+
                 # yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                 # yaw += yaw_change
                 # pitch += pitch_change
                 # drone.set_gimbal_angle(yaw, pitch)
 
                 # debugging
-                
+
                 # print(sending_data, yaw_change, pitch_change)
                 print(sending_array[0], sending_array[1])
 
