@@ -150,11 +150,11 @@ class Drone:
 
     #drone detection return [x, y, label] None if not detected
     def detect(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
-        ret, frame = self.camera.read()
+        ret, self.frame = self.camera.read()
         conf = 0
 
-        h, w = frame.shape[:2]
-        frame = cv2.resize(frame, (int(w * x), h))
+        h, w = self.frame.shape[:2]
+        self.frame = cv2.resize(self.frame, (int(w * x), h))
 
         #cam check
         if not ret:
@@ -164,7 +164,7 @@ class Drone:
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
             #detection = get_prediction(frame, self.detection_model)
-            detection = self.model(frame, verbose=False)[0]
+            detection = self.model(self.frame, verbose=False)[0]
             #Sliced inference
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
@@ -185,7 +185,7 @@ class Drone:
                     self.prevx = []
                     self.prevy = []
                 self.tracker = cv2.TrackerCSRT_create()
-                self.tracker.init(frame, roi)
+                self.tracker.init(self.frame, roi)
                 self.tframe = 0
             except Exception as e: 
                 print(e)
@@ -194,11 +194,11 @@ class Drone:
 
         #tracking
         try:
-            self.success, roi = self.tracker.update(frame)
+            self.success, roi = self.tracker.update(self.frame)
             self.tframe += 1
             if self.success:
                 (x, y, w, h) = tuple(map(int, roi))
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 if (x+w/2 < 5) or (x+w/2 > self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.camera.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
                     print('out of frame')
                     self.tracker = None
@@ -207,7 +207,7 @@ class Drone:
                 if save_image:
                     self.image_count += 1
                     image_name = f"captured_image_{self.image_count}.jpg"
-                    cv2.imwrite(image_name, frame)
+                    #cv2.imwrite(image_name, frame)
 
                 return loc
             else:
@@ -430,6 +430,7 @@ if __name__ == '__main__':
                 step += 1
                 # sending_array = drone.detect_and_find_center()
                 sending_array = drone.detect()
+                cv2.imshow("frame", drone.frame)
                 if sending_array == None:
                     sending_array = [425, 240]
 
