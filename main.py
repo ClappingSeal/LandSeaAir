@@ -102,6 +102,10 @@ class Drone:
         self.previous_centers = []
         self.center_count = 3
         self.tolerance = 100
+        self.tracker_initialized = False
+        self.tracker = None
+        self.frame_count = 0
+        self.recheck_interval = 20  # 드론 재확인 간격
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
@@ -152,7 +156,21 @@ class Drone:
             return 425, 240, 0, 0
     
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
-    
+        self.frame_count += 1
+
+        if self.tracker_initialized:
+            success, bbox = self.tracker.update(frame_resized)
+            if success:
+                x, y, w, h = [int(v) for v in bbox]
+                cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
+
+                if self.frame_count % self.recheck_interval == 0:
+                    if not self.is_drone(frame_resized, bbox):
+                        self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
+                return x + w // 2, 480 - (y + h // 2), w, h  # 중심 좌표 반환
+            else:
+                self.tracker_initialized = False  # 추적 실패 시 초기화
+
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
         best_data = None
@@ -167,17 +185,39 @@ class Drone:
             cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
     
             self.previous_centers.append((center_x, center_y))
-            if len(self.previous_centers) > self.center_count:  # 최근 center_count 개의 센터만 유지
+            if len(self.previous_centers) > self.center_count:
                 self.previous_centers.pop(0)
-    
-        self.capture_count += 1
+
+            if not self.tracker_initialized:
+                bbox = (center_x - width // 2, center_y - height // 2, width, height)
+                self.tracker = cv2.TrackerMIL_create()
+                self.tracker.init(frame_resized, bbox)
+                self.tracker_initialized = True
+
         cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+        self.capture_count += 1
     
         if best_data and best_confidence > self.confidence_threshold:
             return center_x, 480 - center_y, width, height
         else:
             return 425, 240, 0, 0
 
+    def is_drone(self, frame, bbox):
+        """
+        주어진 프레임 내에서 주어진 경계 상자(bounding box) 영역이 드론인지 확인하는 함수.
+        """
+        x, y, w, h = [int(v) for v in bbox]
+        cropped_frame = frame[y:y+h, x:x+w]  # 경계 상자에 해당하는 부분을 잘라냄
+
+        detection = self.model(cropped_frame, verbose=False)[0]
+        for data in detection.boxes.data.tolist():
+            confidence = float(data[4])
+            if confidence > self.confidence_threshold:
+                # 실제 구현에서는 여기서 data에서 드론에 해당하는 클래스인지 확인해야 함
+                return True  # 드론이 발견된 경우
+        
+        return False  # 드론이 발견되지 않은 경우
+    
     @staticmethod
     def get_center_and_dimensions(data):
         xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
