@@ -99,7 +99,7 @@ class Drone:
         
         #detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.pt')
-        self.CONFIDENCE_THRESHOLD = 0.02
+        self.CONFIDENCE_THRESHOLD = 0
         self.tracker = None
         self.success = False
         self.maxtrack = 180
