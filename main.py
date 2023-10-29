@@ -87,12 +87,12 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-        
+
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
-        
-        #detection requirements
+
+        # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
         self.confidence_threshold = 0.75
         self.scale_factor = 1.3275
@@ -146,24 +146,25 @@ class Drone:
 
         return (center[0], 480 - center[1])
 
-    #drone detection return [x, y, label] None if not detected
+    # drone camera 1 (drone detection return [x, y, label] None if not detected)
     def __del__(self):
         self.camera.release()
 
+    # drone camera 2
     def detect(self):
         ret, frame = self.camera.read()
         if not ret:
             return 425, 240, 0, 0
-    
+
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
-    
+
         if self.tracker_initialized:
             success, bbox = self.tracker.update(frame_resized)
             if success:
                 x, y, w, h = [int(v) for v in bbox]
                 cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
-    
+
                 if self.frame_count % self.recheck_interval == 0:
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
@@ -182,13 +183,14 @@ class Drone:
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_data = data
-    
+
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
-            cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
+            cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2),
+                          (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
             cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
             self.capture_count += 1
-    
+
             self.previous_centers.append((center_x, center_y))
             if len(self.previous_centers) > self.center_count:
                 self.previous_centers.pop(0)
@@ -201,28 +203,25 @@ class Drone:
 
         cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
         self.capture_count += 1
-    
+
         if best_data and best_confidence > self.confidence_threshold:
             return center_x, 480 - center_y, width, height
         else:
             return 425, 240, 0, 0
 
+    # drone camera 3
     def is_drone(self, frame, bbox):
-        """
-        주어진 프레임 내에서 주어진 경계 상자(bounding box) 영역이 드론인지 확인하는 함수.
-        """
         x, y, w, h = [int(v) for v in bbox]
-        cropped_frame = frame[y:y+h, x:x+w]  # 경계 상자에 해당하는 부분을 잘라냄
+        cropped_frame = frame[y:y + h, x:x + w]
 
         detection = self.model(cropped_frame, verbose=False)[0]
         for data in detection.boxes.data.tolist():
             confidence = float(data[4])
             if confidence > self.confidence_threshold:
-                # 실제 구현에서는 여기서 data에서 드론에 해당하는 클래스인지 확인해야 함
-                return True  # 드론이 발견된 경우
-        
-        return False  # 드론이 발견되지 않은 경우
-    
+                return True
+        return False
+
+    # drone camera 4
     @staticmethod
     def get_center_and_dimensions(data):
         xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
@@ -231,16 +230,16 @@ class Drone:
         height = ymax - ymin
         return center_x, center_y, width, height
 
+    # drone camera 5
     def check_stability(self):
-        """연속적인 센터들 간의 거리가 일정한지 확인하는 메소드"""
         if len(self.previous_centers) < self.center_count:
-            return False  # 아직 충분한 데이터가 없음
+            return False
 
         distances = []
         for i in range(1, len(self.previous_centers)):
-            prev_center = self.previous_centers[i-1]
+            prev_center = self.previous_centers[i - 1]
             curr_center = self.previous_centers[i]
-            distance = np.sqrt((curr_center[0] - prev_center[0])**2 + (curr_center[1] - prev_center[1])**2)
+            distance = np.sqrt((curr_center[0] - prev_center[0]) ** 2 + (curr_center[1] - prev_center[1]) ** 2)
             distances.append(distance)
 
         return all(abs(d - distances[0]) < self.tolerance for d in distances)
@@ -299,45 +298,35 @@ class Drone:
             print(f"Error sending command via UDP: {e}")
 
     # gimbal 4
-    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
+    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
+        x_conversion = x - 425
+        y_conversion = y - 240
+        if x_conversion > threshold:
+            yaw_change = -movement
+        elif x_conversion < -threshold:
+            yaw_change = movement
+        else:
+            yaw_change = 0
 
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
+        if y_conversion > threshold / 2:
+            pitch_change = movement
+        elif y_conversion < -threshold / 2:
+            pitch_change = -movement
+        else:
+            pitch_change = 0
 
-        yaw_adjustment = self.current_yaw + diff_x
-        pitch_adjustment = self.current_pitch - diff_y
+        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
+            yaw_change = 0
+        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+            pitch_change = 0
 
-        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
-        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
+        return yaw_change, pitch_change
 
-        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
-        print(target_x, target_y)
-        print(yaw_adjustment, -pitch_adjustment)
-
-    # gimbal 5
-    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
-
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
-
-        scale_factor_yaw = 135 / center_x
-        scale_factor_pitch = (25 + 90) / center_y
-
-        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
-        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
-
-        yaw_adjustment = max(-135, min(135, yaw_adjustment))
-        pitch_adjustment = max(-90, min(25, pitch_adjustment))
-
-        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
-
+    # end
     def close_connection(self):
         self.vehicle.close()
 
+    # to avi
     def images_to_avi(self, image_prefix, base_output_filename, fps=10):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
@@ -372,29 +361,6 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
-    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
-        x_conversion = x - 425
-        y_conversion = y - 240
-        if x_conversion > threshold:
-            yaw_change = -movement
-        elif x_conversion < -threshold:
-            yaw_change = movement
-        else:
-            yaw_change = 0
-
-        if y_conversion > threshold/2:
-            pitch_change = movement
-        elif y_conversion < -threshold/2:
-            pitch_change = -movement
-        else:
-            pitch_change = 0
-
-        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
-            yaw_change = 0
-        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
-            pitch_change = 0
-
-        return yaw_change, pitch_change
 
 if __name__ == '__main__':
 
@@ -402,22 +368,16 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-
-        # received_data = drone.receive_data()
-
         yaw = 0
         pitch = -75
-        step = 0
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
-        # drone.set_gimbal_angle(0, -80)
-        # time.sleep(1.5)
 
         try:
             while True:
-                step += 1
                 sending_array = drone.detect()
                 
+                # reformatting data
                 if sending_array == None:
                     sending_array = [425, 240, 0]
                 truth = 0
@@ -425,21 +385,22 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-
-                # drone.sending_data(sending_data)
-
+                # sending data
+                drone.sending_data(sending_data)
+                
+                # camera angle
                 yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                 yaw += yaw_change
                 pitch += pitch_change
-
                 drone.set_gimbal_angle(yaw, pitch)
+                
+                # debugging
                 print(sending_data, yaw_change, pitch_change)
-
+                
                 time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
-
 
