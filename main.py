@@ -7,8 +7,6 @@ import logging
 import numpy as np
 import os
 import math
-from sahi import AutoDetectionModel
-from sahi.predict import get_prediction, get_sliced_prediction
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
