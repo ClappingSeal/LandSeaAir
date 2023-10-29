@@ -144,6 +144,16 @@ class Drone:
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
 
+    # Receiving 1
+    def data64_callback(self, vehicle, name, message):
+        # Unpacking the received data
+        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
+        self.received_data = data
+
+    # Receiving 2
+    def receiving_data(self):
+        return self.received_data
+
     # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
