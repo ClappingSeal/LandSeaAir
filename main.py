@@ -157,16 +157,19 @@ class Drone:
     
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
-
+    
         if self.tracker_initialized:
             success, bbox = self.tracker.update(frame_resized)
             if success:
                 x, y, w, h = [int(v) for v in bbox]
                 cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
-
+    
                 if self.frame_count % self.recheck_interval == 0:
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
+                # 추적하는 동안 이미지 저장
+                cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+                self.capture_count += 1
                 return x + w // 2, 480 - (y + h // 2), w, h  # 중심 좌표 반환
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
@@ -183,6 +186,8 @@ class Drone:
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
             cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
+            cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+            self.capture_count += 1
     
             self.previous_centers.append((center_x, center_y))
             if len(self.previous_centers) > self.center_count:
