@@ -195,7 +195,7 @@ class Drone:
 
             if not self.tracker_initialized:
                 bbox = (center_x - width // 2, center_y - height // 2, width, height)
-                self.tracker = cv2.TrackerMIL_create()
+                self.tracker = cv2.TrackerKCF_create()
                 self.tracker.init(frame_resized, bbox)
                 self.tracker_initialized = True
 
