@@ -169,6 +169,7 @@ class Drone:
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
                 confidence = float(data[4])
+                print(confidence)
                 if (confidence > self.CONFIDENCE_THRESHOLD):# and ((int(data[2]) - int(data[0])) < 500) and ((int(data[3]) - int(data[1])) < 500) and (confidence > conf):
                     xmin, ymin, xlen, ylen = int(data[0]), int(data[1]), int(data[2]) - int(data[0]), int(data[3]) - int(data[1])
                     xmid = xmin+xlen/2
