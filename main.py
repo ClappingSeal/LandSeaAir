@@ -337,9 +337,9 @@ class Drone:
         else:
             yaw_change = 0
 
-        if y_conversion > threshold:
+        if y_conversion > threshold/2:
             pitch_change = movement
-        elif y_conversion < -threshold:
+        elif y_conversion < -threshold/2:
             pitch_change = -movement
         else:
             pitch_change = 0
