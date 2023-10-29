@@ -432,7 +432,7 @@ if __name__ == '__main__':
                 # server data send
                 data_list = [sending_array[0], sending_array[1], truth]
                 #data_string = json.dumps(data_list)
-                data_string = str(sending_array[0] * 10000 + sending_array[1] * 10 + truth)
+                data_string = str(int(sending_array[0] * 10000 + sending_array[1] * 10 + truth))
                 drone.send_data(data_string)
                 print("data sending...")
                 print(data_list)
