@@ -196,7 +196,7 @@ class Drone:
             if self.success:
                 (x, y, w, h) = tuple(map(int, roi))
                 #cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                if (x+w/2 < 5) or (x+w/2 > self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
+                if (x+w/2 < 5) or (x+w/2 > self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.camera.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
                     print('out of frame')
                     self.tracker = None
                 loc = [x+w/2, y+h/2, self.label]
