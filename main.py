@@ -361,7 +361,7 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = -90
+        pitch = -45
         step = 0
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
@@ -371,7 +371,6 @@ if __name__ == '__main__':
         try:
             while True:
                 step += 1
-                # sending_array = drone.detect_and_find_center()
                 sending_array = drone.detect()
                 
                 if sending_array == None:
@@ -383,14 +382,13 @@ if __name__ == '__main__':
 
 
                 # drone.sending_data(sending_data)
-                # print(sending_data)
+                print(sending_data)
                 time.sleep(0.1)
 
                 if step % 2 == 1:
                     yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
-                    # print(truth, yaw, pitch, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(yaw, pitch)
 
