@@ -100,7 +100,7 @@ class Drone:
         self.label = None
         self.labels = ['fixed', 'quadcopter', 'hybrid']
         self.previous_centers = []
-        self.center_count = 5
+        self.center_count = 3
         self.tolerance = 100
 
     # color camera test1
