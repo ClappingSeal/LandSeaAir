@@ -98,8 +98,8 @@ class Drone:
             return
         
         #detection requirements
-        self.model = YOLO('Tech_piece/Detection/best2.pt')
-        self.CONFIDENCE_THRESHOLD = 0
+        self.model = YOLO('Tech_piece/Detection/best3.onnx')
+        self.CONFIDENCE_THRESHOLD = 0.3
         self.tracker = None
         self.success = False
         self.maxtrack = 180
@@ -180,10 +180,10 @@ class Drone:
                 self.prevy.append(ymid)
                 cprevx = self.prevx[:6]
                 cprevy = self.prevy[:6]
-                #if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
-                roi = (xmin, ymin, xlen, ylen)
-                self.prevx = []
-                self.prevy = []
+                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
+                    roi = (xmin, ymin, xlen, ylen)
+                    self.prevx = []
+                    self.prevy = []
                 self.tracker = cv2.TrackerCSRT_create()
                 self.tracker.init(frame, roi)
                 self.tframe = 0
