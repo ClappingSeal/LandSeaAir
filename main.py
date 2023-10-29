@@ -7,6 +7,7 @@ import logging
 import numpy as np
 import os
 import math
+from ultralytics import YOLO
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -89,6 +90,17 @@ class Drone:
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
+        #detection requirements
+        self.model = YOLO('Tech_piece/Detection/best3.onnx')
+        self.CONFIDENCE_THRESHOLD = 0.1
+        self.tracker = None
+        self.success = False
+        self.maxtrack = 180
+        self.tframe = 0
+        self.prevx = []
+        self.prevy = []
+        self.label = None
+        self.labels = ['fixed', 'quadcopter', 'hybrid', 'label']
 
     # drone detect camera frame
     def detect_and_find_center(self):
