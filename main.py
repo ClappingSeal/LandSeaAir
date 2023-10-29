@@ -174,7 +174,7 @@ class Drone:
         cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
     
         if best_data and best_confidence > self.confidence_threshold:
-            return center_x, center_y, width, height
+            return center_x, 480 - center_y, width, height
         else:
             return 425, 240, 0, 0
 
