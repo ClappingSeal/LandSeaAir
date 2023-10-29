@@ -10,7 +10,6 @@ import math
 import json
 from ultralytics import YOLO
 
-
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
@@ -99,8 +98,8 @@ class Drone:
             return
         
         #detection requirements
-        self.model = YOLO('best2.pt')
-        self.CONFIDENCE_THRESHOLD = 0.3
+        self.model = YOLO('Tech_piece/Detection/best2.pt')
+        self.CONFIDENCE_THRESHOLD = 0
         self.tracker = None
         self.success = False
         self.maxtrack = 180
@@ -150,9 +149,12 @@ class Drone:
         return (center[0], 480 - center[1])
 
     #drone detection return [x, y, label] None if not detected
-    def detect(self):
+    def detect(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
         ret, frame = self.camera.read()
         conf = 0
+
+        h, w = frame.shape[:2]
+        frame = cv2.resize(frame, (int(w * x), h))
 
         #cam check
         if not ret:
@@ -167,7 +169,7 @@ class Drone:
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
                 confidence = float(data[4])
-                if (confidence > self.CONFIDENCE_THRESHOLD) and ((int(data[2]) - int(data[0])) < 100) and ((int(data[3]) - int(data[1])) < 100) and (confidence > conf):
+                if (confidence > self.CONFIDENCE_THRESHOLD):# and ((int(data[2]) - int(data[0])) < 500) and ((int(data[3]) - int(data[1])) < 500) and (confidence > conf):
                     xmin, ymin, xlen, ylen = int(data[0]), int(data[1]), int(data[2]) - int(data[0]), int(data[3]) - int(data[1])
                     xmid = xmin+xlen/2
                     ymid = ymin+ylen/2
@@ -178,15 +180,15 @@ class Drone:
                 self.prevy.append(ymid)
                 cprevx = self.prevx[:6]
                 cprevy = self.prevy[:6]
-                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
-                    roi = (xmin, ymin, xlen, ylen)
-                    self.prevx = []
-                    self.prevy = []
+                #if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
+                roi = (xmin, ymin, xlen, ylen)
+                self.prevx = []
+                self.prevy = []
                 self.tracker = cv2.TrackerCSRT_create()
                 self.tracker.init(frame, roi)
                 self.tframe = 0
             except Exception as e: 
-                #print(e)
+                print(e)
                 self.tracker = None
                 pass
 
@@ -196,16 +198,22 @@ class Drone:
             self.tframe += 1
             if self.success:
                 (x, y, w, h) = tuple(map(int, roi))
-                #cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                if (x+w/2 < 5) or (x+w/2 > self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                if (x+w/2 < 5) or (x+w/2 > self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.camera.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
                     print('out of frame')
                     self.tracker = None
                 loc = [x+w/2, y+h/2, self.label]
+
+                if save_image:
+                    self.image_count += 1
+                    image_name = f"captured_image_{self.image_count}.jpg"
+                    cv2.imwrite(image_name, frame)
+
                 return loc
             else:
                 self.tracker = None
         except Exception as e:
-            #print(e)
+            print(e)
             pass
 
     # Receiving 1
@@ -420,7 +428,11 @@ if __name__ == '__main__':
         try:
             while True:
                 step += 1
-                sending_array = drone.detect_and_find_center()
+                # sending_array = drone.detect_and_find_center()
+                sending_array = drone.detect()
+                if sending_array == None:
+                    sending_array = [425, 240]
+
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
@@ -428,13 +440,14 @@ if __name__ == '__main__':
                 
                 # server data send
                 data_list = [sending_array[0], sending_array[1], truth]
-                data_string = json.dumps(data_list)
+                #data_string = json.dumps(data_list)
+                data_string = str(int(sending_array[0]) * 10000 + int(sending_array[1]) * 10 + truth)
                 drone.send_data(data_string)
                 print("data sending...")
                 print(data_list)
                 print(data_string)
 
-                drone.sending_data(sending_data)
+                # drone.sending_data(sending_data)
                 # print(sending_data)
                 time.sleep(0.1)
 
