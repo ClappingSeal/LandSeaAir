@@ -8,6 +8,7 @@ import numpy as np
 import os
 import math
 import json
+from ultralytics import YOLO
 
 from sahi import AutoDetectionModel
 from sahi.predict import get_prediction, get_sliced_prediction
@@ -100,12 +101,8 @@ class Drone:
             return
         
         #detection requirements
-        self.detection_model = AutoDetectionModel.from_pretrained(
-            model_type='yolov8',
-            model_path='runs/detect/best2.pt',
-            confidence_threshold=0.3,
-            #device='cpu'
-        )
+        self.model = YOLO('runs/detect/train/weights/best.pt')
+        self.CONFIDENCE_THRESHOLD = 0.3
         self.tracker = None
         self.success = False
         self.maxtrack = 180
@@ -113,6 +110,7 @@ class Drone:
         self.prevx = []
         self.prevy = []
         self.label = None
+        self.labels = ['fixed', 'quadcopter', 'hybrid']
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
@@ -165,17 +163,18 @@ class Drone:
 
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = get_prediction(frame, self.detection_model)
+            #detection = get_prediction(frame, self.detection_model)
+            detection = self.model(frame, verbose=False)[0]
             #Sliced inference
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
-            for data in detection.to_coco_annotations()[:3]:
-                confidence = float(data['score'])
-                if (confidence > conf) and (data['bbox'][2] < 100) and (data['bbox'][3] < 100):
-                    xmin, ymin, xlen, ylen = int(data['bbox'][0]), int(data['bbox'][1]), int(data['bbox'][2]), int(data['bbox'][3])
+            for data in detection.boxes.data.tolist():
+                confidence = float(data[4])
+                if (confidence > self.CONFIDENCE_THRESHOLD) and ((int(data[2]) - int(data[0])) < 100) and ((int(data[3]) - int(data[1])) < 100) and (confidence > conf):
+                    xmin, ymin, xlen, ylen = int(data[0]), int(data[1]), int(data[2]) - int(data[0]), int(data[3]) - int(data[1])
                     xmid = xmin+xlen/2
                     ymid = ymin+ylen/2
                     conf = confidence
-                    self.label = data['category_name']
+                    self.label = self.labels[int(data[5])]
             try:
                 self.prevx.append(xmid)
                 self.prevy.append(ymid)
