@@ -221,14 +221,6 @@ class Drone:
                 return True
         return False
 
-    # drone camera 4
-    @staticmethod
-    def get_center_and_dimensions(data):
-        xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
-        center_x, center_y = (xmin + xmax) // 2, (ymin + ymax) // 2
-        width = xmax - xmin
-        height = ymax - ymin
-        return center_x, center_y, width, height
 
     # drone camera 5
     def check_stability(self):
