@@ -432,7 +432,7 @@ if __name__ == '__main__':
                 sending_array = drone.detect()
                 #cv2.imshow("frame", drone.frame)
                 if sending_array == None:
-                    sending_array = [425, 240]
+                    sending_array = [425, 240, 0]
 
                 truth = 0
                 if sending_array[1] != 240:
