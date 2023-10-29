@@ -369,8 +369,12 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
         yaw = 0
-        pitch = -88
+        pitch = 0
         drone.set_gimbal_angle(yaw, pitch)
+        yaw = 0
+        pitch = -90
+        drone.set_gimbal_angle(yaw, pitch)
+        
         time.sleep(1.5)
 
         try:
