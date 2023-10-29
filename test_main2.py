@@ -149,9 +149,12 @@ class Drone:
         return (center[0], 480 - center[1])
 
     #drone detection return [x, y, label] None if not detected
-    def detect(self):
+    def detect(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
         ret, frame = self.camera.read()
         conf = 0
+
+        h, w = frame.shape[:2]
+        frame = cv2.resize(frame, (int(w * x), h))
 
         #cam check
         if not ret:
@@ -200,6 +203,12 @@ class Drone:
                     print('out of frame')
                     self.tracker = None
                 loc = [x+w/2, y+h/2, self.label]
+
+                if save_image:
+                    self.image_count += 1
+                    image_name = f"captured_image_{self.image_count}.jpg"
+                    cv2.imwrite(image_name, frame)
+
                 return loc
             else:
                 self.tracker = None
