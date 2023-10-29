@@ -166,7 +166,7 @@ class Drone:
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
                 confidence = float(data[4])
-                if (confidence > self.CONFIDENCE_THRESHOLD) and ((int(data[2]) - int(data[0])) < 100) and ((int(data[3]) - int(data[1])) < 100) and (confidence > conf):
+                if (confidence > self.CONFIDENCE_THRESHOLD) and ((int(data[2]) - int(data[0])) < 500) and ((int(data[3]) - int(data[1])) < 500) and (confidence > conf):
                     xmin, ymin, xlen, ylen = int(data[0]), int(data[1]), int(data[2]) - int(data[0]), int(data[3]) - int(data[1])
                     xmid = xmin+xlen/2
                     ymid = ymin+ylen/2
@@ -185,7 +185,7 @@ class Drone:
                 self.tracker.init(frame, roi)
                 self.tframe = 0
             except Exception as e: 
-                #print(e)
+                print(e)
                 self.tracker = None
                 pass
 
@@ -204,7 +204,7 @@ class Drone:
             else:
                 self.tracker = None
         except Exception as e:
-            #print(e)
+            print(e)
             pass
 
     # Receiving 1
@@ -419,7 +419,11 @@ if __name__ == '__main__':
         try:
             while True:
                 step += 1
-                sending_array = drone.detect_and_find_center()
+                # sending_array = drone.detect_and_find_center()
+                sending_array = drone.detect()
+                if sending_array == None:
+                    sending_array = [425, 240]
+
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
