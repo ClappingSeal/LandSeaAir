@@ -172,7 +172,7 @@ class Drone:
 
                 print(len(detection.boxes.data.tolist()))
                 print(confidence, self.CONFIDENCE_THRESHOLD)
-                
+
                 if (confidence > self.CONFIDENCE_THRESHOLD):# and ((int(data[2]) - int(data[0])) < 500) and ((int(data[3]) - int(data[1])) < 500) and (confidence > conf):
                     xmin, ymin, xlen, ylen = int(data[0]), int(data[1]), int(data[2]) - int(data[0]), int(data[3]) - int(data[1])
                     xmid = xmin+xlen/2
@@ -200,7 +200,8 @@ class Drone:
         try:
             self.success, roi = self.tracker.update(frame)
             self.tframe += 1
-            if self.success:
+            # if self.success:  
+            if True:
                 (x, y, w, h) = tuple(map(int, roi))
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 if (x+w/2 < 5) or (x+w/2 > self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.camera.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
