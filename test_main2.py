@@ -10,7 +10,7 @@ import math
 import json
 from ultralytics import YOLO
 
-
+import numpy
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
