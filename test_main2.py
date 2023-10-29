@@ -438,7 +438,7 @@ if __name__ == '__main__':
                 print(data_list)
                 print(data_string)
 
-                drone.sending_data(sending_data)
+                # drone.sending_data(sending_data)
                 # print(sending_data)
                 time.sleep(0.1)
 
