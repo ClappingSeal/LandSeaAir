@@ -150,9 +150,9 @@ class Drone:
         ret, frame = self.camera.read()
         if not ret:
             return 425, 240, 0, 0
-
+    
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
-
+    
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
         best_data = None
@@ -161,18 +161,18 @@ class Drone:
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_data = data
-
+    
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
             cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
-
+    
             self.previous_centers.append((center_x, center_y))
             if len(self.previous_centers) > self.center_count:  # 최근 center_count 개의 센터만 유지
                 self.previous_centers.pop(0)
-
+    
         self.capture_count += 1
         cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
-
+    
         if best_data and best_confidence > self.confidence_threshold:
             return center_x, center_y, width, height
         else:
