@@ -10,8 +10,6 @@ import math
 import json
 from ultralytics import YOLO
 
-from sahi import AutoDetectionModel
-from sahi.predict import get_prediction, get_sliced_prediction
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -101,7 +99,7 @@ class Drone:
             return
         
         #detection requirements
-        self.model = YOLO('runs/detect/train/weights/best.pt')
+        self.model = YOLO('best2.pt')
         self.CONFIDENCE_THRESHOLD = 0.3
         self.tracker = None
         self.success = False
@@ -378,8 +376,21 @@ class Drone:
     
     # server 3
     def send_data(self, data):
-        self.conn.sendall(data.encode('utf-8'))
-
+        try:
+            self.conn.sendall(data.encode('utf-8'))
+        except ConnectionResetError:
+            print("Connection was reset by peer.")
+            print("Attempting to reconnect...")
+            
+            # 연결을 닫고 다시 시작합니다.
+            self.conn.close()
+            self.setup_connection()
+            
+            # 재연결 후 다시 데이터를 전송해볼 수 있습니다.
+            try:
+                self.conn.sendall(data.encode('utf-8'))
+            except Exception as e:
+                print("Failed to send data after reconnection:", e)
     # server 4
     def close_connection(self):
         if self.conn:
@@ -420,6 +431,8 @@ if __name__ == '__main__':
                 data_string = json.dumps(data_list)
                 drone.send_data(data_string)
                 print("data sending...")
+                print(data_list)
+                print(data_string)
 
                 drone.sending_data(sending_data)
                 # print(sending_data)
@@ -429,7 +442,7 @@ if __name__ == '__main__':
                     yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
-                    print(truth, yaw, pitch, yaw_change, pitch_change)
+                    # print(truth, yaw, pitch, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(yaw, pitch)
 

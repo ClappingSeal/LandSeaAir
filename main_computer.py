@@ -4,7 +4,7 @@ import time
 import logging
 import math
 import numpy as np
-from stable_baselines3 import TD3
+import random
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -23,17 +23,15 @@ class Drone:
         self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
-        # DRL model load
-        self.model = TD3.load("tracking_model_td3_pos_1024.zip")
-
         # Position value
         self.init_lat = self.vehicle.location.global_relative_frame.lat
         self.init_lon = self.vehicle.location.global_relative_frame.lon
+
         if self.init_lat is None or self.init_lon is None:
             raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
         print(self.init_lat, self.init_lon)
 
-        self.past_pos_data = np.zeros((20, 2))
+        self.past_pos_data = np.zeros((30, 2))
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -218,15 +216,6 @@ class Drone:
                 break
             time.sleep(0.5)
 
-    # locking 1 (get_pos 함수, velocity_pid 함수 사용)
-    def locking_easy(self, x, y, num):
-        x_conversion = (x - 425) / num
-        y_conversion = (y - 240) / num
-        target_x = self.get_pos()[0] + x_conversion
-        target_y = self.get_pos()[1] + y_conversion
-        self.velocity_pid(target_x, target_y, self.past_pos_data)
-        print(target_x, target_y)
-
     # Drone movement7 block
     def land(self):
         print("Initiating landing sequence")
@@ -239,6 +228,15 @@ class Drone:
             print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
             time.sleep(1)
         print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
+
+    # locking 1 (get_pos 함수, velocity_pid 함수 사용)
+    def locking_easy(self, x, y, num):
+        x_conversion = (x - 425) / num
+        y_conversion = (y - 240) / num
+        target_x = self.get_pos()[0] + x_conversion
+        target_y = self.get_pos()[1] + y_conversion
+        self.velocity_pid(target_x, target_y, self.past_pos_data)
+        print(target_x, target_y)
 
     # get position (m)
     def get_pos(self):
@@ -258,6 +256,50 @@ class Drone:
         self.past_pos_data = np.roll(self.past_pos_data, shift=-1, axis=0)
         self.past_pos_data[-1] = self.get_pos()
 
+    # IMM target tracking (4x2 행렬만 처리, 30x2 행렬만 입력)
+    def imm_tracking(self, data_raw, num_steps=2):
+        def compute_velocity_and_acceleration(values):
+            velocities = np.diff(values) / np.diff(times)
+            accelerations = np.diff(velocities)
+            return velocities[-1], accelerations[-1]
+
+        def predict_next_step(value, velocity, acceleration, delta_t):
+            value_cv = value + velocity * delta_t
+            value_ca = value + velocity * delta_t + 0.5 * acceleration * delta_t ** 2
+            w1, w2 = 0.6, 0.4  # 모델 가중치
+            return w1 * value_cv + w2 * value_ca
+
+        def select_rows(matrix):
+            # 행렬의 1, 10, 20, 30번째 행을 선택
+            selected_rows = matrix[[0, 9, 19, 29], :]
+            return selected_rows
+
+        data = select_rows(data_raw)
+
+        data = np.array(data)
+        times = np.arange(1, data.shape[0] + 1)
+        x_values = data[:, 0]
+        y_values = data[:, 1]
+
+        vx, ax = compute_velocity_and_acceleration(x_values)
+        vy, ay = compute_velocity_and_acceleration(y_values)
+
+        predictions = []
+        delta_t_pred = 1  # 예측에 사용할 시간 간격
+
+        x_next, y_next = x_values[-1], y_values[-1]
+
+        for _ in range(num_steps):
+            x_next = predict_next_step(x_next, vx, ax, delta_t_pred)
+            y_next = predict_next_step(y_next, vy, ay, delta_t_pred)
+
+            vx += ax * delta_t_pred
+            vy += ay * delta_t_pred
+
+            predictions.append((x_next, y_next))
+
+        return predictions
+
     # get battery
     def battery_state(self):
         return self.vehicle.battery.voltage
@@ -271,24 +313,21 @@ if __name__ == "__main__":
     gt = Drone()
 
     try:
-        # raw_input = input("위도, 경도: ")
-
         nums = 1, 1
-        # nums = [float(num.strip()) for num in raw_input.split(",")]
 
-        # 미션 시작1
         if len(nums) == 2:
-            # gt.arm_takeoff(1)
-            # gt.set_yaw_to_north()
-            # time.sleep(0.1)
+            gt.arm_takeoff(5)
+            gt.set_yaw_to_north()
+
+            time.sleep(0.1)
 
             while True:
-                gt.sending_data([7, 80, 35, 8])
                 receive_arr = np.array(gt.receiving_data())
-                gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                 gt.update_past_pos_data()
+
+                gt.locking_easy(receive_arr[0], receive_arr[1], 1000)
+
                 time.sleep(0.1)
-                print(gt.battery_state())
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
@@ -296,7 +335,5 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
-        gt.goto_location_block(0, 0, 5)
-        gt.set_yaw_to_north()
         gt.land()
         gt.close_connection()
