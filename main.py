@@ -389,7 +389,7 @@ if __name__ == '__main__':
                 yaw += yaw_change
                 pitch += pitch_change
 
-                    drone.set_gimbal_angle(yaw, pitch)
+                drone.set_gimbal_angle(yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
