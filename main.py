@@ -293,7 +293,7 @@ class Drone:
     def close_connection(self):
         self.vehicle.close()
 
-    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
+    def images_to_avi(self, image_prefix, base_output_filename, fps=5):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
 
