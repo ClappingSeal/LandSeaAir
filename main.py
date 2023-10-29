@@ -327,7 +327,7 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
-    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=4):
+    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=10):
         x_conversion = x - 425
         y_conversion = y - 240
         if x_conversion > threshold:
@@ -384,10 +384,10 @@ if __name__ == '__main__':
                 # drone.sending_data(sending_data)
                 print(sending_data)
 
-                if step % 2 == 1:
-                    yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
-                    yaw += yaw_change
-                    pitch += pitch_change
+
+                yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                yaw += yaw_change
+                pitch += pitch_change
 
                     drone.set_gimbal_angle(yaw, pitch)
 
