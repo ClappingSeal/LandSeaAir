@@ -1,17 +1,20 @@
 from dronekit import connect
 import cv2
-import threading
 import time
-import serial
+import socket
 import struct
 import logging
 import numpy as np
+import os
+import math
+import json
+from ultralytics import YOLO
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200):
+    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="0.0.0.0", udp_port=37260):
 
         # Connecting value
         self.connection_string = connection_string
@@ -24,16 +27,32 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.is_recording = True
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (int(self.camera.get(3)), int(self.camera.get(4))))
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([100, 255, 255])
+        self.base_color = np.array([0, 255, 255])
+        self.image_count = 0
+        self.threshold = 10
+        self.alpha = 0.3
 
+        # Gimbal UDP Settings
+        self.udp_ip = udp_ip
+        self.udp_port = udp_port
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            self.udp_socket.bind((self.udp_ip, self.udp_port))
+            print("UDP socket bound successfully!")
+        except socket.error as e:
+            print(f"Error binding UDP socket: {e}")
+            return
         # Gimbal
-        self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
+        self.current_yaw = 0
+        self.current_pitch = -90
+        self.frame_width = 850
+        self.frame_height = 480
+        self.max_yaw = 10
+        self.max_pitch = 10
+        self.min_pitch = -10
         self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
                           0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
                           0x1231, 0x210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -67,23 +86,14 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-        self.center()  # function used
-        self.threshold = 10
-        self.alpha = 0.3
-        self.prev_center = None
 
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
 
-        if self.ser.isOpen():
-            print("Connection is established!")
-        else:
-            print("Error in serial connection!")
-
     # color camera test1
-    def detect_and_find_center(self, x=1.3275):
-        ret, frame = self.camera.read()  # Read a frame from the camera
+    def detect_and_find_center(self, x=1.3275, save_image=True):
+        ret, frame = self.camera.read()
         if not ret:
             print("Error: Couldn't read frame.")
             return (425, 240)
@@ -109,21 +119,17 @@ class Drone:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 center = (cX, cY)
-                # Draw a circle at the detected center
-                cv2.circle(res_frame, center, 10, (0, 0, 255), -1)
+                print('sadf')
 
-        return center
+        # Always draw the circle at the detected center (or default if no center detected)
+        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
 
+        if save_image:
+            self.image_count += 1
+            image_name = f"captured_image_{self.image_count}.jpg"
+            cv2.imwrite(image_name, res_frame)
 
-    # Receiving 1
-    def data64_callback(self, vehicle, name, message):
-        # Unpacking the received data
-        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
-        self.received_data = data
-
-    # Receiving 2
-    def receiving_data(self):
-        return self.received_data
+        return (center[0], 480 - center[1])
 
     # Transmitting
     def sending_data(self, data):
@@ -138,37 +144,7 @@ class Drone:
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
 
-    # Camera
-    def show_camera_stream(self, x=1.3275):
-        while True:
-            ret, frame = self.camera.read()
-            if not ret:
-                print("Error: Couldn't read frame.")
-                break
-
-            # 가로로 1.1배 늘리기
-            h, w = frame.shape[:2]
-            res = cv2.resize(frame, (int(w * x), h))
-
-            cv2.imshow("Camera Stream", res)
-
-            if self.is_recording:
-                self.out.write(res)
-
-            key = cv2.waitKey(1) & 0xFF
-
-            if key == ord('q'):  # 'q'를 누르면 종료
-                break
-            elif key == ord('s') and self.is_recording:  # 's'를 누르면 녹화 중지
-                self.is_recording = False
-                self.out.release()
-
-        self.camera.release()
-        cv2.destroyAllWindows()
-        if self.is_recording:
-            self.out.release()
-
-    # gimbal1
+    # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
         for i in range(len_):
@@ -176,52 +152,91 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal2
-    def rotate(self, x, y, t):
-        cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x07'
-
-        x_byte = struct.pack('b', x)
-        y_byte = struct.pack('b', y)
-
-        data_to_checksum = cmd_header + x_byte + y_byte
+    # gimbal 2
+    def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
+        cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
+        yaw_bytes = struct.pack('<h', int(yaw * 10))
+        pitch_bytes = struct.pack('<h', int(pitch * 10))
+        data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
-
         command = data_to_checksum + checksum_bytes
+        self.send_command_to_gimbal(command)
 
-        self.ser.write(command)
+        self.current_yaw = yaw
+        self.current_pitch = pitch
 
-        time.sleep(t)
+    # gimbal 3
+    def send_command_to_gimbal(self, command_bytes):
+        try:
+            self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
+            # print("Command sent successfully!")
+        except socket.error as e:
+            print(f"Error sending command via UDP: {e}")
 
-        x_byte = struct.pack('b', 0)
-        y_byte = struct.pack('b', 0)
+    # gimbal 4
+    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
+        x_conversion = x - 425
+        y_conversion = y - 240
+        if x_conversion > threshold:
+            yaw_change = -movement
+        elif x_conversion < -threshold:
+            yaw_change = movement
+        else:
+            yaw_change = 0
 
-        data_to_checksum = cmd_header + x_byte + y_byte
-        calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
-        checksum_bytes = struct.pack('<H', calculated_checksum)
+        if y_conversion > threshold / 2:
+            pitch_change = movement
+        elif y_conversion < -threshold / 2:
+            pitch_change = -movement
+        else:
+            pitch_change = 0
 
-        command = data_to_checksum + checksum_bytes
+        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
+            yaw_change = 0
+        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+            pitch_change = 0
 
-        self.ser.write(command)
+        return yaw_change, pitch_change
 
-    # gimbal3 (CRC16_cal 외부 함수 사용)
-    def center(self):
-        cmd_header = b'\x55\x66\x01\x02\x00\x00\x00\x0E'
-
-        x_byte = struct.pack('b', 0)
-        y_byte = struct.pack('b', 0)
-
-        data_to_checksum = cmd_header + x_byte + y_byte
-        calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
-        checksum_bytes = struct.pack('<H', calculated_checksum)
-
-        command = data_to_checksum + checksum_bytes
-
-        self.ser.write(command)
-        time.sleep(2)
-
+    # end
     def close_connection(self):
         self.vehicle.close()
+
+    # to avi
+    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
+        files = os.listdir()
+        jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
+
+        jpg_files.sort(key=lambda x: int(x.split('_')[-1].split('.jpg')[0]))
+
+        if not jpg_files:
+            print("No jpg files found with the given prefix.")
+            return
+
+        img = cv2.imread(jpg_files[0])
+        if img is None:
+            print(f"Error reading the image: {jpg_files[0]}")
+            return
+
+        height, width, layers = img.shape
+
+        combinations = [('XVID', 'avi')]
+
+        for codec, ext in combinations:
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            output_filename = f"{base_output_filename}_{codec}.{ext}"
+            out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
+
+            for file in jpg_files:
+                img = cv2.imread(file)
+                if img is not None:
+                    out.write(img)
+                else:
+                    print(f"Error reading the image: {file}")
+
+            out.release()
+            print(f"Saved video with {codec} codec to {output_filename}")
 
 
 if __name__ == '__main__':
@@ -230,10 +245,33 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.center()
+        yaw = 0
+        pitch = 0
+        drone.set_gimbal_angle(yaw, pitch)
+        yaw = 0
+        pitch = -90
+        drone.set_gimbal_angle(yaw, pitch)
 
-        while True:
-            drone.sending_data([drone.detect_and_find_center()[0],drone.detect_and_find_center()[1]])
-            # print(drone.receiving_data())
-            time.sleep(0.1)
+        time.sleep(1.5)
 
+        try:
+            while True:
+                sending_array = drone.detect_and_find_center()
+                print(sending_array)
+
+                # reformatting data
+                if sending_array == None:
+                    sending_array = [425, 240, 0]
+                truth = 0
+                if sending_array[1] != 240:
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth]
+
+                # sending data
+                drone.sending_data(sending_data)
+                time.sleep(0.1)
+
+        except KeyboardInterrupt:
+            drone.images_to_avi("captured_image", "output.avi")
+            print("Video saved as output.avi")
+            drone.close_connection()
