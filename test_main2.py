@@ -204,10 +204,10 @@ class Drone:
                     self.tracker = None
                 loc = [x+w/2, y+h/2, self.label]
 
-                if save_image:
-                    self.image_count += 1
-                    image_name = f"captured_image_{self.image_count}.jpg"
-                    cv2.imwrite(image_name, frame)
+            if save_image:
+                self.image_count += 1
+                image_name = f"captured_image_{self.image_count}.jpg"
+                cv2.imwrite(image_name, frame)
 
                 return loc
             else:
