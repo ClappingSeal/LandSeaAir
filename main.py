@@ -30,7 +30,7 @@ class Drone:
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([100, 255, 255])
+        self.base_color = np.array([0, 255, 255])
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
@@ -369,14 +369,14 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
         yaw = 0
-        pitch = -75
+        pitch = -88
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
 
         try:
             while True:
-                sending_array = drone.detect()
-                
+                sending_array = drone.detect_and_find_center()
+
                 # reformatting data
                 if sending_array == None:
                     sending_array = [425, 240, 0]
@@ -387,20 +387,22 @@ if __name__ == '__main__':
 
                 # sending data
                 drone.sending_data(sending_data)
-                
+
                 # camera angle
-                yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
-                yaw += yaw_change
-                pitch += pitch_change
-                drone.set_gimbal_angle(yaw, pitch)
                 
+                # yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                # yaw += yaw_change
+                # pitch += pitch_change
+                # drone.set_gimbal_angle(yaw, pitch)
+
                 # debugging
-                print(sending_data, yaw_change, pitch_change)
                 
+                # print(sending_data, yaw_change, pitch_change)
+                print(sending_array[0], sending_array[1])
+
                 time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
-
