@@ -365,7 +365,7 @@ if __name__ == '__main__':
         step = 0
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
-        # drone.set_gimbal_angle(0, -45)
+        # drone.set_gimbal_angle(0, -80)
         # time.sleep(1.5)
 
         try:
