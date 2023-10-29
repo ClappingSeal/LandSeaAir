@@ -154,7 +154,7 @@ class Drone:
         conf = 0
 
         h, w = frame.shape[:2]
-        frame = cv2.resize(frame, (int(w * x), h))
+        # frame = cv2.resize(frame, (int(w * x), h))
 
         #cam check
         if not ret:
