@@ -98,7 +98,7 @@ class Drone:
             return
         
         #detection requirements
-        self.model = YOLO('Tech_piece/Detection/best3.pt')
+        self.model = YOLO('Tech_piece/Detection/best3.onnx')
         self.CONFIDENCE_THRESHOLD = 0
         self.tracker = None
         self.success = False
@@ -154,7 +154,7 @@ class Drone:
         conf = 0
 
         h, w = frame.shape[:2]
-        # frame = cv2.resize(frame, (int(w * x), h))
+        frame = cv2.resize(frame, (int(w * x), h))
 
         #cam check
         if not ret:
