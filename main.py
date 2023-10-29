@@ -293,7 +293,7 @@ class Drone:
     def close_connection(self):
         self.vehicle.close()
 
-    def images_to_avi(self, image_prefix, base_output_filename, fps=5):
+    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
 
@@ -365,7 +365,7 @@ if __name__ == '__main__':
         step = 0
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
-        # drone.set_gimbal_angle(0, -60)
+        # drone.set_gimbal_angle(0, -80)
         # time.sleep(1.5)
 
         try:
@@ -383,7 +383,6 @@ if __name__ == '__main__':
 
                 # drone.sending_data(sending_data)
                 print(sending_data)
-                time.sleep(0.1)
 
                 if step % 2 == 1:
                     yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
