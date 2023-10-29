@@ -7,6 +7,7 @@ import logging
 import numpy as np
 import os
 import math
+import json
 from ultralytics import YOLO
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
@@ -86,83 +87,124 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
+        
+        # server data send & receive
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.conn = None
+        self.addr = None
 
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
+        
         #detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.CONFIDENCE_THRESHOLD = 0.1
-        self.tracker = None
-        self.success = False
-        self.maxtrack = 180
-        self.tframe = 0
-        self.prevx = []
-        self.prevy = []
+        self.confidence_threshold = 0.75
+        self.scale_factor = 1.3275
+        self.capture_count = 0
         self.label = None
-        self.labels = ['fixed', 'quadcopter', 'hybrid', 'label']
+        self.labels = ['fixed', 'quadcopter', 'hybrid']
+        self.previous_centers = []
+        self.center_count = 5
+        self.tolerance = 100
 
-    # drone detect camera frame
-    def detect_and_find_center(self):
+    # color camera test1
+    def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
         ret, frame = self.camera.read()
-        conf = 0
-    
-        # cam check
         if not ret:
-            print('Cam Error')
-            return None
-    
-        # Detection
-        if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = get_prediction(frame, self.detection_model)
-            # Sliced inference
-            # detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
-            for data in detection.to_coco_annotations()[:3]:
-                confidence = float(data['score'])
-                if (confidence > conf) and (data['bbox'][2] < 100) and (data['bbox'][3] < 100):
-                    xmin, ymin, xlen, ylen = int(data['bbox'][0]), int(data['bbox'][1]), int(data['bbox'][2]), int(
-                        data['bbox'][3])
-                    xmid = xmin + xlen / 2
-                    ymid = ymin + ylen / 2
-                    conf = confidence
-                    self.label = data['category_name']
-            try:
-                self.prevx.append(xmid)
-                self.prevy.append(ymid)
-                cprevx = self.prevx[:6]
-                cprevy = self.prevy[:6]
-                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
-                    roi = (xmin, ymin, xlen, ylen)
-                    self.prevx = []
-                    self.prevy = []
-                self.tracker = cv2.TrackerCSRT_create()
-                self.tracker.init(frame, roi)
-                self.tframe = 0
-            except Exception as e:
-                # print(e)
-                self.tracker = None
-                pass
-    
-        # tracking
-        try:
-            self.success, roi = self.tracker.update(frame)
-            self.tframe += 1
-            if self.success:
-                (x, y, w, h) = tuple(map(int, roi))
-                # cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                if (x + w / 2 < 5) or (x + w / 2 > self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y + h / 2 < 5) or (
-                        y + h / 2 > self.camera.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
-                    print('out of frame')
-                    self.tracker = None
-                loc = [x + w / 2, y + h / 2, self.label]
-                print(loc)
-                return loc
-            else:
-                self.tracker = None
-        except Exception as e:
-            # print(e)
-            pass
-        
+            print("Error: Couldn't read frame.")
+            return (425, 240)
+
+        # Resize frame considering the aspect ratio multiplier
+        h, w = frame.shape[:2]
+        res_frame = cv2.resize(frame, (int(w * x), h))
+
+        hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
+
+        lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
+        upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
+
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        center = (425, 240)
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            M = cv2.moments(largest_contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                center = (cX, cY)
+
+        # Always draw the circle at the detected center (or default if no center detected)
+        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
+
+        if save_image:
+            self.image_count += 1
+            image_name = f"captured_image_{self.image_count}.jpg"
+            cv2.imwrite(image_name, res_frame)
+
+        return (center[0], 480 - center[1])
+
+    #drone detection return [x, y, label] None if not detected
+    def __del__(self):
+        self.camera.release()
+
+    def detect(self):
+        ret, frame = self.camera.read()
+        if not ret:
+            return 425, 240, 0, 0
+
+        frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
+
+        detection = self.model(frame_resized, verbose=False)[0]
+        best_confidence = 0
+        best_data = None
+        for data in detection.boxes.data.tolist():
+            confidence = float(data[4])
+            if confidence > best_confidence:
+                best_confidence = confidence
+                best_data = data
+
+        if best_data and best_confidence > self.confidence_threshold:
+            center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
+            cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
+
+            self.previous_centers.append((center_x, center_y))
+            if len(self.previous_centers) > self.center_count:  # 최근 center_count 개의 센터만 유지
+                self.previous_centers.pop(0)
+
+        self.capture_count += 1
+        cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+
+        if best_data and best_confidence > self.confidence_threshold:
+            return center_x, center_y, width, height
+        else:
+            return 425, 240, 0, 0
+
+    @staticmethod
+    def get_center_and_dimensions(data):
+        xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
+        center_x, center_y = (xmin + xmax) // 2, (ymin + ymax) // 2
+        width = xmax - xmin
+        height = ymax - ymin
+        return center_x, center_y, width, height
+
+    def check_stability(self):
+        """연속적인 센터들 간의 거리가 일정한지 확인하는 메소드"""
+        if len(self.previous_centers) < self.center_count:
+            return False  # 아직 충분한 데이터가 없음
+
+        distances = []
+        for i in range(1, len(self.previous_centers)):
+            prev_center = self.previous_centers[i-1]
+            curr_center = self.previous_centers[i]
+            distance = np.sqrt((curr_center[0] - prev_center[0])**2 + (curr_center[1] - prev_center[1])**2)
+            distances.append(distance)
+
+        return all(abs(d - distances[0]) < self.tolerance for d in distances)
+
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
@@ -290,6 +332,69 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
+    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=4):
+        x_conversion = x - 425
+        y_conversion = y - 240
+        if x_conversion > threshold:
+            yaw_change = -movement
+        elif x_conversion < -threshold:
+            yaw_change = movement
+        else:
+            yaw_change = 0
+
+        if y_conversion > threshold:
+            pitch_change = movement
+        elif y_conversion < -threshold:
+            pitch_change = -movement
+        else:
+            pitch_change = 0
+
+        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
+            yaw_change = 0
+        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+            pitch_change = 0
+
+        return yaw_change, pitch_change
+    
+    # server 1
+    def setup_connection(self):
+        self.server_socket.bind(('192.168.0.31', 12345))
+        self.server_socket.listen(5)
+        print("Waiting for connection...")
+        self.conn, self.addr = self.server_socket.accept()
+        print("Connected by", self.addr)
+
+    # server 2
+    def receive_data(self):
+        data = self.conn.recv(1024)
+        decoded_data = data.decode('utf-8')
+        print('Received message:', decoded_data)
+        return decoded_data
+    
+    # server 3
+    def send_data(self, data):
+        try:
+            self.conn.sendall(data.encode('utf-8'))
+        except ConnectionResetError:
+            print("Connection was reset by peer.")
+            print("Attempting to reconnect...")
+            
+            # 연결을 닫고 다시 시작합니다.
+            self.conn.close()
+            self.setup_connection()
+            
+            # 재연결 후 다시 데이터를 전송해볼 수 있습니다.
+            try:
+                self.conn.sendall(data.encode('utf-8'))
+            except Exception as e:
+                print("Failed to send data after reconnection:", e)
+    # server 4
+    def close_connection(self):
+        if self.conn:
+            self.conn.close()
+        self.server_socket.close()
+        
+
 
 if __name__ == '__main__':
 
@@ -297,62 +402,47 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+
+        drone.setup_connection() 
+        # received_data = drone.receive_data()
+
         yaw = 0
-        pitch = 0
+        pitch = -90
         step = 0
-        drone.set_gimbal_angle(0, -90)
+        drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
-        drone.set_gimbal_angle(0, 0)
-        time.sleep(1.5)
-
-
-        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=50, movement=2):
-            x_conversion = x - 425
-            y_conversion = y - 240
-            if x_conversion > threshold:
-                yaw_change = -movement
-            elif x_conversion < -threshold:
-                yaw_change = movement
-            else:
-                yaw_change = 0
-
-            if y_conversion > threshold:
-                pitch_change = movement
-            elif y_conversion < -threshold:
-                pitch_change = -movement
-            else:
-                pitch_change = 0
-
-            if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
-                yaw_change = 0
-            if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
-                pitch_change = 0
-
-            return yaw_change, pitch_change
-
+        # drone.set_gimbal_angle(0, -45)
+        # time.sleep(1.5)
 
         try:
             while True:
                 step += 1
-                sending_array = drone.detect_and_find_center()
+                # sending_array = drone.detect_and_find_center()
+                sending_array = drone.detect()
+                
+                if sending_array == None:
+                    sending_array = [425, 240, 0]
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-
                 sending_data = [sending_array[0], sending_array[1], truth]
-                print(sending_data)
 
-                drone.sending_data(sending_data)
+
+                # drone.sending_data(sending_data)
+                # print(sending_data)
                 time.sleep(0.1)
 
                 if step % 2 == 1:
-                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                    yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
+                    # print(truth, yaw, pitch, yaw_change, pitch_change)
+
                     drone.set_gimbal_angle(yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
+            drone.close_connection()
 
 
