@@ -88,11 +88,6 @@ class Drone:
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
         
-        # server data send & receive
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.conn = None
-        self.addr = None
-
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
@@ -355,46 +350,6 @@ class Drone:
             pitch_change = 0
 
         return yaw_change, pitch_change
-    
-    # server 1
-    def setup_connection(self):
-        self.server_socket.bind(('192.168.0.31', 12345))
-        self.server_socket.listen(5)
-        print("Waiting for connection...")
-        self.conn, self.addr = self.server_socket.accept()
-        print("Connected by", self.addr)
-
-    # server 2
-    def receive_data(self):
-        data = self.conn.recv(1024)
-        decoded_data = data.decode('utf-8')
-        print('Received message:', decoded_data)
-        return decoded_data
-    
-    # server 3
-    def send_data(self, data):
-        try:
-            self.conn.sendall(data.encode('utf-8'))
-        except ConnectionResetError:
-            print("Connection was reset by peer.")
-            print("Attempting to reconnect...")
-            
-            # 연결을 닫고 다시 시작합니다.
-            self.conn.close()
-            self.setup_connection()
-            
-            # 재연결 후 다시 데이터를 전송해볼 수 있습니다.
-            try:
-                self.conn.sendall(data.encode('utf-8'))
-            except Exception as e:
-                print("Failed to send data after reconnection:", e)
-    # server 4
-    def close_connection(self):
-        if self.conn:
-            self.conn.close()
-        self.server_socket.close()
-        
-
 
 if __name__ == '__main__':
 
