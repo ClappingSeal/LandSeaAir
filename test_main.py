@@ -388,7 +388,7 @@ if __name__ == '__main__':
                 drone.set_gimbal_angle(yaw, pitch)
                 time.sleep(3)
                 drone.capture_image(yaw, pitch)
-                time.sleep(0.1)
+                time.sleep(0.2)
 
         try:
             while True:
