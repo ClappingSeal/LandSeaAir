@@ -275,7 +275,7 @@ class Drone:
 
     # DRL model
     def locking_drl(self, x_frame, y_frame):
-        obs = np.array([x_frame, y_frame])
+        obs = np.array([x_frame-425, y_frame-240])
         action, _ = self.model.predict(obs)
 
         speed_magnitude = np.linalg.norm(action)
