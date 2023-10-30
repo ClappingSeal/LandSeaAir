@@ -41,6 +41,9 @@ class Drone:
         # client setup
         self.client_socket = None
 
+        # data_list
+        self.data_list = []
+
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
@@ -317,22 +320,22 @@ if __name__ == "__main__":
             while True:
                 # client data receive
                 data_received = gt.receive_data()
-                data_list = json.loads(data_received)
-                print(type(data_received))
-                print(type(data_list))
-                data_list.append(str(data_received//10000))
+                # data_list = json.loads(data_received)
+                # print(type(data_received))
+                # print(type(data_list))
+                gt.data_list.append(str(data_received//10000))
                 data_received = data_received%10000
-                data_list.append(data_received//10)
+                gt.data_list.append(data_received//10)
                 data_received = data_received%10
-                data_list.append(data_received)
+                gt.data_list.append(data_received)
                 print("data_received")
-                print(data_list)
+                print(gt.data_list)
 
                 # gt.sending_data([7, 80, 35, 8])
                 # receive_arr = np.array(gt.receiving_data())
                 # print(receive_arr)
                 # gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
-                gt.locking_easy(data_list[0], data_list[1], 300) # 마지막 숫자가 줄어들면 빨라짐
+                # gt.locking_easy(data_list[0], data_list[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                 gt.update_past_pos_data()
                 time.sleep(0.1)
                 # print(gt.battery_state())
