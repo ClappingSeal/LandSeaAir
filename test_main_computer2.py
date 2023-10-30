@@ -279,6 +279,7 @@ class Drone:
         action, _ = self.model.predict(obs)
 
         speed_magnitude = np.linalg.norm(action)
+        print(speed_magnitude)
         if speed_magnitude > 10:
             action = (action / speed_magnitude)
         print(-action)
