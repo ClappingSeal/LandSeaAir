@@ -281,7 +281,7 @@ class Drone:
         speed_magnitude = np.linalg.norm(action)
         print(speed_magnitude)
         if speed_magnitude > 10:
-            action = (action / speed_magnitude)
+            action = (action / speed_magnitude) * 10
         print(-action)
 
         x_conversion = -action[0] / 100 # Scale
