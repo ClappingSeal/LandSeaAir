@@ -30,7 +30,7 @@ class Drone:
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([100, 255, 255])
+        self.base_color = np.array([0, 255, 255])
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
