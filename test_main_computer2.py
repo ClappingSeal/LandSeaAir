@@ -228,7 +228,7 @@ class Drone:
     def locking_easy(self, x, y, num):
         x_conversion = (x - 425) / num
         y_conversion = (y - 240) / num
-        print(x_conversion)
+        print(x_conversion, y_conversion)
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
         # self.velocity_pid(target_x, target_y, self.past_pos_data)
@@ -282,9 +282,9 @@ class Drone:
         if speed_magnitude > 10:
             action = (action / speed_magnitude)
         print(-action)
-        
-        x_conversion = -action[0] / 100
-        y_conversion = -action[1] / 100
+
+        x_conversion = -action[0] / 100 # Scale
+        y_conversion = -action[1] / 100 # Scale
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
         # self.velocity_pid(target_x, target_y, self.past_pos_data)
