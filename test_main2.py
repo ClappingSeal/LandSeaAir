@@ -433,8 +433,8 @@ if __name__ == '__main__':
         try:
             while True:
                 step += 1
-                # sending_array = drone.detect_and_find_center()
-                sending_array = drone.detect()
+                sending_array = drone.detect_and_find_center()
+                # sending_array = drone.detect()
                 #cv2.imshow("frame", drone.frame)
                 if sending_array == None:
                     sending_array = [425, 240, 0]
