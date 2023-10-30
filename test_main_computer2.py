@@ -305,14 +305,14 @@ if __name__ == "__main__":
 
         nums = 1, 1
         # nums = [float(num.strip()) for num in raw_input.split(",")]
-        gt.set_connection() # client
+
 
         # 미션 시작1
         if len(nums) == 2:
             gt.arm_takeoff(2)
             gt.set_yaw_to_north()
             time.sleep(3)
-
+            gt.set_connection() # client
 
             while True:
                 # client data receive
