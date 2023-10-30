@@ -326,7 +326,6 @@ if __name__ == "__main__":
                 gt.update_past_pos_data()
 
                 gt.locking_easy(receive_arr[0], receive_arr[1], 1000)
-
                 time.sleep(0.1)
 
         else:

@@ -107,7 +107,7 @@ class Drone:
         self.prevx = []
         self.prevy = []
         self.label = None
-        self.labels = ['fixed', 'quadcopter', 'hybrid']
+        self.labels = ['fixed', 'quadcopter', 'hybrid', 'label']
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True, image_name="captured_image.jpg"):
@@ -173,7 +173,7 @@ class Drone:
                 print(len(detection.boxes.data.tolist()))
                 print(confidence, self.CONFIDENCE_THRESHOLD)
 
-                if (confidence > self.CONFIDENCE_THRESHOLD):# and ((int(data[2]) - int(data[0])) < 500) and ((int(data[3]) - int(data[1])) < 500) and (confidence > conf):
+                if (confidence > self.CONFIDENCE_THRESHOLD) and ((int(data[2]) - int(data[0])) < 500) and ((int(data[3]) - int(data[1])) < 500) and (confidence > conf):
                     xmin, ymin, xlen, ylen = int(data[0]), int(data[1]), int(data[2]) - int(data[0]), int(data[3]) - int(data[1])
                     xmid = xmin+xlen/2
                     ymid = ymin+ylen/2

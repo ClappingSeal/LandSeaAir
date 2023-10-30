@@ -7,8 +7,8 @@ import logging
 import numpy as np
 import os
 import math
-from sahi import AutoDetectionModel
-from sahi.predict import get_prediction, get_sliced_prediction
+import json
+from ultralytics import YOLO
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -30,7 +30,7 @@ class Drone:
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
-        self.base_color = np.array([100, 255, 255])
+        self.base_color = np.array([0, 255, 255])
         self.image_count = 0
         self.threshold = 10
         self.alpha = 0.3
@@ -46,7 +46,6 @@ class Drone:
             print(f"Error binding UDP socket: {e}")
             return
         # Gimbal
-        # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
         self.current_pitch = -90
         self.frame_width = 850
@@ -92,76 +91,45 @@ class Drone:
             print("Error: Couldn't open the camera.")
             return
 
-    # drone detect camera frame
-    def detect_and_find_center(self):
+    # color camera test1
+    def detect_and_find_center(self, x=1.3275, save_image=True):
         ret, frame = self.camera.read()
-        conf = 0
-    
-        # cam check
         if not ret:
-            print('Cam Error')
-            return None
-    
-        # Detection
-        if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = get_prediction(frame, self.detection_model)
-            # Sliced inference
-            # detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
-            for data in detection.to_coco_annotations()[:3]:
-                confidence = float(data['score'])
-                if (confidence > conf) and (data['bbox'][2] < 100) and (data['bbox'][3] < 100):
-                    xmin, ymin, xlen, ylen = int(data['bbox'][0]), int(data['bbox'][1]), int(data['bbox'][2]), int(
-                        data['bbox'][3])
-                    xmid = xmin + xlen / 2
-                    ymid = ymin + ylen / 2
-                    conf = confidence
-                    self.label = data['category_name']
-            try:
-                self.prevx.append(xmid)
-                self.prevy.append(ymid)
-                cprevx = self.prevx[:6]
-                cprevy = self.prevy[:6]
-                if max(cprevx) - min(cprevx) < 300 and max(cprevy) - min(cprevy) < 300 and len(cprevx) > 5:
-                    roi = (xmin, ymin, xlen, ylen)
-                    self.prevx = []
-                    self.prevy = []
-                self.tracker = cv2.TrackerCSRT_create()
-                self.tracker.init(frame, roi)
-                self.tframe = 0
-            except Exception as e:
-                # print(e)
-                self.tracker = None
-                pass
-    
-        # tracking
-        try:
-            self.success, roi = self.tracker.update(frame)
-            self.tframe += 1
-            if self.success:
-                (x, y, w, h) = tuple(map(int, roi))
-                # cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                if (x + w / 2 < 5) or (x + w / 2 > self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y + h / 2 < 5) or (
-                        y + h / 2 > self.camera.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
-                    print('out of frame')
-                    self.tracker = None
-                loc = [x + w / 2, y + h / 2, self.label]
-                print(loc)
-                return loc
-            else:
-                self.tracker = None
-        except Exception as e:
-            # print(e)
-            pass
-        
-    # Receiving 1
-    def data64_callback(self, vehicle, name, message):
-        # Unpacking the received data
-        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
-        self.received_data = data
+            print("Error: Couldn't read frame.")
+            return (425, 240)
 
-    # Receiving 2
-    def receiving_data(self):
-        return self.received_data
+        # Resize frame considering the aspect ratio multiplier
+        h, w = frame.shape[:2]
+        res_frame = cv2.resize(frame, (int(w * x), h))
+
+        hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
+
+        lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
+        upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
+
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        center = (425, 240)
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            M = cv2.moments(largest_contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                center = (cX, cY)
+                print('sadf')
+
+        # Always draw the circle at the detected center (or default if no center detected)
+        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
+
+        if save_image:
+            self.image_count += 1
+            image_name = f"captured_image_{self.image_count}.jpg"
+            cv2.imwrite(image_name, res_frame)
+
+        return (center[0], 480 - center[1])
 
     # Transmitting
     def sending_data(self, data):
@@ -175,6 +143,16 @@ class Drone:
 
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
+
+    # Receiving 1
+    def data64_callback(self, vehicle, name, message):
+        # Unpacking the received data
+        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
+        self.received_data = data
+
+    # Receiving 2
+    def receiving_data(self):
+        return self.received_data
 
     # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
@@ -207,45 +185,35 @@ class Drone:
             print(f"Error sending command via UDP: {e}")
 
     # gimbal 4
-    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
+    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
+        x_conversion = x - 425
+        y_conversion = y - 240
+        if x_conversion > threshold:
+            yaw_change = -movement
+        elif x_conversion < -threshold:
+            yaw_change = movement
+        else:
+            yaw_change = 0
 
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
+        if y_conversion > threshold / 2:
+            pitch_change = movement
+        elif y_conversion < -threshold / 2:
+            pitch_change = -movement
+        else:
+            pitch_change = 0
 
-        yaw_adjustment = self.current_yaw + diff_x
-        pitch_adjustment = self.current_pitch - diff_y
+        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
+            yaw_change = 0
+        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+            pitch_change = 0
 
-        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
-        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
+        return yaw_change, pitch_change
 
-        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
-        print(target_x, target_y)
-        print(yaw_adjustment, -pitch_adjustment)
-
-    # gimbal 5
-    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
-
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
-
-        scale_factor_yaw = 135 / center_x
-        scale_factor_pitch = (25 + 90) / center_y
-
-        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
-        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
-
-        yaw_adjustment = max(-135, min(135, yaw_adjustment))
-        pitch_adjustment = max(-90, min(25, pitch_adjustment))
-
-        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
-
+    # end
     def close_connection(self):
         self.vehicle.close()
 
+    # to avi
     def images_to_avi(self, image_prefix, base_output_filename, fps=10):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
@@ -289,60 +257,31 @@ if __name__ == '__main__':
         drone = Drone()
         yaw = 0
         pitch = 0
-        step = 0
-        drone.set_gimbal_angle(0, -90)
+        drone.set_gimbal_angle(yaw, pitch)
+        yaw = 0
+        pitch = -90
+        drone.set_gimbal_angle(yaw, pitch)
+
         time.sleep(1.5)
-        drone.set_gimbal_angle(0, 0)
-        time.sleep(1.5)
-
-
-        def yaw_pitch(x, y, current_yaw, current_pitch, threshold=50, movement=2):
-            x_conversion = x - 425
-            y_conversion = y - 240
-            if x_conversion > threshold:
-                yaw_change = -movement
-            elif x_conversion < -threshold:
-                yaw_change = movement
-            else:
-                yaw_change = 0
-
-            if y_conversion > threshold:
-                pitch_change = movement
-            elif y_conversion < -threshold:
-                pitch_change = -movement
-            else:
-                pitch_change = 0
-
-            if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
-                yaw_change = 0
-            if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
-                pitch_change = 0
-
-            return yaw_change, pitch_change
-
 
         try:
             while True:
-                step += 1
                 sending_array = drone.detect_and_find_center()
+                print(sending_array)
+
+                # reformatting data
+                if sending_array == None:
+                    sending_array = [425, 240, 0]
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-
                 sending_data = [sending_array[0], sending_array[1], truth]
-                print(sending_data)
 
+                # sending data
                 drone.sending_data(sending_data)
                 time.sleep(0.1)
-
-                if step % 2 == 1:
-                    yaw_change, pitch_change = yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
-                    yaw += yaw_change
-                    pitch += pitch_change
-                    drone.set_gimbal_angle(yaw, pitch)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-
-
+            drone.close_connection()
