@@ -98,7 +98,7 @@ class Drone:
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
-        self.labels = ['fixed', 'quadcopter', 'hybrid']
+        self.labels = ['hybrid', 'fixed', 'quadcopter']
         self.previous_centers = []
         self.center_count = 3
         self.tolerance = 100
