@@ -436,8 +436,8 @@ if __name__ == '__main__':
                 sending_array = drone.detect_and_find_center()
                 # sending_array = drone.detect()
                 #cv2.imshow("frame", drone.frame)
-                if sending_array == None:
-                    sending_array = [425, 240, 0]
+                # if sending_array == None:
+                #     sending_array = [425, 240, 0]
 
                 truth = 0
                 if sending_array[1] != 240:
@@ -451,7 +451,7 @@ if __name__ == '__main__':
                 drone.send_data(data_string)
                 print("data sending...")
                 print(data_list)
-                print(data_string)
+                # print(data_string)
 
                 # drone.sending_data(sending_data)
                 # print(sending_data)
