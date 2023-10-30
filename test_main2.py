@@ -423,7 +423,7 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = -90
+        pitch = 0  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
