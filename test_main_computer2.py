@@ -41,9 +41,6 @@ class Drone:
         # client setup
         self.client_socket = None
 
-        # data_list
-        self.data_list = []
-
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
         # Unpacking the received data
@@ -321,15 +318,16 @@ if __name__ == "__main__":
                 # client data receive
                 data_received = int(gt.receive_data())
                 # data_list = json.loads(data_received)
+                data_list = []
                 # print(type(data_received))
                 # print(type(data_list))
-                gt.data_list.append(data_received//10000)
+                data_list.append(data_received//10000)
                 data_received = data_received%10000
-                gt.data_list.append(data_received//10)
+                data_list.append(data_received//10)
                 data_received = data_received%10
-                gt.data_list.append(data_received)
+                data_list.append(data_received)
                 print("data_received")
-                print(gt.data_list)
+                print(data_list)
 
                 # gt.sending_data([7, 80, 35, 8])
                 # receive_arr = np.array(gt.receiving_data())
