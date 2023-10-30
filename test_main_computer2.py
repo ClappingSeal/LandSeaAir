@@ -328,7 +328,7 @@ if __name__ == "__main__":
                 data_list.append(data_received)
                 print("data_received")
                 print(data_list)
-                print(data_list.shape)
+                print(len(data_list))
                 # gt.sending_data([7, 80, 35, 8])
                 # receive_arr = np.array(gt.receiving_data())
                 # print(receive_arr)
