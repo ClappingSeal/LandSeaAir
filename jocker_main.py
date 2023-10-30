@@ -124,8 +124,6 @@ if __name__ == '__main__':
 
     try:
         while True:
-            drone = Drone()
-
             ret, frame = drone.camera.read()
             out = cv2.VideoWriter('output.avi', drone.fourcc, 20.0, (640, 480))
 
