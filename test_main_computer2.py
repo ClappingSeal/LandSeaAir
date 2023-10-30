@@ -318,8 +318,8 @@ if __name__ == "__main__":
                 # client data receive
                 data_received = gt.receive_data()
                 data_list = json.loads(data_received)
-                print(data_received)
-                print(data_list)
+                print(type(data_received))
+                print(type(data_list))
                 data_list.append(str(data_received//10000))
                 data_received = data_received%10000
                 data_list.append(data_received//10)
