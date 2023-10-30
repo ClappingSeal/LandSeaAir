@@ -323,7 +323,7 @@ if __name__ == "__main__":
                 # data_list = json.loads(data_received)
                 # print(type(data_received))
                 # print(type(data_list))
-                gt.data_list.append(str(data_received//10000))
+                gt.data_list.append(data_received//10000)
                 data_received = data_received%10000
                 gt.data_list.append(data_received//10)
                 data_received = data_received%10
