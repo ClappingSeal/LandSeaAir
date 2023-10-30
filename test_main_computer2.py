@@ -306,7 +306,7 @@ if __name__ == "__main__":
         nums = 1, 1
         # nums = [float(num.strip()) for num in raw_input.split(",")]
         gt.set_connection() # client
-        
+
         # 미션 시작1
         if len(nums) == 2:
             gt.arm_takeoff(2)
@@ -318,7 +318,7 @@ if __name__ == "__main__":
                 # client data receive
                 data_received = gt.receive_data()
                 data_list = json.loads(data_received)
-                data_list.append(data_received//10000)
+                data_list.append(str(data_received//10000))
                 data_received = data_received%10000
                 data_list.append(data_received//10)
                 data_received = data_received%10
