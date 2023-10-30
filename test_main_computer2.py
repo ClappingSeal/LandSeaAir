@@ -305,14 +305,14 @@ if __name__ == "__main__":
 
         nums = 1, 1
         # nums = [float(num.strip()) for num in raw_input.split(",")]
-
+        gt.set_connection() # client
 
         # 미션 시작1
         if len(nums) == 2:
             gt.arm_takeoff(2)
             gt.set_yaw_to_north()
             time.sleep(3)
-            gt.set_connection() # client
+
 
             while True:
                 # client data receive
@@ -328,12 +328,13 @@ if __name__ == "__main__":
                 data_list.append(data_received)
                 print("data_received")
                 print(data_list)
-
+                print(data_list.shape)
                 # gt.sending_data([7, 80, 35, 8])
                 # receive_arr = np.array(gt.receiving_data())
                 # print(receive_arr)
                 # gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
-                # gt.locking_easy(data_list[0], data_list[1], 300) # 마지막 숫자가 줄어들면 빨라짐
+                # if data_list.shape == 3:
+                #     gt.locking_easy(data_list[0], data_list[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                 gt.update_past_pos_data()
                 time.sleep(0.1)
                 # print(gt.battery_state())
