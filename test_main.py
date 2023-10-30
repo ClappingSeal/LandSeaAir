@@ -46,6 +46,7 @@ class Drone:
             print(f"Error binding UDP socket: {e}")
             return
         # Gimbal
+        # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
         self.current_pitch = -90
         self.frame_width = 850
@@ -91,6 +92,21 @@ class Drone:
             print("Error: Couldn't open the camera.")
             return
 
+        # detection requirements
+        self.model = YOLO('Tech_piece/Detection/best3.onnx')
+        self.confidence_threshold = 0.75
+        self.scale_factor = 1.3275
+        self.capture_count = 0
+        self.label = None
+        self.labels = ['fixed', 'quadcopter', 'hybrid']
+        self.previous_centers = []
+        self.center_count = 3
+        self.tolerance = 100
+        self.tracker_initialized = False
+        self.tracker = None
+        self.frame_count = 0
+        self.recheck_interval = 10  # 드론 재확인 간격
+
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
         ret, frame = self.camera.read()
@@ -131,6 +147,114 @@ class Drone:
 
         return (center[0], 480 - center[1])
 
+    # drone camera 1 (drone detection return [x, y, label] None if not detected)
+    def __del__(self):
+        self.camera.release()
+
+    # drone camera 2
+    def detect(self):
+        ret, frame = self.camera.read()
+        if not ret:
+            return 425, 240, 0, 0
+
+        frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
+        self.frame_count += 1
+
+        if self.tracker_initialized:
+            success, bbox = self.tracker.update(frame_resized)
+            if success:
+                x, y, w, h = [int(v) for v in bbox]
+                cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
+
+                if self.frame_count % self.recheck_interval == 0:
+                    if not self.is_drone(frame_resized, bbox):
+                        self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
+                # 추적하는 동안 이미지 저장
+                cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+                self.capture_count += 1
+                return x + w // 2, 480 - (y + h // 2), w, h  # 중심 좌표 반환
+            else:
+                self.tracker_initialized = False  # 추적 실패 시 초기화
+
+        detection = self.model(frame_resized, verbose=False)[0]
+        best_confidence = 0
+        best_data = None
+        for data in detection.boxes.data.tolist():
+            confidence = float(data[4])
+            if confidence > best_confidence:
+                best_confidence = confidence
+                best_data = data
+
+        if best_data and best_confidence > self.confidence_threshold:
+            center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
+            cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2),
+                          (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
+            cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+            self.capture_count += 1
+
+            self.previous_centers.append((center_x, center_y))
+            if len(self.previous_centers) > self.center_count:
+                self.previous_centers.pop(0)
+
+            if not self.tracker_initialized:
+                bbox = (center_x - width // 2, center_y - height // 2, width, height)
+                self.tracker = cv2.TrackerKCF_create()
+                self.tracker.init(frame_resized, bbox)
+                self.tracker_initialized = True
+
+        cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+        self.capture_count += 1
+
+        if best_data and best_confidence > self.confidence_threshold:
+            return center_x, 480 - center_y, width, height
+        else:
+            return 425, 240, 0, 0
+
+    # drone camera 3
+    def is_drone(self, frame, bbox):
+        x, y, w, h = [int(v) for v in bbox]
+        cropped_frame = frame[y:y + h, x:x + w]
+
+        detection = self.model(cropped_frame, verbose=False)[0]
+        for data in detection.boxes.data.tolist():
+            confidence = float(data[4])
+            if confidence > self.confidence_threshold:
+                return True
+        return False
+
+    # drone camera 4
+    @staticmethod
+    def get_center_and_dimensions(data):
+        xmin, ymin, xmax, ymax = int(data[0]), int(data[1]), int(data[2]), int(data[3])
+        center_x, center_y = (xmin + xmax) // 2, (ymin + ymax) // 2
+        width = xmax - xmin
+        height = ymax - ymin
+        return center_x, center_y, width, height
+
+    # drone camera 5
+    def check_stability(self):
+        if len(self.previous_centers) < self.center_count:
+            return False
+
+        distances = []
+        for i in range(1, len(self.previous_centers)):
+            prev_center = self.previous_centers[i - 1]
+            curr_center = self.previous_centers[i]
+            distance = np.sqrt((curr_center[0] - prev_center[0]) ** 2 + (curr_center[1] - prev_center[1]) ** 2)
+            distances.append(distance)
+
+        return all(abs(d - distances[0]) < self.tolerance for d in distances)
+
+    # Receiving 1
+    def data64_callback(self, vehicle, name, message):
+        # Unpacking the received data
+        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
+        self.received_data = data
+
+    # Receiving 2
+    def receiving_data(self):
+        return self.received_data
+
     # Transmitting
     def sending_data(self, data):
         # Packing Data
@@ -143,16 +267,6 @@ class Drone:
 
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
-
-    # Receiving 1
-    def data64_callback(self, vehicle, name, message):
-        # Unpacking the received data
-        data = [int.from_bytes(message.data[i:i + 4], 'little') for i in range(0, len(message.data), 4)]
-        self.received_data = data
-
-    # Receiving 2
-    def receiving_data(self):
-        return self.received_data
 
     # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
@@ -209,6 +323,16 @@ class Drone:
 
         return yaw_change, pitch_change
 
+    def capture_image(self, num1, num2):
+        ret, frame = self.camera.read()
+
+        if ret:
+            file_name = f"{num1}_and_{num2}.jpg"
+            cv2.imwrite(file_name, frame)
+            print(f"Picture saved as {file_name}.")
+        else:
+            print("Cannot take picture.")
+
     # end
     def close_connection(self):
         self.vehicle.close()
@@ -255,33 +379,25 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        yaw = 0
-        pitch = 0
-        drone.set_gimbal_angle(yaw, pitch)
-        yaw = 0
-        pitch = -90
-        drone.set_gimbal_angle(yaw, pitch)
 
-        time.sleep(1.5)
+        yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
+        pitches = [-90, -75, -60, -45, -30, -15]
+
+        for yaw in yaws:
+            for pitch in pitches:
+                drone.set_gimbal_angle(yaw, pitch)
+                time.sleep(3)
+                drone.capture_image(yaw, pitch)
+                time.sleep(0.1)
 
         try:
             while True:
-                sending_array = drone.detect_and_find_center()
-                print(sending_array)
+                print('finish!!!')
 
-                # reformatting data
-                if sending_array == None:
-                    sending_array = [425, 240, 0]
-                truth = 0
-                if sending_array[1] != 240:
-                    truth = 1
-                sending_data = [sending_array[0], sending_array[1], truth]
-
-                # sending data
-                drone.sending_data(sending_data)
                 time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
+
