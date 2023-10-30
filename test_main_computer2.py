@@ -284,8 +284,8 @@ class Drone:
             action = (action / speed_magnitude) * 10
         print(-action)
 
-        x_conversion = -action[0] / 100 # Scale
-        y_conversion = -action[1] / 100 # Scale
+        x_conversion = -action[0] / 10 # Scale
+        y_conversion = -action[1] / 10 # Scale
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
         self.velocity_pid(target_x, target_y, self.past_pos_data)
