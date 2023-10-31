@@ -418,10 +418,13 @@ if __name__ == '__main__':
         drone = Drone()
         drone.set_gimbal_angle(0,0)
         time.sleep(1)
-        drone.capture_image(0,0,0,0,0)
-        drone.capture_image(0,0,0,0,0)
-        drone.capture_image(0,0,0,0,0)
-        drone.capture_image(0,0,0,0,0)
+        drone.capture_image(999,0,0,0,0)
+        time.sleep(1)
+        drone.capture_image(999,0,0,0,0)
+        time.sleep(1)
+        drone.capture_image(999,0,0,0,0)
+        time.sleep(1)
+        drone.capture_image(999,0,0,0,0)
         time.sleep(1)
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
