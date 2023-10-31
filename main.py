@@ -95,7 +95,7 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.8
+        self.confidence_threshold = 0.6
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
@@ -113,7 +113,7 @@ class Drone:
         ret, frame = self.camera.read()
         if not ret:
             print("Error: Couldn't read frame.")
-            return (425, 240)
+            return (850, 480)
 
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
@@ -128,7 +128,7 @@ class Drone:
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        center = (425, 240)
+        center = (850, 480)
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
             M = cv2.moments(largest_contour)
@@ -156,7 +156,7 @@ class Drone:
     def detect(self):
         ret, frame = self.camera.read()
         if not ret:
-            return 425, 240, 0, 0
+            return 850, 480, 0, 0
 
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
@@ -209,7 +209,7 @@ class Drone:
         if best_data and best_confidence > self.confidence_threshold:
             return center_x, self.frame_height - center_y, width, height
         else:
-            return 425, 240, 0, 0
+            return 850, 480, 0, 0
 
     # drone camera 3
     def is_drone(self, frame, bbox):
@@ -301,8 +301,8 @@ class Drone:
 
     # gimbal 4
     def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
-        x_conversion = x - 425
-        y_conversion = y - 240
+        x_conversion = x - 850
+        y_conversion = y - 480
         if x_conversion > threshold:
             yaw_change = -movement
         elif x_conversion < -threshold:
@@ -385,7 +385,7 @@ if __name__ == '__main__':
 
                 # reformatting data
                 if sending_array == None:
-                    sending_array = [425, 240, 0]
+                    sending_array = [850, 480, 0]
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
