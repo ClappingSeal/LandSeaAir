@@ -32,8 +32,8 @@ class Drone:
             return
         self.frame_width = 850
         self.frame_height = 480
-        self.frame_width_divide_2 = int(self.frame_width)
-        self.frame_height_divide_2 = int(self.frame_height)
+        self.frame_width_divide_2 = int(self.frame_width)/2
+        self.frame_height_divide_2 = int(self.frame_height)/2
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
 
@@ -415,3 +415,4 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
+
