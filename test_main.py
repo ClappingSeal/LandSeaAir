@@ -366,7 +366,10 @@ class Drone:
         if ret:
             file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
             cv2.imwrite(file_name, frame)
-            cv2.imshow()
+            cv2.imshow('window name', frame)
+            key = cv2.waitKey(0) 
+            if key == 27: 
+                cv2.destroyAllWindows()
             print(f"Picture saved as {file_name}.")
         else:
             print("Cannot take picture.")
