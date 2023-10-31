@@ -434,9 +434,9 @@ if __name__ == '__main__':
                         print("Pitch:", pitch_wr)
                         print("Roll:", roll_wr)
                         break
-                time.sleep(0.2)
+                time.sleep(2)
                 drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
-                time.sleep(0.2)
+                time.sleep(2)
 
         try:
             while True:
