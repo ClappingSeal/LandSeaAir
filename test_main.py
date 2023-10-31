@@ -29,7 +29,7 @@ class Drone:
         self.camera = cv2.VideoCapture(0)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
-        
+
         # Camera_color_test1    
         self.ret, self.frame = self.camera.read()
         self.base_color = np.array([0, 255, 255])
@@ -416,10 +416,8 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.capture_image(0,0,0,0,0)
-        drone.capture_image(0,0,0,0,0)
-        drone.capture_image(0,0,0,0,0)
-        drone.capture_image(0,0,0,0,0)
+        drone.capture_image(1000,0,0,0,0)
+        time.sleep(10)
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
         pitches = [0, -15, -30, -45, -60, -75, -90]
