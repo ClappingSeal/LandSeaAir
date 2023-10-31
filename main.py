@@ -109,6 +109,7 @@ class Drone:
         self.tracker = None
         self.frame_count = 0
         self.recheck_interval = 20  # 드론 재확인 간격
+        self.truth = 0
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
@@ -165,6 +166,7 @@ class Drone:
 
         if self.tracker_initialized:
             success, bbox = self.tracker.update(frame_resized)
+            self.truth = 0
             if success:
                 x, y, w, h = [int(v) for v in bbox]
                 cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
@@ -204,6 +206,7 @@ class Drone:
                 self.tracker = cv2.TrackerKCF_create()
                 self.tracker.init(frame_resized, bbox)
                 self.tracker_initialized = True
+                self.truth = 1
 
         cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
         self.capture_count += 1
@@ -391,7 +394,7 @@ if __name__ == '__main__':
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-                sending_data = [sending_array[0], sending_array[1], truth]
+                sending_data = [sending_array[0], sending_array[1], drone.truth]
 
                 # sending data
                 drone.sending_data(sending_data)
@@ -412,3 +415,4 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
+
