@@ -389,7 +389,7 @@ if __name__ == '__main__':
                 if sending_array == None:
                     sending_array = [drone.frame_width_divide_2, drone.frame_height_divide_2, 0]
                     truth = 0
-                if sending_array[1] != drone.frame_width_divide_2:
+                if sending_array[1] != drone.frame_height_divide_2:
                     print(sending_array[1], drone.frame_width_divide_2)
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
@@ -413,4 +413,5 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
+
 
