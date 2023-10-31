@@ -338,28 +338,38 @@ class Drone:
             return None
     
     # gimbal 6
-    def acquire_attitude(self,response):
-        # CMD ID를 찾습니다.
-        index_0d = response.find(b'\x0D')
+    def acquire_attitude(self, response):
+        try:
+            # CMD ID를 찾습니다.
+            index_0d = response.find(b'\x0D')
 
-        # Yaw, Pitch, Roll 데이터를 추출합니다.
-        data_06 = response[index_0d+1:index_0d+7]
-        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
+            # Yaw, Pitch, Roll 데이터를 추출합니다.
+            data_06 = response[index_0d+1:index_0d+7]
+            yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
 
-        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-        data_0c = response[index_0d+7:index_0d+15]
-        print(len(data_0c))
-        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
+            # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
+            data_0c = response[index_0d+7:index_0d+15]
+            print(len(data_0c))
+            if len(data_0c) != 8:
+                raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
 
-        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
-        yaw = yaw_raw / 10.0
-        pitch = pitch_raw / 10.0
-        roll = roll_raw / 10.0
-        yaw_velocity = yaw_velocity_raw / 10.0
-        pitch_velocity = pitch_velocity_raw / 10.0
-        roll_velocity = roll_velocity_raw / 10.0
+            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
 
-        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+            # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
+            yaw = yaw_raw / 10.0
+            pitch = pitch_raw / 10.0
+            roll = roll_raw / 10.0
+            yaw_velocity = yaw_velocity_raw / 10.0
+            pitch_velocity = pitch_velocity_raw / 10.0
+            roll_velocity = roll_velocity_raw / 10.0
+
+            return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+        except struct.error as e:
+            print("Error in unpacking data: {}".format(e))
+            return None, None, None, None, None, None
+        except ValueError as e:
+            print("Error: {}".format(e))
+            return None, None, None, None, None, None
     
     def capture_image(self, num1, num2, num3, num4, num5):
         for _ in range(5):  # 더미 이미지 5장 캡처
