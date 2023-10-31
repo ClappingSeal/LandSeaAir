@@ -420,8 +420,13 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        for _ in range(5): 
-            drone.camera.read()
+        for _ in range(10):  # 더미 이미지 10장 캡처
+            ret, frame = drone.camera.read()
+            if not ret:
+                print("Failed to grab frame")
+                break
+            cv2.imshow('frame', frame)
+            cv2.waitKey(1)
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
         pitches = [0, -15, -30, -45, -60, -75, -90]
