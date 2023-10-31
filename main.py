@@ -25,8 +25,11 @@ class Drone:
         self.received_data = None
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
-        # Camera
+        # Camera connection
         self.camera = cv2.VideoCapture(0)
+        if not self.camera.isOpened():
+            print("Error: Couldn't open the camera.")
+            return
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
@@ -45,12 +48,10 @@ class Drone:
         except socket.error as e:
             print(f"Error binding UDP socket: {e}")
             return
+        
         # Gimbal
-        # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
         self.current_pitch = -90
-        self.frame_width = 850
-        self.frame_height = 480
         self.max_yaw = 10
         self.max_pitch = 10
         self.min_pitch = -10
@@ -87,14 +88,14 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-
-        if not self.camera.isOpened():
-            print("Error: Couldn't open the camera.")
-            return
+        
+        # Camera output
+        self.frame_width = 850
+        self.frame_height = 480
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.75
+        self.confidence_threshold = 0.4
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
@@ -105,7 +106,7 @@ class Drone:
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
-        self.recheck_interval = 10  # 드론 재확인 간격
+        self.recheck_interval = 20  # 드론 재확인 간격
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
