@@ -109,7 +109,6 @@ class Drone:
         self.tracker = None
         self.frame_count = 0
         self.recheck_interval = 20  # 드론 재확인 간격
-        self.truth = 0
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
@@ -389,10 +388,10 @@ if __name__ == '__main__':
                 # reformatting data
                 if sending_array == None:
                     sending_array = [drone.frame_width_divide_2, drone.frame_height_divide_2, 0]
-                drone.truth = 0
+                    truth = 0
                 if sending_array[1] != drone.frame_width_divide_2:
-                    drone.truth = 1
-                sending_data = [sending_array[0], sending_array[1], drone.truth]
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth]
 
                 # sending data
                 drone.sending_data(sending_data)
@@ -413,5 +412,4 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
-
 
