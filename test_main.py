@@ -365,6 +365,7 @@ class Drone:
         if ret:
             thread = threading.Thread(target=self.save_image, args=(num1, num2, num3, num4, num5, frame))
             thread.start()
+            thread.join()  
         else:
             print("Cannot take picture.")
 
