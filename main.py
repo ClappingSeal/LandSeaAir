@@ -30,8 +30,8 @@ class Drone:
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
-        self.frame_width = 1700
-        self.frame_height = 960
+        self.frame_width = 850
+        self.frame_height = 480
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
 
@@ -113,7 +113,7 @@ class Drone:
         ret, frame = self.camera.read()
         if not ret:
             print("Error: Couldn't read frame.")
-            return (850, 480)
+            return (self.frame_width / 2, self.frame_height / 2)
 
         # Resize frame considering the aspect ratio multiplier
         h, w = frame.shape[:2]
@@ -128,7 +128,7 @@ class Drone:
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        center = (850, 480)
+        center = (self.frame_width / 2, self.frame_height / 2)
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
             M = cv2.moments(largest_contour)
@@ -156,7 +156,7 @@ class Drone:
     def detect(self):
         ret, frame = self.camera.read()
         if not ret:
-            return 850, 480, 0, 0
+            return self.frame_width / 2, self.frame_height / 2, 0, 0
 
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
@@ -209,7 +209,7 @@ class Drone:
         if best_data and best_confidence > self.confidence_threshold:
             return center_x, self.frame_height - center_y, width, height
         else:
-            return 850, 480, 0, 0
+            return self.frame_width / 2, self.frame_height / 2, 0, 0
 
     # drone camera 3
     def is_drone(self, frame, bbox):
@@ -301,8 +301,8 @@ class Drone:
 
     # gimbal 4
     def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
-        x_conversion = x - 850
-        y_conversion = y - 480
+        x_conversion = x - self.frame_width / 2
+        y_conversion = y - self.frame_height / 2
         if x_conversion > threshold:
             yaw_change = -movement
         elif x_conversion < -threshold:
@@ -385,7 +385,7 @@ if __name__ == '__main__':
 
                 # reformatting data
                 if sending_array == None:
-                    sending_array = [850, 480, 0]
+                    sending_array = [drone.frame_width / 2, drone.frame_height / 2, 0]
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
@@ -410,3 +410,4 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
+
