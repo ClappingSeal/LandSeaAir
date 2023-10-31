@@ -380,6 +380,7 @@ if __name__ == '__main__':
         drone.set_gimbal_angle(yaw, pitch)
 
         time.sleep(1.5)
+        truth = 0
 
         try:
             while True:
@@ -413,5 +414,3 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
-
-
