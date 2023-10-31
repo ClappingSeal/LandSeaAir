@@ -9,6 +9,7 @@ import os
 import math
 import json
 from ultralytics import YOLO
+import threading
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -362,11 +363,15 @@ class Drone:
         ret, frame = self.camera.read()
 
         if ret:
-            file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
-            cv2.imwrite(file_name, frame)
-            print(f"Picture saved as {file_name}.")
+            thread = threading.Thread(target=self.save_image, args=(num1, num2, num3, num4, num5, frame))
+            thread.start()
         else:
             print("Cannot take picture.")
+
+    def save_image(self, num1, num2, num3, num4, num5, frame):
+        file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
+        cv2.imwrite(file_name, frame)
+        print(f"Picture saved as {file_name}.")
 
     # end
     def close_connection(self):
