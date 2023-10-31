@@ -438,11 +438,30 @@ if __name__ == '__main__':
         drone = Drone()
 
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
-        yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
+        yaws = [0]
         pitches = [0, -15, -30, -45, -60, -75, -90]
 
         for yaw in yaws:
             for pitch in pitches:
+                drone.set_gimbal_angle(yaw, pitch)
+                time.sleep(2)
+                while True:
+                    response = drone.accquire_data()
+                    yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
+                    if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
+                        print("Yaw:", yaw_wr)
+                        print("Pitch:", pitch_wr)
+                        print("Roll:", roll_wr)
+                        break
+                time.sleep(0.2)
+                drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
+                time.sleep(0.2)
+
+        pitches = [-90]
+        yaws = [0, 15, 30, 45, 60, 75, 90]
+
+        for pitche in pitches:
+            for yaw in yaws:
                 drone.set_gimbal_angle(yaw, pitch)
                 time.sleep(2)
                 while True:
