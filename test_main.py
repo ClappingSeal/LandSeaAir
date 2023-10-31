@@ -414,10 +414,10 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.capture_image(0,0,0,0)
-        drone.capture_image(0,0,0,0)
-        drone.capture_image(0,0,0,0)
-        drone.capture_image(0,0,0,0)
+        drone.capture_image(0,0,0,0,0)
+        drone.capture_image(0,0,0,0,0)
+        drone.capture_image(0,0,0,0,0)
+        drone.capture_image(0,0,0,0,0)
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
         pitches = [0, -15, -30, -45, -60, -75, -90]
