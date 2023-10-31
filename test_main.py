@@ -376,7 +376,7 @@ class Drone:
             self.camera.read()
             
         ret, frame = self.camera.read()
-        frame = cv2.resize(frame, (1700, 960))
+        frame = cv2.resize(frame, (850, 480))
 
         if ret:
             file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
