@@ -25,16 +25,23 @@ class Drone:
         self.received_data = None
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
-        # Camera
+        # Camera connection
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1700)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+        if not self.camera.isOpened():
+            print("Error: Couldn't open the camera.")
+            return
+        self.frame_width = 850
+        self.frame_height = 480
+        self.frame_width_divide_2 = 425
+        self.frame_height_divide_2 = 240
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
         self.base_color = np.array([0, 255, 255])
         self.image_count = 0
-        self.threshold = 10
+        self.threshold = 40
         self.alpha = 0.3
 
         # Gimbal UDP Settings
@@ -47,12 +54,10 @@ class Drone:
         except socket.error as e:
             print(f"Error binding UDP socket: {e}")
             return
+
         # Gimbal
-        # self.serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
         self.current_yaw = 0
         self.current_pitch = -90
-        self.frame_width = 850
-        self.frame_height = 480
         self.max_yaw = 10
         self.max_pitch = 10
         self.min_pitch = -10
@@ -90,37 +95,70 @@ class Drone:
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
 
-        if not self.camera.isOpened():
-            print("Error: Couldn't open the camera.")
-            return
-
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.1
+        self.confidence_threshold = 0.6
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
-        self.labels = ['fixed', 'quadcopter', 'hybrid']
+        self.labels = ['hybrid', 'fixed', 'quadcopter']
         self.previous_centers = []
         self.center_count = 2
-        self.tolerance = 200
+        self.tolerance = 100
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
-        self.recheck_interval = 15  # 드론 재확인 간격
+        self.recheck_interval = 20  # 드론 재확인 간격
 
-        self.video_writer = cv2.VideoWriter('output_video.avi', cv2.VideoWriter_fourcc(*'XVID'), 30.0, (850, 480))
+    # color camera test1
+    def detect_and_find_center(self, x=1.3275, save_image=True):
+        ret, frame = self.camera.read()
+        if not ret:
+            print("Error: Couldn't read frame.")
+            return (self.frame_width_divide_2, self.frame_height_divide_2)
+
+        # Resize frame considering the aspect ratio multiplier
+        h, w = frame.shape[:2]
+        res_frame = cv2.resize(frame, (int(w * x), h))
+
+        hsv = cv2.cvtColor(res_frame, cv2.COLOR_BGR2HSV)
+
+        lower_bound = np.array([self.base_color[0] - self.threshold, 130, 130])
+        upper_bound = np.array([self.base_color[0] + self.threshold, 255, 255])
+
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        center = (self.frame_width_divide_2, self.frame_height_divide_2)
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            M = cv2.moments(largest_contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                center = (cX, cY)
+                print('sadf')
+
+        # Always draw the circle at the detected center (or default if no center detected)
+        cv2.circle(res_frame, center, 10, (100, 100, 100), -1)
+
+        if save_image:
+            self.image_count += 1
+            image_name = f"captured_image_{self.image_count}.jpg"
+            cv2.imwrite(image_name, res_frame)
+
+        return (center[0], 960 - center[1])
 
     # drone camera 1 (drone detection return [x, y, label] None if not detected)
     def __del__(self):
         self.camera.release()
-        self.video_writer.release()  # 비디오 라이터 리소스 해제
 
     # drone camera 2
     def detect(self):
         ret, frame = self.camera.read()
         if not ret:
-            return 425, 240, 0, 0
+            return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
 
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
@@ -134,11 +172,10 @@ class Drone:
                 if self.frame_count % self.recheck_interval == 0:
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
-
-                # 프레임 녹화
-                self.video_writer.write(frame_resized)
-
-                return x + w // 2, 480 - (y + h // 2), w, h  # 중심 좌표 반환
+                # 추적하는 동안 이미지 저장
+                cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+                self.capture_count += 1
+                return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
 
@@ -155,6 +192,8 @@ class Drone:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
             cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2),
                           (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
+            cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+            self.capture_count += 1
 
             self.previous_centers.append((center_x, center_y))
             if len(self.previous_centers) > self.center_count:
@@ -166,13 +205,13 @@ class Drone:
                 self.tracker.init(frame_resized, bbox)
                 self.tracker_initialized = True
 
-        # 프레임 녹화
-        self.video_writer.write(frame_resized)
+        cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+        self.capture_count += 1
 
         if best_data and best_confidence > self.confidence_threshold:
-            return center_x, 480 - center_y, width, height
+            return center_x, self.frame_height - center_y, width, height
         else:
-            return 425, 240, 0, 0
+            return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
 
     # drone camera 3
     def is_drone(self, frame, bbox):
@@ -264,8 +303,8 @@ class Drone:
 
     # gimbal 4
     def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=50, movement=2):
-        x_conversion = x - 425
-        y_conversion = y - 240
+        x_conversion = x - self.frame_width_divide_2
+        y_conversion = y - self.frame_height_divide_2
         if x_conversion > threshold:
             yaw_change = -movement
         elif x_conversion < -threshold:
@@ -286,58 +325,6 @@ class Drone:
             pitch_change = 0
 
         return yaw_change, pitch_change
-
-    # gimbal 5
-    def accquire_data(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
-
-        try:
-            response, addr = self.udp_socket.recvfrom(1024)
-            # print("Received:", response)
-            return response
-        except socket.error as e:
-            print(f"Error receiving data via UDP: {e}")
-            return None
-
-    # gimbal 6
-    def acquire_attitude(self, response):
-        # CMD ID를 찾습니다.
-        index_0d = response.find(b'\x0D')
-
-        # Yaw, Pitch, Roll 데이터를 추출합니다.
-        data_06 = response[index_0d + 1:index_0d + 7]
-        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
-
-        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-        data_0c = response[index_0d + 7:index_0d + 15]
-        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
-
-        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
-        yaw = yaw_raw / 10.0
-        pitch = pitch_raw / 10.0
-        roll = roll_raw / 10.0
-        yaw_velocity = yaw_velocity_raw / 10.0
-        pitch_velocity = pitch_velocity_raw / 10.0
-        roll_velocity = roll_velocity_raw / 10.0
-
-        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
-
-    def capture_image(self, num1, num2, num3, num4, num5):
-        for _ in range(5):  # 더미 이미지 5장 캡처
-            self.camera.read()
-
-        ret, frame = self.camera.read()
-
-        if ret:
-            file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
-            cv2.imwrite(file_name, frame)
-            # cv2.imshow('window name', frame)
-            # key = cv2.waitKey(0)
-            # if key == 27:
-            #     cv2.destroyAllWindows()
-            print(f"Picture saved as {file_name}.")
-        else:
-            print("Cannot take picture.")
 
     # end
     def close_connection(self):
@@ -383,29 +370,44 @@ if __name__ == '__main__':
 
     start_command = input("Press 's' to start: ")
 
-    if start_command.lower() == 's':  # 대소문자 구분 없이 's'를 입력받기 위해 .lower() 메소드 사용
-
+    if start_command == 's':
         drone = Drone()
+        yaw = 0
+        pitch = 0
+        drone.set_gimbal_angle(yaw, pitch)
+        yaw = 0
+        pitch = -90
+        drone.set_gimbal_angle(yaw, pitch)
 
-        # 초기 감블 각도 설정을 함수로 추출하여 코드 중복 제거
-        def set_initial_gimbal_angle(yaw, pitch, wait=1.5):
-            drone.set_gimbal_angle(yaw, pitch)
-            time.sleep(wait)
-
-        set_initial_gimbal_angle(0, 0)
-        set_initial_gimbal_angle(0, -90)
+        time.sleep(1.5)
+        truth = 0
 
         try:
             while True:
-                sending_array = drone.detect() or [425, 240, 0]  # None이면 기본값 설정
+                sending_array = drone.detect()
 
-                truth = int(sending_array[1] != 240)  # truth 값 계산을 보다 명확하게
+                # reformatting data
+                if sending_array == None:
+                    sending_array = [drone.frame_width_divide_2, drone.frame_height_divide_2, 0]
+                    truth = 0
+                if sending_array[1] != drone.frame_height_divide_2:
+                    truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
-                # 데이터 전송
+                # sending data
                 drone.sending_data(sending_data)
-                print(sending_data)
-                time.sleep(0.1)
+
+                # camera angle
+
+                # yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                # yaw += yaw_change
+                # pitch += pitch_change
+                # drone.set_gimbal_angle(yaw, pitch)
+
+                # debugging
+
+                # print(sending_data, yaw_change, pitch_change)
+                print(sending_array[0], sending_array[1], truth)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
