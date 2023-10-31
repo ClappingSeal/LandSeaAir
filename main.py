@@ -95,7 +95,7 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.2
+        self.confidence_threshold = 0.6
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
