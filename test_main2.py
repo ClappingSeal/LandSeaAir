@@ -471,7 +471,7 @@ if __name__ == '__main__':
                 print("Yaw:", yaw_wr)
                 print("Pitch:", pitch_wr)
                 print("Roll:", roll_wr)
-                break
+                
         # try:
         #     while True:
         #         step += 1
