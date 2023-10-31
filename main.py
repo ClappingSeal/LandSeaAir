@@ -403,7 +403,7 @@ if __name__ == '__main__':
                 # debugging
 
                 # print(sending_data, yaw_change, pitch_change)
-                print(sending_array[0], sending_array[1])
+                print(sending_array[0], sending_array[1], truth)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
