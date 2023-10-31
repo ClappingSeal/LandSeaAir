@@ -380,8 +380,7 @@ if __name__ == '__main__':
 
         try:
             while True:
-                sending_array = drone.detect_and_find_center()
-                # sending_array = drone.detect()
+                sending_array = drone.detect()
 
                 # reformatting data
                 if sending_array == None:
