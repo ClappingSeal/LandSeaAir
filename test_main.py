@@ -350,7 +350,7 @@ class Drone:
             # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
             data_0c = response[index_0d+7:index_0d+15]
             print(len(data_0c))
-            if len(data_0c) != 8:
+            if len(data_0c) == 8:
                 raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
 
             yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
