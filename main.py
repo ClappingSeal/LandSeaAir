@@ -405,8 +405,6 @@ if __name__ == '__main__':
                 # print(sending_data, yaw_change, pitch_change)
                 print(sending_array[0], sending_array[1])
 
-                time.sleep(0.1)
-
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
