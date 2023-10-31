@@ -317,7 +317,7 @@ class Drone:
         
         try:
             response, addr = self.udp_socket.recvfrom(1024) 
-            print("Received:", response)
+            # print("Received:", response)
             return response
         except socket.error as e:
             print(f"Error receiving data via UDP: {e}")
@@ -467,7 +467,7 @@ if __name__ == '__main__':
         while True:
             response = drone.accquire_data()
             yaw_wr, pitch_wr, roll_wr, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-            if abs(yaw_wr - yaw) < 0.5:
+            if abs(yaw_wr - yaw) < 1:
                 print("Yaw:", yaw_wr)
                 print("Pitch:", pitch_wr)
                 print("Roll:", roll_wr)
