@@ -27,8 +27,10 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1700)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 850)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter('output.avi', self.fourcc, 20.0, (850, 480))
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
@@ -108,8 +110,6 @@ class Drone:
         self.tracker = None
         self.frame_count = 0
         self.recheck_interval = 15  # 드론 재확인 간격
-
-        self.video_writer = cv2.VideoWriter('output_video.avi', cv2.VideoWriter_fourcc(*'XVID'), 30.0, (850, 480))
 
     # drone camera 1 (drone detection return [x, y, label] None if not detected)
     def __del__(self):
@@ -380,14 +380,13 @@ class Drone:
 
 
 if __name__ == '__main__':
-
     start_command = input("Press 's' to start: ")
 
-    if start_command.lower() == 's':  # 대소문자 구분 없이 's'를 입력받기 위해 .lower() 메소드 사용
+    if start_command.lower() == 's':
 
         drone = Drone()
 
-        # 초기 감블 각도 설정을 함수로 추출하여 코드 중복 제거
+        # 초기 감블 각도 설정
         def set_initial_gimbal_angle(yaw, pitch, wait=1.5):
             drone.set_gimbal_angle(yaw, pitch)
             time.sleep(wait)
@@ -397,17 +396,32 @@ if __name__ == '__main__':
 
         try:
             while True:
-                sending_array = drone.detect() or [425, 240, 0]  # None이면 기본값 설정
+                ret, frame = drone.camera.read()
+                if ret:
+                    drone.frame = frame  # 현재 프레임 저장
+                    drone.out.write(frame)
 
-                truth = int(sending_array[1] != 240)  # truth 값 계산을 보다 명확하게
-                sending_data = [sending_array[0], sending_array[1], truth]
+                    sending_array = drone.detect() or [425, 240, 0]
 
-                # 데이터 전송
-                drone.sending_data(sending_data)
-                print(sending_data)
-                time.sleep(0.1)
+                    truth = int(sending_array[1] != 240)
+                    sending_data = [sending_array[0], sending_array[1], truth]
+
+                    drone.sending_data(sending_data)
+                    print(sending_data)
+                    time.sleep(0.1)
+
+                    cv2.imshow('frame', frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                else:
+                    break
 
         except KeyboardInterrupt:
-            drone.images_to_avi("captured_image", "output.avi")
-            print("Video saved as output.avi")
+            print("Saving video and closing connection...")
+
+        finally:
+            drone.camera.release()
+            drone.out.release()
+            cv2.destroyAllWindows()
             drone.close_connection()
+            print("Video saved as output.avi")
