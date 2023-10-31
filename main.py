@@ -114,7 +114,7 @@ class Drone:
     # drone camera 1 (drone detection return [x, y, label] None if not detected)
     def __del__(self):
         self.camera.release()
-        self.video_writer.release()  # 비디오 라이터 리소스 해제
+        self.out.release()
 
     # drone camera 2
     def detect(self):
