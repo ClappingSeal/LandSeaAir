@@ -348,6 +348,7 @@ class Drone:
 
         # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
         data_0c = response[index_0d+7:index_0d+15]
+        print(len(data_0c))
         yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
 
         # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
