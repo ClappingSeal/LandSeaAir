@@ -167,7 +167,7 @@ class Drone:
                 self.tracker_initialized = True
 
         # 프레임 녹화
-        self.video_writer.write(frame_resized)
+        self.out.write(frame_resized)
 
         if best_data and best_confidence > self.confidence_threshold:
             return center_x, 480 - center_y, width, height
