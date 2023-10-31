@@ -30,8 +30,8 @@ class Drone:
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
-        self.frame_width = 850
-        self.frame_height = 480
+        self.frame_width = int(850)
+        self.frame_height = int(480)
         self.frame_width_divide_2 = int(self.frame_width)/2
         self.frame_height_divide_2 = int(self.frame_height)/2
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
@@ -415,4 +415,5 @@ if __name__ == '__main__':
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
             drone.close_connection()
+
 
