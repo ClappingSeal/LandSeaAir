@@ -466,10 +466,12 @@ if __name__ == '__main__':
         # time.sleep(1.5)
         while True:
             response = drone.accquire_data()
-            yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-            print("Yaw:", yaw)
-            print("Pitch:", pitch)
-            print("Roll:", roll)
+            yaw_wr, pitch_wr, roll_wr, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+            if abs(yaw_wr - yaw) < 0.5:
+                print("Yaw:", yaw_wr)
+                print("Pitch:", pitch_wr)
+                print("Roll:", roll_wr)
+                break
         # try:
         #     while True:
         #         step += 1
