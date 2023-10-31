@@ -27,6 +27,8 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 850)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
@@ -364,6 +366,7 @@ class Drone:
         if ret:
             file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
             cv2.imwrite(file_name, frame)
+            cv2.imshow()
             print(f"Picture saved as {file_name}.")
         else:
             print("Cannot take picture.")
