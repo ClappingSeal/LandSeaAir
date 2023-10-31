@@ -468,7 +468,7 @@ if __name__ == '__main__':
         # time.sleep(1.5)
         response = drone.accquire_data()
         yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-        drone.set_gimbal_angle(0, 0 ,10)
+        drone.set_gimbal_angle(10, 10 ,10)
         print("Yaw:", yaw)
         print("Pitch:", pitch)
         print("Roll:", roll)
