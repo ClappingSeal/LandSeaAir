@@ -425,26 +425,21 @@ if __name__ == '__main__':
         
         drone = Drone()
 
-        sending_array = drone.detect_and_find_center()
-        # sending_array = drone.detect()
-
-         # reformatting data
-        if sending_array == None:
-            sending_array = [425, 240, 0]
-        truth = 0
-        if sending_array[1] != 240:
-            truth = 1
-        sending_data = [sending_array[0], sending_array[1], truth]
-
-        # sending data
-        drone.sending_data(sending_data)
-
-
         try:
             while True:
-                print('finish!!!')
-
-                time.sleep(0.1)
+            sending_array = drone.detect()
+    
+             # reformatting data
+            if sending_array == None:
+                sending_array = [425, 240, 0]
+            truth = 0
+            if sending_array[1] != 240:
+                truth = 1
+            sending_data = [sending_array[0], sending_array[1], truth]
+    
+            # sending data
+            drone.sending_data(sending_data)
+            time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
