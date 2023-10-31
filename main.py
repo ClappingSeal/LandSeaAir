@@ -439,6 +439,7 @@ if __name__ == '__main__':
         
                 # sending data
                 drone.sending_data(sending_data)
+                print(sending_data)
                 time.sleep(0.1)
 
         except KeyboardInterrupt:
