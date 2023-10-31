@@ -30,12 +30,16 @@ class Drone:
         if not self.camera.isOpened():
             print("Error: Couldn't open the camera.")
             return
+        self.frame_width = 1700
+        self.frame_height = 960
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
         self.base_color = np.array([0, 255, 255])
         self.image_count = 0
-        self.threshold = 10
+        self.threshold = 40
         self.alpha = 0.3
 
         # Gimbal UDP Settings
@@ -48,7 +52,7 @@ class Drone:
         except socket.error as e:
             print(f"Error binding UDP socket: {e}")
             return
-        
+
         # Gimbal
         self.current_yaw = 0
         self.current_pitch = -90
@@ -88,10 +92,6 @@ class Drone:
                           0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
                           0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
                           ]
-        
-        # Camera output
-        self.frame_width = 850
-        self.frame_height = 480
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
@@ -146,7 +146,7 @@ class Drone:
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
-        return (center[0], 480 - center[1])
+        return (center[0], 960 - center[1])
 
     # drone camera 1 (drone detection return [x, y, label] None if not detected)
     def __del__(self):
@@ -173,7 +173,7 @@ class Drone:
                 # 추적하는 동안 이미지 저장
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
                 self.capture_count += 1
-                return x + w // 2, 480 - (y + h // 2), w, h  # 중심 좌표 반환
+                return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
 
@@ -207,7 +207,7 @@ class Drone:
         self.capture_count += 1
 
         if best_data and best_confidence > self.confidence_threshold:
-            return center_x, 480 - center_y, width, height
+            return center_x, self.frame_height - center_y, width, height
         else:
             return 425, 240, 0, 0
 
