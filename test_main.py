@@ -27,10 +27,8 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        # self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 850)
-        # self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        
-        # Camera_color_test1    
+
+        # Camera_color_test1
         self.ret, self.frame = self.camera.read()
         self.base_color = np.array([0, 255, 255])
         self.image_count = 0
@@ -416,16 +414,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(0,0)
-        time.sleep(1)
-        drone.capture_image(999,0,0,0,0)
-        time.sleep(1)
-        drone.capture_image(999,0,0,0,0)
-        time.sleep(1)
-        drone.capture_image(999,0,0,0,0)
-        time.sleep(1)
-        drone.capture_image(999,0,0,0,0)
-        time.sleep(1)
+        
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
         pitches = [0, -15, -30, -45, -60, -75, -90]
