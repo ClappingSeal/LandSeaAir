@@ -252,13 +252,12 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal 2 test
-    def set_gimbal_angle(self, yaw, pitch, roll):  # 각도 체크섬 생성 및 각도 조종 명령 주기
+    # gimbal 2
+    def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
         pitch_bytes = struct.pack('<h', int(pitch * 10))
-        roll_bytes = struct.pack('<h', int(roll * 10))
-        data_to_checksum = cmd_header + yaw_bytes + pitch_bytes + roll_bytes
+        data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
         command = data_to_checksum + checksum_bytes
@@ -266,7 +265,6 @@ class Drone:
 
         self.current_yaw = yaw
         self.current_pitch = pitch
-        self.current_roll = roll
 
     # gimbal 3
     def send_command_to_gimbal(self, command_bytes):
@@ -460,30 +458,18 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = 0  # -45, -90
+        pitch = -45  # -45, -90
         step = 0
-        drone.set_gimbal_angle(yaw, pitch,roll=0)
+        drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
         # drone.set_gimbal_angle(0, -45)
         # time.sleep(1.5)
-        response = drone.accquire_data()
-        yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-        drone.set_gimbal_angle(10, 10 ,10)
-        print("Yaw:", yaw)
-        print("Pitch:", pitch)
-        print("Roll:", roll)
-        time.sleep(3)
-        drone.set_gimbal_angle(0, 0 , 0)
-        print("Yaw:", yaw)
-        print("Pitch:", pitch)
-        print("Roll:", roll)
-        time.sleep(3)
-        drone.set_gimbal_angle(0, 0 , -10)
-        print("Yaw:", yaw)
-        print("Pitch:", pitch)
-        print("Roll:", roll)
-        time.sleep(3)
-
+        while True:
+            response = drone.accquire_data()
+            yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
+            print("Yaw:", yaw)
+            print("Pitch:", pitch)
+            print("Roll:", roll)
         # try:
         #     while True:
         #         step += 1
