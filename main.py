@@ -97,14 +97,14 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.6
+        self.confidence_threshold = 0.1
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
         self.labels = ['hybrid', 'fixed', 'quadcopter']
         self.previous_centers = []
         self.center_count = 2
-        self.tolerance = 100
+        self.tolerance = 400
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
@@ -159,6 +159,16 @@ class Drone:
         ret, frame = self.camera.read()
         if not ret:
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
+    
+        # 이미지 전처리 시작: 필터 적용
+        frame = cv2.GaussianBlur(frame, (3, 3), 1)
+        frame = cv2.bilateralFilter(frame, 9, 80, 80)
+        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+        frame = cv2.filter2D(frame, -1, kernel)
+        frame = cv2.medianBlur(frame, 5)
+        alpha = 0.9
+        frame = cv2.addWeighted(frame, alpha, np.zeros(frame.shape, frame.dtype), 0, 0)
+        # 이미지 전처리 끝
 
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
