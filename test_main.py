@@ -27,8 +27,8 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
 
         # Camera_color_test1    
         self.ret, self.frame = self.camera.read()
@@ -434,9 +434,9 @@ if __name__ == '__main__':
                         print("Pitch:", pitch_wr)
                         print("Roll:", roll_wr)
                         break
-                time.sleep(2)
+                time.sleep(0.2)
                 drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
-                time.sleep(2)
+                time.sleep(0.2)
 
         try:
             while True:
