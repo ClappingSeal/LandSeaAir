@@ -423,11 +423,14 @@ if __name__ == '__main__':
             for pitch in pitches:
                 drone.set_gimbal_angle(yaw, pitch)
                 time.sleep(3)
-                response = drone.accquire_data()
-                yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
-                print("Yaw:", yaw_wr)
-                print("Pitch:", pitch_wr)
-                print("Roll:", roll_wr)
+                while True:
+                    response = drone.accquire_data()
+                    yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
+                    if abs(yaw_wr - yaw) < 0.5:
+                        print("Yaw:", yaw_wr)
+                        print("Pitch:", pitch_wr)
+                        print("Roll:", roll_wr)
+                        break
                 time.sleep(0.2)
                 drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
                 time.sleep(0.2)
