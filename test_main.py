@@ -358,11 +358,11 @@ class Drone:
 
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
     
-    def capture_image(self, num1, num2, num3):
+    def capture_image(self, num1, num2, num3, num4, num5):
         ret, frame = self.camera.read()
 
         if ret:
-            file_name = f"{num1}_and_{num2}_and_{num3}.jpg"
+            file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
             cv2.imwrite(file_name, frame)
             print(f"Picture saved as {file_name}.")
         else:
@@ -424,8 +424,11 @@ if __name__ == '__main__':
                 time.sleep(3)
                 response = drone.accquire_data()
                 yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
+                print("Yaw:", yaw_wr)
+                print("Pitch:", pitch_wr)
+                print("Roll:", roll_wr)
                 time.sleep(0.2)
-                drone.capture_image(yaw_wr, pitch_wr, roll_wr)
+                drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
                 time.sleep(0.2)
 
         try:
