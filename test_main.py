@@ -437,7 +437,7 @@ if __name__ == '__main__':
                 while True:
                     response = drone.accquire_data()
                     yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
-                    if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
+                    if abs(None - yaw) < 5 and abs(pitch_wr - pitch) < 5:
                         print("Yaw:", yaw_wr)
                         print("Pitch:", pitch_wr)
                         print("Roll:", roll_wr)
