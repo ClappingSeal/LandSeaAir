@@ -136,7 +136,7 @@ class Drone:
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
 
                 # 프레임 녹화
-                self.video_writer.write(frame_resized)
+                self.out.write(frame_resized)
 
                 return x + w // 2, 480 - (y + h // 2), w, h  # 중심 좌표 반환
             else:
