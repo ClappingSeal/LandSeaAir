@@ -9,7 +9,6 @@ import os
 import math
 import json
 from ultralytics import YOLO
-import threading
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -363,16 +362,11 @@ class Drone:
         ret, frame = self.camera.read()
 
         if ret:
-            thread = threading.Thread(target=self.save_image, args=(num1, num2, num3, num4, num5, frame))
-            thread.start()
-            thread.join()  
+            file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
+            cv2.imwrite(file_name, frame)
+            print(f"Picture saved as {file_name}.")
         else:
             print("Cannot take picture.")
-
-    def save_image(self, num1, num2, num3, num4, num5, frame):
-        file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
-        cv2.imwrite(file_name, frame)
-        print(f"Picture saved as {file_name}.")
 
     # end
     def close_connection(self):
@@ -420,7 +414,8 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        
+        for _ in range(5): 
+            drone.camera.read()
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
         pitches = [0, -15, -30, -45, -60, -75, -90]
@@ -437,9 +432,9 @@ if __name__ == '__main__':
                         print("Pitch:", pitch_wr)
                         print("Roll:", roll_wr)
                         break
-                time.sleep(0.2)
+                time.sleep(1)
                 drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
-                time.sleep(0.2)
+                time.sleep(3)
 
         try:
             while True:
