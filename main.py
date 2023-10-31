@@ -97,14 +97,14 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.6
+        self.confidence_threshold = 0.1
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
         self.labels = ['hybrid', 'fixed', 'quadcopter']
         self.previous_centers = []
         self.center_count = 2
-        self.tolerance = 100
+        self.tolerance = 400
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
