@@ -350,7 +350,7 @@ class Drone:
             # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
             data_0c = response[index_0d+7:index_0d+15]
             print(len(data_0c))
-            if len(data_0c) == 8:
+            if len(data_0c) != 8:
                 raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
 
             yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
@@ -366,10 +366,10 @@ class Drone:
             return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
         except struct.error as e:
             print("Error in unpacking data: {}".format(e))
-            return None, None, None, None, None, None
+            return 10000, 10000, 10000, 10000, 10000, 10000
         except ValueError as e:
             print("Error: {}".format(e))
-            return None, None, None, None, None, None
+            return 10000, 10000, 10000, 10000, 10000, 10000
     
     def capture_image(self, num1, num2, num3, num4, num5):
         for _ in range(5):  # 더미 이미지 5장 캡처
@@ -447,7 +447,7 @@ if __name__ == '__main__':
                 while True:
                     response = drone.accquire_data()
                     yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
-                    if abs(int(10000) - yaw) < 5 and abs(pitch_wr - pitch) < 5:
+                    if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
                         print("Yaw:", yaw_wr)
                         print("Pitch:", pitch_wr)
                         print("Roll:", roll_wr)
