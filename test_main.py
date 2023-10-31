@@ -323,11 +323,46 @@ class Drone:
 
         return yaw_change, pitch_change
 
-    def capture_image(self, num1, num2):
+    # gimbal 5
+    def accquire_data(self):
+        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
+        
+        try:
+            response, addr = self.udp_socket.recvfrom(1024) 
+            # print("Received:", response)
+            return response
+        except socket.error as e:
+            print(f"Error receiving data via UDP: {e}")
+            return None
+    
+    # gimbal 6
+    def acquire_attitude(self,response):
+        # CMD ID를 찾습니다.
+        index_0d = response.find(b'\x0D')
+
+        # Yaw, Pitch, Roll 데이터를 추출합니다.
+        data_06 = response[index_0d+1:index_0d+7]
+        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
+
+        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
+        data_0c = response[index_0d+7:index_0d+15]
+        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
+
+        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
+        yaw = yaw_raw / 10.0
+        pitch = pitch_raw / 10.0
+        roll = roll_raw / 10.0
+        yaw_velocity = yaw_velocity_raw / 10.0
+        pitch_velocity = pitch_velocity_raw / 10.0
+        roll_velocity = roll_velocity_raw / 10.0
+
+        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+    
+    def capture_image(self, num1, num2, num3):
         ret, frame = self.camera.read()
 
         if ret:
-            file_name = f"{num1}_and_{num2}.jpg"
+            file_name = f"{num1}_and_{num2}_and_{num3}.jpg"
             cv2.imwrite(file_name, frame)
             print(f"Picture saved as {file_name}.")
         else:
@@ -387,7 +422,10 @@ if __name__ == '__main__':
             for pitch in pitches:
                 drone.set_gimbal_angle(yaw, pitch)
                 time.sleep(3)
-                drone.capture_image(yaw, pitch)
+                response = drone.accquire_data()
+                yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
+                time.sleep(0.2)
+                drone.capture_image(yaw_wr, pitch_wr, roll_wr)
                 time.sleep(0.2)
 
         try:
