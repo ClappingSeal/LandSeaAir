@@ -27,8 +27,10 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-
-        # Camera_color_test1
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+        
+        # Camera_color_test1    
         self.ret, self.frame = self.camera.read()
         self.base_color = np.array([0, 255, 255])
         self.image_count = 0
