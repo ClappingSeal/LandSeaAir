@@ -390,6 +390,7 @@ if __name__ == '__main__':
                     sending_array = [drone.frame_width_divide_2, drone.frame_height_divide_2, 0]
                     truth = 0
                 if sending_array[1] != drone.frame_width_divide_2:
+                    print(sending_array[1], drone.frame_width_divide_2)
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
 
