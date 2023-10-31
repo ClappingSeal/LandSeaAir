@@ -96,18 +96,18 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.75
+        self.confidence_threshold = 0.1
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
         self.labels = ['fixed', 'quadcopter', 'hybrid']
         self.previous_centers = []
-        self.center_count = 3
-        self.tolerance = 100
+        self.center_count = 2
+        self.tolerance = 200
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
-        self.recheck_interval = 10  # 드론 재확인 간격
+        self.recheck_interval = 15  # 드론 재확인 간격
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
