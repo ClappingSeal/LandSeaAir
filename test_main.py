@@ -27,8 +27,8 @@ class Drone:
 
         # Camera
         self.camera = cv2.VideoCapture(0)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1700)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
 
         # Camera_color_test1
         self.ret, self.frame = self.camera.read()
