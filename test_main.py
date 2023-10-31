@@ -361,14 +361,17 @@ class Drone:
         return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
     
     def capture_image(self, num1, num2, num3, num4, num5):
+        for _ in range(5):  # 더미 이미지 5장 캡처
+            self.camera.read()
+            
         ret, frame = self.camera.read()
 
         if ret:
             file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
             cv2.imwrite(file_name, frame)
             cv2.imshow('window name', frame)
-            key = cv2.waitKey(0) 
-            if key == 27: 
+            key = cv2.waitKey(0)
+            if key == 27:
                 cv2.destroyAllWindows()
             print(f"Picture saved as {file_name}.")
         else:
@@ -419,14 +422,9 @@ if __name__ == '__main__':
     start_command = input("Press 's' to start: ")
 
     if start_command == 's':
+        
         drone = Drone()
-        for _ in range(10):  # 더미 이미지 10장 캡처
-            ret, frame = drone.camera.read()
-            if not ret:
-                print("Failed to grab frame")
-                break
-            cv2.imshow('frame', frame)
-            cv2.waitKey(1)
+
         # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         yaws = [0,15,30,45,60,75,90,-15, -30, -45, -60, -75, -90]
         pitches = [0, -15, -30, -45, -60, -75, -90]
