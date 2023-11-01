@@ -173,6 +173,7 @@ class Drone:
     
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
+        drone_type = None
     
         if self.tracker_initialized:
             success, bbox = self.tracker.update(frame_resized)
@@ -183,9 +184,20 @@ class Drone:
                     self.recheck_interval += 1
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
+                        drone_type = None
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
                 self.capture_count += 1
                 return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
+                if drone_type:
+                    font_scale = 2.0
+                    thickness = 3
+                    text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+                    text_x = frame_resized.shape[1] - text_size[0] - 20
+                    text_y = frame_resized.shape[0] - 20
+                    cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
+                cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+                self.capture_count += 1
+                return x + w // 2, self.frame_height - (y + h // 2), w, h
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
                 self.recheck_interval = self.init_recheck_interval
