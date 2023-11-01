@@ -203,11 +203,11 @@ class Drone:
         # 드론 타입을 이미지 오른쪽 아래에 굵은 글씨로 표시
         if drone_type:
             font_scale = 2.0
-            thickness = 5
+            thickness = 3
             text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
             text_x = frame_resized.shape[1] - text_size[0] - 20
             text_y = frame_resized.shape[0] - 20
-            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 255), thickness)
+            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
     
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
@@ -428,6 +428,7 @@ if __name__ == '__main__':
 
                 # print(sending_data, yaw_change, pitch_change)
                 print(sending_array[0], sending_array[1], truth)
+                time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
