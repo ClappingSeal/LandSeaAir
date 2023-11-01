@@ -35,8 +35,8 @@ class Drone:
             raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
         print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
 
-        #if self.init_lat == 0 or self.init_lon == 0:
-            #raise ValueError("Cannot get Location. Class initialization aborted.")
+        if self.init_lat == 0 or self.init_lon == 0:
+            raise ValueError("Cannot get Location. Class initialization aborted.")
 
         self.past_pos_data = np.zeros((30, 2))
 
