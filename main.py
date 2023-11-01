@@ -108,7 +108,7 @@ class Drone:
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
-        self.recheck_interval = 20  # 드론 재확인 간격
+        self.recheck_interval = 10  # 드론 재확인 간격
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
