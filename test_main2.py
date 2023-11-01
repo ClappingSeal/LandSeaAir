@@ -317,34 +317,45 @@ class Drone:
         
         try:
             response, addr = self.udp_socket.recvfrom(1024) 
-            # print("Received:", response)
+            print("Received:", response)
             return response
         except socket.error as e:
             print(f"Error receiving data via UDP: {e}")
             return None
     
     # gimbal 7
-    def acquire_attitude(self,response):
-        # CMD ID를 찾습니다.
-        index_0d = response.find(b'\x0D')
+    def acquire_attitude(self, response):
+        try:
+            # CMD ID를 찾습니다.
+            index_0d = response.find(b'\x0D')
 
-        # Yaw, Pitch, Roll 데이터를 추출합니다.
-        data_06 = response[index_0d+1:index_0d+7]
-        yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
+            # Yaw, Pitch, Roll 데이터를 추출합니다.
+            data_06 = response[index_0d+1:index_0d+7]
+            yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
 
-        # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-        data_0c = response[index_0d+7:index_0d+15]
-        yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
+            # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
+            data_0c = response[index_0d+7:index_0d+15]
+            # print(len(data_0c))
+            if len(data_0c) != 8:
+                raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
 
-        # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
-        yaw = yaw_raw / 10.0
-        pitch = pitch_raw / 10.0
-        roll = roll_raw / 10.0
-        yaw_velocity = yaw_velocity_raw / 10.0
-        pitch_velocity = pitch_velocity_raw / 10.0
-        roll_velocity = roll_velocity_raw / 10.0
+            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
 
-        return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+            # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
+            yaw = yaw_raw / 10.0
+            pitch = pitch_raw / 10.0
+            roll = roll_raw / 10.0
+            yaw_velocity = yaw_velocity_raw / 10.0
+            pitch_velocity = pitch_velocity_raw / 10.0
+            roll_velocity = roll_velocity_raw / 10.0
+
+            return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+        except struct.error as e:
+            print("Error in unpacking data: {}".format(e))
+            return 10000, 10000, 10000, 10000, 10000, 10000
+        except ValueError as e:
+            print("Error: {}".format(e))
+            return 10000, 10000, 10000, 10000, 10000, 10000
 
     def close_connection(self):
         self.vehicle.close()
@@ -458,56 +469,49 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = -45  # -45, -90
+        pitch = 0  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch)
         time.sleep(1.5)
         # drone.set_gimbal_angle(0, -45)
         # time.sleep(1.5)
-        while True:
-            response = drone.accquire_data()
-            yaw_wr, pitch_wr, roll_wr, yaw_velocity, pitch_velocity, roll_velocity = drone.acquire_attitude(response)
-            if abs(yaw_wr - yaw) < 1.5 and abs(pitch_wr - pitch) < 1.5:
-                print("Yaw:", yaw_wr)
-                print("Pitch:", pitch_wr)
-                print("Roll:", roll_wr)
+
+        try:
+            while True:
+                step += 1
+                sending_array = drone.detect_and_find_center()
+                # sending_array = drone.detect()
+                #cv2.imshow("frame", drone.frame)
+                # if sending_array == None:
+                #     sending_array = [425, 240, 0]
+
+                truth = 0
+                if sending_array[1] != 240:
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth]
                 
-        # try:
-        #     while True:
-        #         step += 1
-        #         sending_array = drone.detect_and_find_center()
-        #         # sending_array = drone.detect()
-        #         #cv2.imshow("frame", drone.frame)
-        #         # if sending_array == None:
-        #         #     sending_array = [425, 240, 0]
+                # server data send
+                data_list = [sending_array[0], sending_array[1], truth]
+                #data_string = json.dumps(data_list)
+                data_string = str(int(sending_array[0]) * 10000 + int(sending_array[1]) * 10 + truth)
+                drone.send_data(data_string)
+                print("data sending...")
+                print(data_list)
+                # print(data_string)
 
-        #         truth = 0
-        #         if sending_array[1] != 240:
-        #             truth = 1
-        #         sending_data = [sending_array[0], sending_array[1], truth]
-                
-        #         # server data send
-        #         data_list = [sending_array[0], sending_array[1], truth]
-        #         #data_string = json.dumps(data_list)
-        #         data_string = str(int(sending_array[0]) * 10000 + int(sending_array[1]) * 10 + truth)
-        #         drone.send_data(data_string)
-        #         print("data sending...")
-        #         print(data_list)
-        #         # print(data_string)
+                # drone.sending_data(sending_data)
+                # print(sending_data)
+                time.sleep(0.1)
 
-        #         # drone.sending_data(sending_data)
-        #         # print(sending_data)
-        #         time.sleep(0.1)
+                if step % 2 == 1:
+                    yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
+                    yaw += yaw_change
+                    pitch += pitch_change
+                    # print(truth, yaw, pitch, yaw_change, pitch_change)
 
-        #         # if step % 2 == 1:
-        #         #     yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
-        #         #     yaw += yaw_change
-        #         #     pitch += pitch_change
-        #         #     # print(truth, yaw, pitch, yaw_change, pitch_change)
+                    drone.set_gimbal_angle(yaw, pitch)
 
-        #         #     drone.set_gimbal_angle(yaw, pitch)
-
-        # except KeyboardInterrupt:
-        #     drone.images_to_avi("captured_image", "output.avi")
-        #     print("Video saved as output.avi")
-        #     drone.close_connection()
+        except KeyboardInterrupt:
+            drone.images_to_avi("captured_image", "output.avi")
+            print("Video saved as output.avi")
+            drone.close_connection()
