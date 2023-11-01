@@ -97,7 +97,7 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.confidence_threshold = 0.7
+        self.confidence_threshold = 0.3
         self.scale_factor = 1.3275
         self.capture_count = 0
         self.label = None
@@ -216,11 +216,12 @@ class Drone:
             text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
             text_x = frame_resized.shape[1] - text_size[0] - 20
             text_y = frame_resized.shape[0] - 20
-            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (95, 65, 245), thickness)
+            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (25, 65, 245), thickness)
 
         print('d')
     
         if best_data and best_confidence > self.confidence_threshold:
+            print(best_confidence)
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
             cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
             cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
