@@ -216,7 +216,7 @@ class Drone:
             text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
             text_x = frame_resized.shape[1] - text_size[0] - 20
             text_y = frame_resized.shape[0] - 20
-            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (95, 65, 245), thickness)
+            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (25, 65, 245), thickness)
 
         print('d')
     
