@@ -16,7 +16,7 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
         # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
@@ -27,9 +27,16 @@ class Drone:
         self.init_lat = self.vehicle.location.global_relative_frame.lat
         self.init_lon = self.vehicle.location.global_relative_frame.lon
 
+        # Arming value
+        self.min_throttle = 1100
+        self.arm_throttle = 1110
+
         if self.init_lat is None or self.init_lon is None:
             raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
-        print(self.init_lat, self.init_lon)
+        print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
+
+        #if self.init_lat == 0 or self.init_lon == 0:
+            #raise ValueError("Cannot get Location. Class initialization aborted.")
 
         self.past_pos_data = np.zeros((30, 2))
 
@@ -58,8 +65,9 @@ class Drone:
 
     # Drone movement1 block
     def arm_takeoff(self, h):
-
+        self.vehicle.channels.overrides['3'] = self.min_throttle
         self.vehicle.mode = VehicleMode("STABILIZE")
+
         cmds = self.vehicle.commands
         cmds.download()
         cmds.wait_ready()
@@ -72,9 +80,15 @@ class Drone:
         time.sleep(0.1)
         self.vehicle.armed = True
         time.sleep(0.1)
+        self.vehicle.channels.overrides['3'] = self.arm_throttle
+        time.sleep(0.1)
+        print(self.vehicle.armed)
         while not self.vehicle.armed:
+            print(self.vehicle.armed)
             print("Waiting for arming...")
             time.sleep(1)
+
+        print(self.vehicle.armed)
 
         self.vehicle._master.mav.command_long_send(
             self.vehicle._master.target_system, self.vehicle._master.target_component,
@@ -316,8 +330,8 @@ if __name__ == "__main__":
         nums = 1, 1
 
         if len(nums) == 2:
-            gt.arm_takeoff(5)
-            gt.set_yaw_to_north()
+            gt.arm_takeoff(100)
+            # gt.set_yaw_to_north()
 
             time.sleep(0.1)
 
