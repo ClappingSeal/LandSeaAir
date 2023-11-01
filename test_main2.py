@@ -511,7 +511,7 @@ if __name__ == '__main__':
                 # 각도 불러오기
                 response = drone.accquire_data()
                 yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
-
+                print(yaw_curr, pitch_curr)
                 # 계산식 적용
                 x_new, y_new = Drone.angle_cali(sending_array[0], sending_array[1], yaw_curr, pitch_curr)
 
