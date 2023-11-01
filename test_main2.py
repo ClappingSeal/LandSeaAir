@@ -483,7 +483,7 @@ if __name__ == '__main__':
     if start_command == 's':
         drone = Drone()
 
-        drone.setup_connection() 
+        # drone.setup_connection() 
         # received_data = drone.receive_data()
 
         yaw = 0
