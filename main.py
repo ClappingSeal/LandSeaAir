@@ -183,6 +183,7 @@ class Drone:
                     self.recheck_interval += 1
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
+                cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
                 self.capture_count += 1
                 return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
