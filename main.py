@@ -108,7 +108,8 @@ class Drone:
         self.tracker_initialized = False
         self.tracker = None
         self.frame_count = 0
-        self.recheck_interval = 10  # 드론 재확인 간격
+        self.recheck_interval = 5  # 드론 재확인 간격
+        self.init_recheck_interval = 5
 
     # color camera test1
     def detect_and_find_center(self, x=1.3275, save_image=True):
@@ -179,6 +180,7 @@ class Drone:
                 x, y, w, h = [int(v) for v in bbox]
                 cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
                 if self.frame_count % self.recheck_interval == 0:
+                    self.recheck_interval += 1
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
@@ -186,6 +188,7 @@ class Drone:
                 return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
+                self.recheck_interval = self.init_recheck_interval
     
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
