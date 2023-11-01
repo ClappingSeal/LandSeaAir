@@ -358,7 +358,7 @@ class Drone:
             return 10000, 10000, 10000, 10000, 10000, 10000
 
     # <계산식> 현재 각도 (yaw, pitch)에 대해 기준 (0, -90) 에 맞게 frame 값 출력
-    def angle_cali(x, y, yaw, pitch): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 아래 숫자 90 -> 60 수정해야 함.
+    def angle_cali(x, y, yaw, pitch, standard_pitch = -90): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
         pivot_x=425
         pivot_y=240
 
@@ -370,7 +370,7 @@ class Drone:
         rotated_x = translated_x * math.cos(yaw_rad) - translated_y * math.sin(yaw_rad)
         rotated_y = translated_x * math.sin(yaw_rad) + translated_y * math.cos(yaw_rad)
 
-        x_new = rotated_x + pivot_x + ((pitch + 90) * (130/15)) # 15도당 130프레임
+        x_new = rotated_x + pivot_x + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
         y_new = rotated_y + pivot_y
 
         return x_new, y_new
@@ -508,12 +508,20 @@ if __name__ == '__main__':
                     truth = 1
                 sending_data = [sending_array[0], sending_array[1], truth]
                 
+                # 각도 불러오기
+                response = drone.accquire_data()
+                yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+
+                # 계산식 적용
+                x_new, y_new = Drone.angle_cali(sending_array[0], sending_array[1], yaw_curr, pitch_curr)
+
                 # server data send
-                data_list = [sending_array[0], sending_array[1], truth]
+                data_list = [x_new, y_new, truth]
                 #data_string = json.dumps(data_list)
-                data_string = str(int(sending_array[0]) * 10000 + int(sending_array[1]) * 10 + truth)
+                data_string = str(int(x_new) * 10000 + int(y_new) * 10 + truth)
                 drone.send_data(data_string)
                 print("data sending...")
+                print(sending_array)
                 print(data_list)
                 # print(data_string)
 
