@@ -29,7 +29,7 @@ class Drone:
 
         # Arming value
         self.min_throttle = 1100
-        self.arm_throttle = 1110
+        self.arm_throttle = 1200
 
         if self.init_lat is None or self.init_lon is None:
             raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
@@ -76,17 +76,17 @@ class Drone:
                               mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, h)
         cmds.add(takeoff_cmd)
         cmds.upload()
-
-        time.sleep(0.1)
+        time.sleep(0.1) # upload wait
         self.vehicle.armed = True
         time.sleep(0.1)
         self.vehicle.channels.overrides['3'] = self.arm_throttle
-        time.sleep(0.1)
-        print(self.vehicle.armed)
+        time.sleep(1)
+        print("ARMED : ", self.vehicle.armed)
         while not self.vehicle.armed:
-            print(self.vehicle.armed)
+            self.vehicle.armed = True
+            self.vehicle.channels.overrides['3'] = self.arm_throttle
             print("Waiting for arming...")
-            time.sleep(1)
+            time.sleep(0.5)
 
         print(self.vehicle.armed)
 
