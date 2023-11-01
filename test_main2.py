@@ -317,7 +317,7 @@ class Drone:
         
         try:
             response, addr = self.udp_socket.recvfrom(1024) 
-            print("Received:", response)
+            # print("Received:", response)
             return response
         except socket.error as e:
             print(f"Error receiving data via UDP: {e}")
@@ -509,9 +509,14 @@ if __name__ == '__main__':
                 sending_data = [sending_array[0], sending_array[1], truth]
                 
                 # 각도 불러오기
-                response = drone.accquire_data()
-                yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
-                print(yaw_curr, pitch_curr)
+                while True:
+                    response = drone.accquire_data()
+                    yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+                    if abs(yaw_curr - yaw) < 5 and abs(pitch_curr - pitch) < 5:
+                        print("Yaw:", yaw_curr)
+                        print("Pitch:", pitch_curr)
+                        print("Roll:", roll_curr)
+                        break
                 # 계산식 적용
                 x_new, y_new = Drone.angle_cali(sending_array[0], sending_array[1], yaw_curr, pitch_curr)
 
