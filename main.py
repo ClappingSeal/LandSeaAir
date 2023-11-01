@@ -189,11 +189,15 @@ class Drone:
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
                 self.recheck_interval = self.init_recheck_interval
+
+        print('a')
     
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
         best_data = None
         drone_type = None
+
+        print('b')
     
         for data in detection.boxes.data.tolist():
             confidence = float(data[4])
@@ -202,6 +206,8 @@ class Drone:
                 best_data = data
                 label_index = int(data[5])
                 drone_type = self.labels[label_index] if label_index < len(self.labels) else None
+
+         print('c')
     
         # 드론 타입을 이미지 오른쪽 아래에 굵은 글씨로 표시
         font_scale = 1.0  # 폰트 크기를 조절하고 싶다면 여기를 수정하세요.
@@ -211,6 +217,8 @@ class Drone:
             text_x = frame_resized.shape[1] - text_size[0] - 20
             text_y = frame_resized.shape[0] - 20
             cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
+
+         print('d')
     
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
@@ -232,6 +240,8 @@ class Drone:
             cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
             self.capture_count += 1
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
+
+        print('e')
 
     
     # drone camera 3
