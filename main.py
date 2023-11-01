@@ -173,23 +173,29 @@ class Drone:
     
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
+
+        drone_type = None
     
         if self.tracker_initialized:
             success, bbox = self.tracker.update(frame_resized)
             if success:
                 x, y, w, h = [int(v) for v in bbox]
-                cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
+                cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)
                 if self.frame_count % self.recheck_interval == 0:
                     self.recheck_interval += 1
                     if not self.is_drone(frame_resized, bbox):
-                        self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
-                cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
+                        self.tracker_initialized = False
+                        drone_type = None  # 드론이 아니면 타입 초기화
+                # 추적 성공 시 드론 타입 표시 (최근 업데이트된 정보 사용)
+                if drone_type:
+                    self.put_text_on_frame(frame_resized, drone_type)
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
                 self.capture_count += 1
-                return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
+                return x + w // 2, self.frame_height - (y + h // 2), w, h
             else:
-                self.tracker_initialized = False  # 추적 실패 시 초기화
+                self.tracker_initialized = False
                 self.recheck_interval = self.init_recheck_interval
+                drone_type = None  # 추적 실패 시 타입 초기화
     
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
