@@ -149,7 +149,7 @@ class Drone:
             image_name = f"captured_image_{self.image_count}.jpg"
             cv2.imwrite(image_name, res_frame)
 
-        return (center[0], 960 - center[1])
+        return (center[0], self.frame_width - center[1])
 
     # drone camera 1 (drone detection return [x, y, label] None if not detected)
     def __del__(self):
@@ -172,7 +172,6 @@ class Drone:
         # 이미지 전처리 끝
     
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
-        self.frame_count += 1
         drone_type = None
     
         if self.tracker_initialized:
@@ -184,20 +183,9 @@ class Drone:
                     self.recheck_interval += 1
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
-                        drone_type = None
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
                 self.capture_count += 1
                 return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
-                if drone_type:
-                    font_scale = 2.0
-                    thickness = 3
-                    text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
-                    text_x = frame_resized.shape[1] - text_size[0] - 20
-                    text_y = frame_resized.shape[0] - 20
-                    cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
-                cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
-                self.capture_count += 1
-                return x + w // 2, self.frame_height - (y + h // 2), w, h
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
                 self.recheck_interval = self.init_recheck_interval
@@ -216,13 +204,13 @@ class Drone:
                 drone_type = self.labels[label_index] if label_index < len(self.labels) else None
     
         # 드론 타입을 이미지 오른쪽 아래에 굵은 글씨로 표시
+        font_scale = 1.0  # 폰트 크기를 조절하고 싶다면 여기를 수정하세요.
+        thickness = 1  # 폰트 두께를 조절하고 싶다면 여기를 수정하세요.
         if drone_type:
-            font_scale = 2.0
-            thickness = 3
             text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
             text_x = frame_resized.shape[1] - text_size[0] - 20
             text_y = frame_resized.shape[0] - 20
-            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
+            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
     
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
@@ -245,7 +233,7 @@ class Drone:
             self.capture_count += 1
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
 
-
+    
     # drone camera 3
     def is_drone(self, frame, bbox):
         x, y, w, h = [int(v) for v in bbox]
