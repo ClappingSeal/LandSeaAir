@@ -207,7 +207,7 @@ class Drone:
                 label_index = int(data[5])
                 drone_type = self.labels[label_index] if label_index < len(self.labels) else None
 
-         print('c')
+        print('c')
     
         # 드론 타입을 이미지 오른쪽 아래에 굵은 글씨로 표시
         font_scale = 1.0  # 폰트 크기를 조절하고 싶다면 여기를 수정하세요.
@@ -218,7 +218,7 @@ class Drone:
             text_y = frame_resized.shape[0] - 20
             cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
 
-         print('d')
+        print('d')
     
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
