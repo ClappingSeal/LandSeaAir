@@ -377,7 +377,7 @@ class Drone:
     
     def angle_cali(x, y, yaw, pitch, standard_yaw = 0, standard_pitch = -45): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
 
-        x_new =  ((yaw - standard_yaw) * (130/15)) # 15도당 130프레임
+        x_new =  -((yaw - standard_yaw) * (130/15)) # 15도당 130프레임
         y_new =  ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
         return x_new, y_new
