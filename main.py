@@ -221,6 +221,7 @@ class Drone:
         print('d')
     
         if best_data and best_confidence > self.confidence_threshold:
+            print(best_confidence)
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
             cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
             cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
