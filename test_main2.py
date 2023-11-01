@@ -358,9 +358,9 @@ class Drone:
             return 10000, 10000, 10000, 10000, 10000, 10000
 
     # <계산식> 현재 각도 (yaw, pitch)에 대해 기준 (0, -90) 에 맞게 frame 값 출력
-    def angle_cali(x, y, yaw, pitch, standard_pitch = -90): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
-        pivot_x=425
-        pivot_y=240
+    def angle_cali(x, y, yaw, pitch, standard_pitch = -90): 
+        pivot_x = 425
+        pivot_y = 240
 
         yaw_rad = math.radians(yaw)
 
@@ -370,8 +370,8 @@ class Drone:
         rotated_x = translated_x * math.cos(yaw_rad) - translated_y * math.sin(yaw_rad)
         rotated_y = translated_x * math.sin(yaw_rad) + translated_y * math.cos(yaw_rad)
 
-        x_new = rotated_x + pivot_x + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
-        y_new = rotated_y + pivot_y
+        x_new = rotated_x + pivot_x 
+        y_new = rotated_y + pivot_y + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
         return x_new, y_new
 
