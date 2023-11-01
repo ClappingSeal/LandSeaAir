@@ -169,59 +169,67 @@ class Drone:
         alpha = 0.9
         frame = cv2.addWeighted(frame, alpha, np.zeros(frame.shape, frame.dtype), 0, 0)
         # 이미지 전처리 끝
-
+    
         frame_resized = cv2.resize(frame, None, fx=self.scale_factor, fy=1)
         self.frame_count += 1
-
+    
         if self.tracker_initialized:
             success, bbox = self.tracker.update(frame_resized)
             if success:
                 x, y, w, h = [int(v) for v in bbox]
                 cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 0, 255), 2)  # 추적된 객체를 빨간색으로 표시
-
                 if self.frame_count % self.recheck_interval == 0:
                     if not self.is_drone(frame_resized, bbox):
                         self.tracker_initialized = False  # 드론이 아니라면 트래커 초기화
-                # 추적하는 동안 이미지 저장
                 cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
                 self.capture_count += 1
                 return x + w // 2, self.frame_height - (y + h // 2), w, h  # 중심 좌표 반환
             else:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
-
+    
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
         best_data = None
+        drone_type = None
+    
         for data in detection.boxes.data.tolist():
             confidence = float(data[4])
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_data = data
-
+                label_index = int(data[5])
+                drone_type = self.labels[label_index] if label_index < len(self.labels) else None
+    
+        # 드론 타입을 이미지 오른쪽 아래에 굵은 글씨로 표시
+        if drone_type:
+            font_scale = 2.0
+            thickness = 5
+            text_size = cv2.getTextSize(drone_type, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+            text_x = frame_resized.shape[1] - text_size[0] - 20
+            text_y = frame_resized.shape[0] - 20
+            cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 255), thickness)
+    
         if best_data and best_confidence > self.confidence_threshold:
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
-            cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2),
-                          (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
+            cv2.rectangle(frame_resized, (center_x - width // 2, center_y - height // 2), (center_x + width // 2, center_y + height // 2), (0, 255, 0), 2)
             cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
             self.capture_count += 1
-
+    
             self.previous_centers.append((center_x, center_y))
             if len(self.previous_centers) > self.center_count:
                 self.previous_centers.pop(0)
-
+    
             if not self.tracker_initialized:
                 bbox = (center_x - width // 2, center_y - height // 2, width, height)
                 self.tracker = cv2.TrackerKCF_create()
                 self.tracker.init(frame_resized, bbox)
                 self.tracker_initialized = True
-
-        cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
-        self.capture_count += 1
-
-        if best_data and best_confidence > self.confidence_threshold:
             return center_x, self.frame_height - center_y, width, height
         else:
+            cv2.imwrite(f"captured_image_{self.capture_count}.jpg", frame_resized)
+            self.capture_count += 1
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
+
 
     # drone camera 3
     def is_drone(self, frame, bbox):
@@ -394,6 +402,8 @@ if __name__ == '__main__':
 
         try:
             while True:
+                drone.set_gimbal_angle(yaw, pitch)
+                
                 sending_array = drone.detect()
 
                 # reformatting data
