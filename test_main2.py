@@ -555,8 +555,9 @@ if __name__ == '__main__':
                 if step % 2 == 1:
                     pitch_change = drone.yaw_pitch(y_new, pitch_curr)
 
-                    pitch = pitch_change
+                    pitch += pitch_change
                     # print(truth, yaw, pitch, pitch_change)
+                    print("ctr:", pitch)
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
         except KeyboardInterrupt:
