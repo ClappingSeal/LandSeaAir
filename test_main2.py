@@ -553,7 +553,7 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 if step % 2 == 1:
-                    pitch_change = drone.yaw_pitch(sending_array[1], pitch_curr)
+                    pitch_change = drone.yaw_pitch(200, pitch_curr)
 
                     pitch += pitch_change
                     # print(truth, yaw, pitch, pitch_change)
