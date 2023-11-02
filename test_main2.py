@@ -488,7 +488,7 @@ if __name__ == '__main__':
 
             drone.set_gimbal_angle(i, j)
             print(f"Yaw 가 {i}, Pitch가 {j})로 설정되었습니다.")
-            time.sleep(3)
+            time.sleep(2)
             response = drone.accquire_data()
             yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
             print("Yaw:", yaw_curr)
