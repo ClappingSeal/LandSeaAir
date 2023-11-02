@@ -366,19 +366,6 @@ class Drone:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
 
-    def set_gimbal_mounting_dir(self, mounting_dir):
-        # CMD_ID: 0x0A로 가정. 실제 사용 시에는 해당 명령어의 ID로 변경해야 할 수도 있습니다.
-        cmd_header = b'\x55\x66\x0A\x00'  # 0x0A: CMD_ID, 나머지 바이트는 예제로 채워둔 것이며 실제 상황에 맞게 조정해야 합니다.
-        
-        # 마운팅 방향 설정 (1: Normal, 2: Upside Down)
-        mounting_dir_byte = struct.pack('B', mounting_dir)  # uint8_t 형식
-
-        data_to_checksum = cmd_header + mounting_dir_byte
-        calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
-        checksum_bytes = struct.pack('<H', calculated_checksum)
-        command = data_to_checksum + checksum_bytes
-        self.send_command_to_gimbal(command)
-
     def angle_cali(y, pitch, standard_pitch = -30): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
         y_new =  y + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
@@ -491,16 +478,27 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+        while True:
+            response = drone.accquire_data()
+            yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+            print("Yaw:", yaw_curr)
+            print("Pitch:", pitch_curr)
+            print("Roll:", roll_curr)
+            time.sleep(1)
+            i = 1
+            if i == 0:
+                break
 
+
+        
         drone.setup_connection() 
         # received_data = drone.receive_data()
-        drone.set_gimbal_mounting_dir(1)
+
         yaw = 0
-        pitch = -90  # -45, -90
+        pitch = 0  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch) # 초기 각도
-        print("control")
-        time.sleep(15)
+        time.sleep(1.5)
         
         try:
             while True:
