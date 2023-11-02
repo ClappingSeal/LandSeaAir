@@ -357,7 +357,7 @@ class Drone:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
 
-    def angle_cali(y, yaw, pitch, standard_yaw = 0, standard_pitch = -45): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
+    def angle_cali(y, pitch, standard_pitch = -45): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
         y_new =  y + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
         return y_new
@@ -476,17 +476,15 @@ if __name__ == '__main__':
         yaw = 0
         pitch = 0  # -45, -90
         step = 0
-        drone.set_gimbal_angle(yaw, pitch)
+        drone.set_gimbal_angle(yaw, pitch) # 초기 각도
         time.sleep(1.5)
-        # drone.set_gimbal_angle(0, -45)
-        # time.sleep(1.5)
 
         try:
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
                 # sending_array = drone.detect()
-                #cv2.imshow("frame", drone.frame)
+                # cv2.imshow("frame", drone.frame)
                 # if sending_array == None:
                 #     sending_array = [425, 240, 0]
 
@@ -505,7 +503,8 @@ if __name__ == '__main__':
                         print("Roll:", roll_curr)
                         break
                 # 계산식 적용
-                x_new, y_new = Drone.angle_cali(sending_array[0], sending_array[1], yaw_curr, pitch_curr)
+                x_new = sending_array[0]
+                y_new = Drone.angle_cali(sending_array[1], pitch_curr)
 
                 # server data send
                 data_list = [x_new, y_new, truth]
@@ -513,7 +512,7 @@ if __name__ == '__main__':
                 data_string = str(int(x_new) * 10000 + int(y_new) * 10 + truth)
                 drone.send_data(data_string)
                 print("data sending...")
-                print(sending_array)
+                # print(sending_array)
                 print(data_list)
                 # print(data_string)
 
@@ -527,7 +526,7 @@ if __name__ == '__main__':
                     pitch += pitch_change
                     # print(truth, yaw, pitch, yaw_change, pitch_change)
 
-                    drone.set_gimbal_angle(0, pitch)
+                    drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
