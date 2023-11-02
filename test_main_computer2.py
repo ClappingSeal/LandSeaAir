@@ -138,7 +138,7 @@ class Drone:
             mavutil.mavlink.MAV_FRAME_LOCAL_NED,  # coordinate frame
             0b0000111111000111,  # type mask (enabling only velocity)
             0, 0, 0,  # x, y, z 위치
-            vx, -vy, -vz,  # x, y, z 속도
+            vy, vx, vz,  # x, y, z 속도
             0, 0, 0,  # x, y, z 가속도
             0, 0)  # yaw, yaw_rate
         self.vehicle.send_mavlink(msg)
@@ -165,6 +165,7 @@ class Drone:
             velocity_z = -1
         else:
             velocity_z = 0
+
         self.velocity(velocity_x, velocity_y, velocity_z)
 
     # Drone movement5 non-block
