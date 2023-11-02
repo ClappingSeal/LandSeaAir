@@ -352,7 +352,11 @@ class Drone:
 
             # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
             yaw = yaw_raw / 10.0
-            pitch = 180 - pitch_raw / 10.0 
+            pitch = pitch_raw / 10.0
+            if pitch < 0 :
+                pitch = 360 + 180 - pitch
+            else:
+                pitch = 180 - pitch
             roll = roll_raw / 10.0
             yaw_velocity = yaw_velocity_raw / 10.0
             pitch_velocity = pitch_velocity_raw / 10.0
