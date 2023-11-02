@@ -139,13 +139,14 @@ class Drone:
             mavutil.mavlink.MAV_FRAME_LOCAL_NED,  # coordinate frame
             0b0000111111000111,  # type mask (enabling only velocity)
             0, 0, 0,  # x, y, z 위치
-            vx, -vy, vz,  # x, y, z 속도
+            vx, -vy, -vz,  # x, y, z 속도
             0, 0, 0,  # x, y, z 가속도
             0, 0)  # yaw, yaw_rate
         self.vehicle.send_mavlink(msg)
 
     # Drone movement4 non-block (velocity 함수 사용)
-    def velocity_pid(self, target_x, target_y, history_positions, proportional=0.6, integral=0.001, derivative=0.5):
+    def velocity_pid(self, target_x, target_y, velocity_z, history_positions, proportional=0.6, integral=0.001,
+                     derivative=0.5):
         pos_x, pos_y = self.get_pos()
 
         error_x = target_x - pos_x
@@ -159,7 +160,7 @@ class Drone:
 
         velocity_x = proportional * error_x + integral * cumulative_error_x + derivative * error_delta_x
         velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
-        self.velocity(velocity_x, velocity_y, 0)
+        self.velocity(velocity_x, velocity_y, velocity_z)
 
     # Drone movement5 non-block
     def goto_location(self, x, y, z, speed=10):
@@ -335,8 +336,9 @@ if __name__ == "__main__":
                 gt.update_past_pos_data()
 
                 # gt.goto_location(5, 10, 1)
-                gt.velocity_pid(5,10,gt.past_pos_data)
+                gt.velocity_pid(target_x=5, target_y=10, velocity_z=2, history_positions=gt.past_pos_data)
                 time.sleep(0.1)
+                print(gt.past_pos_data)
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
@@ -346,3 +348,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         gt.land()
         gt.close_connection()
+
