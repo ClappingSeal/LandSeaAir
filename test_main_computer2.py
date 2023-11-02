@@ -336,8 +336,8 @@ if __name__ == "__main__":
                 # print(type(data_list))
                 data_list.append(data_received//100000)
                 data_received = data_received%100000
-                data_list.append(data_received//10)
-                data_received = data_received%10-1000
+                data_list.append(data_received//10-1000)
+                data_received = data_received%10
                 data_list.append(data_received)
                 print("data_received")
                 print(data_list)
