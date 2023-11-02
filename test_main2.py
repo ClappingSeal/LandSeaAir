@@ -423,10 +423,9 @@ class Drone:
         else:
             pitch_change = 0
 
-        print("pitch:", pitch_change)
         if (current_pitch + pitch_change < 0) or (current_pitch + pitch_change) > 90:
             pitch_change = 0
-
+        print("pitch:", pitch_change)
         return pitch_change
     
     # server 1
@@ -556,7 +555,7 @@ if __name__ == '__main__':
                 if step % 2 == 1:
                     pitch_change = drone.yaw_pitch(y_new, pitch_curr)
 
-                    pitch -= pitch_change
+                    pitch = pitch_change
                     # print(truth, yaw, pitch, pitch_change)
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
