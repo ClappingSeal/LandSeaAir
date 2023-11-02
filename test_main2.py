@@ -423,6 +423,7 @@ class Drone:
         else:
             pitch_change = 0
 
+        print("pitch:", pitch_change)
         if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) > 90:
             pitch_change = 0
 
