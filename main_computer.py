@@ -271,7 +271,7 @@ class Drone:
         delta_lon = self.vehicle.location.global_relative_frame.lon - self.init_lon
 
         x = delta_lat * LATITUDE_CONVERSION
-        y = -delta_lon * LONGITUDE_CONVERSION  # 서쪽 방향을 양의 값으로 나타내기 위해 부호를 반대로 합니다.
+        y = -delta_lon * LONGITUDE_CONVERSION
 
         return x, y
 
@@ -351,29 +351,25 @@ if __name__ == "__main__":
             ax.set_xlim(-3000, 3000)  # x축 범위 설정
             ax.set_ylim(-3000, 3000)  # y축 범위 설정
 
-            x = 1
-            y = 10
-
             while True:
                 step += 1
                 receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
 
                 # gt.goto_location(5, 10, 1)
-                x += 0.5
-                y -= 2
-                gt.velocity_pid(target_x=x, target_y=y, velocity_z=0.2, history_positions=gt.past_pos_data)
+                gt.velocity_pid(target_x=5, target_y=10, velocity_z=0.2, history_positions=gt.past_pos_data)
                 gt.set_yaw_to_west_nonblock()
-                time.sleep(0.1)
 
                 print(gt.get_pos())
 
                 if step % 30 == 0:
                     current_pos = gt.get_pos()
                     print(current_pos)
-                    ax.scatter(-current_pos[1], current_pos[0])  # 현재 위치에 점 찍기 (Y축은 서쪽, X축은 북쪽)
-                    plt.draw()  # 그래프 업데이트
-                    plt.pause(0.1)  # 그래프 업데이트
+                    ax.scatter(-current_pos[1], current_pos[0])
+                    plt.draw()
+                    plt.pause(0.1)
+
+                time.sleep(0.1)
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
