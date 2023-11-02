@@ -412,18 +412,8 @@ class Drone:
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
 
-    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=4):
-        x_conversion = x - 425
+    def yaw_pitch(self, y, current_pitch, threshold=100, movement=4):
         y_conversion = y - 240
-        print('-------------')
-        print(x_conversion)
-        print(y_conversion)
-        if x_conversion > threshold:
-            yaw_change = movement
-        elif x_conversion < -threshold:
-            yaw_change = -movement
-        else:
-            yaw_change = 0
 
         if y_conversion > threshold:
             pitch_change = movement
@@ -432,12 +422,10 @@ class Drone:
         else:
             pitch_change = 0
 
-        if (current_yaw + yaw_change > 120) or (current_yaw + yaw_change < -120):
-            yaw_change = 0
-        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < 90:
+        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) > 90:
             pitch_change = 0
 
-        return yaw_change, pitch_change
+        return pitch_change
     
     # server 1
     def setup_connection(self):
@@ -564,11 +552,10 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 if step % 2 == 1:
-                    yaw_change, pitch_change = drone.yaw_pitch(x_new, y_new, yaw_curr, pitch_curr)
-                    yaw += yaw_change
-                    pitch += pitch_change
-                    print(truth, yaw, pitch, yaw_change, pitch_change)
+                    pitch_change = drone.yaw_pitch(y_new, pitch_curr)
 
+                    pitch += pitch_change
+                    # print(truth, yaw, pitch, pitch_change)
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
         except KeyboardInterrupt:
