@@ -562,9 +562,11 @@ if __name__ == '__main__':
 
                 if step % 2 == 1:
                     yaw_change, pitch_change = drone.yaw_pitch(x_new, y_new, yaw_curr, pitch_curr)
+                    print("x_new",x_new)
+                    print("y_new",y_new)
                     yaw += yaw_change
                     pitch += pitch_change
-                    print(truth, yaw, pitch, yaw_change, pitch_change)
+                    print(truth, yaw_curr, pitch_curr, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
