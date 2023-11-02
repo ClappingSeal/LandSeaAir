@@ -489,11 +489,15 @@ if __name__ == '__main__':
             drone.set_gimbal_angle(i, j)
             print(f"Yaw 가 {i}, Pitch가 {j})로 설정되었습니다.")
             time.sleep(0.1)
-            response = drone.accquire_data()
-            yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
-            print("Yaw:", yaw_curr)
-            print("Pitch:", pitch_curr)
-            print("Roll:", roll_curr)
+            while True:
+                response = drone.accquire_data()
+                yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+                
+                if abs(yaw_curr - i) < 5:
+                    print("Yaw:", yaw_curr)
+                    print("Pitch:", pitch_curr)
+                    print("Roll:", roll_curr)
+                    break
 
             cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
             if cont.lower() == 'q':
