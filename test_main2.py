@@ -497,10 +497,11 @@ if __name__ == '__main__':
                 while True:
                     response = drone.accquire_data()
                     yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+                    print("Yaw:", yaw_curr)
+                    print("Pitch:", pitch_curr)
+                    print("Roll:", roll_curr)
                     if abs(pitch_curr - pitch) < 5:
-                        print("Yaw:", yaw_curr)
-                        print("Pitch:", pitch_curr)
-                        print("Roll:", roll_curr)
+
                         break
                 # 계산식 적용
                 x_new = sending_array[0]
