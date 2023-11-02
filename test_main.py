@@ -371,24 +371,50 @@ class Drone:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
     
-    def capture_image(self, num1, num2, num3, num4, num5):
+    # def capture_image(self, num1, num2, num3, num4, num5):
+    #     for _ in range(5):  # 더미 이미지 5장 캡처
+    #         self.camera.read()
+            
+    #     ret, frame = self.camera.read()
+    #     frame = cv2.resize(frame, (850, 480))
+
+    #     if ret:
+    #         file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
+    #         cv2.imwrite(file_name, frame)
+    #         # cv2.imshow('window name', frame)
+    #         # key = cv2.waitKey(0)
+    #         # if key == 27:
+    #         #     cv2.destroyAllWindows()
+    #         print(f"Picture saved as {file_name}.")
+    #     else:
+    #         print("Cannot take picture.")
+    def capture_image(self,i):
         for _ in range(5):  # 더미 이미지 5장 캡처
             self.camera.read()
-            
+
         ret, frame = self.camera.read()
         frame = cv2.resize(frame, (850, 480))
 
         if ret:
-            file_name = f"{num1}_and_{num2}_vs_{num3}_and_{num4}_and_{num5}.jpg"
+            file_name = f"{i}.jpg"
             cv2.imwrite(file_name, frame)
-            # cv2.imshow('window name', frame)
-            # key = cv2.waitKey(0)
-            # if key == 27:
-            #     cv2.destroyAllWindows()
             print(f"Picture saved as {file_name}.")
         else:
             print("Cannot take picture.")
 
+    def take_picture_on_keypress(self,i):
+        while True:
+            ret, frame = self.camera.read()
+            cv2.imshow('Camera', frame)
+
+            key = cv2.waitKey(1)
+            if key == ord('n'):  # 'n' 키가 눌렸을 때
+                self.capture_image(i)  # 예시로 넣은 숫자입니다. 원하는 값으로 바꿔 사용하세요.
+            elif key == 27:  # ESC 키가 눌렸을 때
+                break
+
+        self.camera.release()
+        cv2.destroyAllWindows()
     # end
     def close_connection(self):
         self.vehicle.close()
@@ -436,45 +462,47 @@ if __name__ == '__main__':
     if start_command == 's':
         
         drone = Drone()
+        
+        for i in range(30):
+            drone.take_picture_on_keypress(i)
+        # # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
+        # yaws = [0]
+        # pitches = [0, -15, -30, -45, -60, -75, -90]
 
-        # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
-        yaws = [0]
-        pitches = [0, -15, -30, -45, -60, -75, -90]
+        # for yaw in yaws:
+        #     for pitch in pitches:
+        #         drone.set_gimbal_angle(yaw, pitch)
+        #         time.sleep(2)
+        #         while True:
+        #             response = drone.accquire_data()
+        #             yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
+        #             if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
+        #                 print("Yaw:", yaw_wr)
+        #                 print("Pitch:", pitch_wr)
+        #                 print("Roll:", roll_wr)
+        #                 break
+        #         time.sleep(0.2)
+        #         drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
+        #         time.sleep(0.2)
 
-        for yaw in yaws:
-            for pitch in pitches:
-                drone.set_gimbal_angle(yaw, pitch)
-                time.sleep(2)
-                while True:
-                    response = drone.accquire_data()
-                    yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
-                    if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
-                        print("Yaw:", yaw_wr)
-                        print("Pitch:", pitch_wr)
-                        print("Roll:", roll_wr)
-                        break
-                time.sleep(0.2)
-                drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
-                time.sleep(0.2)
+        # pitches = [-90]
+        # yaws = [0, 15, 30, 45, 60, 75, 90]
 
-        pitches = [-90]
-        yaws = [0, 15, 30, 45, 60, 75, 90]
-
-        for pitche in pitches:
-            for yaw in yaws:
-                drone.set_gimbal_angle(yaw, pitch)
-                time.sleep(2)
-                while True:
-                    response = drone.accquire_data()
-                    yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
-                    if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
-                        print("Yaw:", yaw_wr)
-                        print("Pitch:", pitch_wr)
-                        print("Roll:", roll_wr)
-                        break
-                time.sleep(0.2)
-                drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
-                time.sleep(0.2)
+        # for pitche in pitches:
+        #     for yaw in yaws:
+        #         drone.set_gimbal_angle(yaw, pitch)
+        #         time.sleep(2)
+        #         while True:
+        #             response = drone.accquire_data()
+        #             yaw_wr, pitch_wr, roll_wr, _, _, _ = drone.acquire_attitude(response)
+        #             if abs(yaw_wr - yaw) < 5 and abs(pitch_wr - pitch) < 5:
+        #                 print("Yaw:", yaw_wr)
+        #                 print("Pitch:", pitch_wr)
+        #                 print("Roll:", roll_wr)
+        #                 break
+        #         time.sleep(0.2)
+        #         drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
+        #         time.sleep(0.2)
 
         try:
             while True:
