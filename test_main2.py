@@ -354,7 +354,7 @@ class Drone:
             yaw = yaw_raw / 10.0
             pitch = pitch_raw / 10.0
             if pitch < 0 :
-                pitch = 180 + pitch
+                pitch = -(180 + pitch)
             else:
                 pitch = 180 - pitch
             roll = roll_raw / 10.0
