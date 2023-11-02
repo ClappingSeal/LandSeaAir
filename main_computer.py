@@ -5,6 +5,7 @@ import logging
 import math
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -128,6 +129,19 @@ class Drone:
         time.sleep(0.5)
 
     # Drone movement3 non-block
+    def set_yaw_to_west_nonblock(self):
+        yaw_angle = 270
+        is_relative = False
+
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system, self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
+            yaw_angle, 0, 0, is_relative, 0, 0, 0)
+
+        self.target_yaw = yaw_angle
+        self.yaw_tolerance = 0.1  # 단위는 도
+
+    # Drone movement4 non-block
     def velocity(self, vx, vy, vz):
         if self.vehicle.mode != VehicleMode("GUIDED"):
             self.vehicle.mode = VehicleMode("GUIDED")
@@ -144,7 +158,7 @@ class Drone:
             0, 0)  # yaw, yaw_rate
         self.vehicle.send_mavlink(msg)
 
-    # Drone movement4 non-block (velocity 함수 사용)
+    # Drone movement5 non-block (velocity 함수 사용)
     def velocity_pid(self, target_x, target_y, velocity_z, history_positions, proportional=0.6, integral=0.001,
                      derivative=0.5):
         pos_x, pos_y = self.get_pos()
@@ -162,7 +176,7 @@ class Drone:
         velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
         self.velocity(velocity_x, velocity_y, velocity_z)
 
-    # Drone movement5 non-block
+    # Drone movement6 non-block
     def goto_location(self, x, y, z, speed=10):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -182,7 +196,7 @@ class Drone:
 
         # print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
 
-    # Drone movement6 block (get_pos 함수 사용)
+    # Drone movement7 block (get_pos 함수 사용)
     def goto_location_block(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
@@ -226,7 +240,7 @@ class Drone:
                 break
             time.sleep(0.5)
 
-    # Drone movement7 block
+    # Drone movement8 block
     def land(self):
         print("Initiating landing sequence")
         self.vehicle._master.mav.command_long_send(
@@ -331,14 +345,35 @@ if __name__ == "__main__":
 
             time.sleep(0.1)
 
+            step = 0
+            plt.ion()
+            fig, ax = plt.subplots()
+            ax.set_xlim(-3000, 3000)  # x축 범위 설정
+            ax.set_ylim(-3000, 3000)  # y축 범위 설정
+
+            x = 1
+            y = 10
+
             while True:
+                step += 1
                 receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
 
                 # gt.goto_location(5, 10, 1)
-                gt.velocity_pid(target_x=5, target_y=10, velocity_z=2, history_positions=gt.past_pos_data)
+                x += 0.5
+                y -= 2
+                gt.velocity_pid(target_x=x, target_y=y, velocity_z=0.2, history_positions=gt.past_pos_data)
+                gt.set_yaw_to_west_nonblock()
                 time.sleep(0.1)
-                print(gt.past_pos_data)
+
+                print(gt.get_pos())
+
+                if step % 30 == 0:
+                    current_pos = gt.get_pos()
+                    print(current_pos)
+                    ax.scatter(-current_pos[1], current_pos[0])  # 현재 위치에 점 찍기 (Y축은 서쪽, X축은 북쪽)
+                    plt.draw()  # 그래프 업데이트
+                    plt.pause(0.1)  # 그래프 업데이트
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
