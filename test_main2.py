@@ -264,8 +264,8 @@ class Drone:
     # gimbal 2
     def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
-        yaw_bytes = struct.pack('<h', int(yaw * 10))
-        pitch_bytes = struct.pack('<h', int(pitch * 10))
+        yaw_bytes = struct.pack('<h', int(-yaw * 10))
+        pitch_bytes = struct.pack('<h', int(-pitch * 10))
         data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
@@ -478,22 +478,27 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        j = 0
         while True:
+            try:
+                i = int(input("i 값을 입력하세요: "))
+                j = int(input("j 값을 입력하세요: "))
+            except ValueError:
+                print("숫자를 입력하세요.")
+                continue
+
+            drone.set_gimbal_angle(i, j)
+            print(f"각도가 ({i}, {j})로 설정되었습니다.")
+
             response = drone.accquire_data()
             yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
             print("Yaw:", yaw_curr)
             print("Pitch:", pitch_curr)
             print("Roll:", roll_curr)
-            time.sleep(5)
-            drone.set_gimbal_angle(0, j)
-            j -= 10
-            i = 1
-            if i == 0:
+
+            cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
+            if cont.lower() == 'q':
                 break
-
-
-        
+            
         drone.setup_connection() 
         # received_data = drone.receive_data()
 
