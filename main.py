@@ -190,14 +190,10 @@ class Drone:
                 self.tracker_initialized = False  # 추적 실패 시 초기화
                 self.recheck_interval = self.init_recheck_interval
 
-        print('a')
-    
         detection = self.model(frame_resized, verbose=False)[0]
         best_confidence = 0
         best_data = None
         drone_type = None
-
-        print('b')
     
         for data in detection.boxes.data.tolist():
             confidence = float(data[4])
@@ -207,8 +203,6 @@ class Drone:
                 label_index = int(data[5])
                 drone_type = self.labels[label_index] if label_index < len(self.labels) else None
 
-        print('c')
-    
         # 드론 타입을 이미지 오른쪽 아래에 굵은 글씨로 표시
         font_scale = 1.0  # 폰트 크기를 조절하고 싶다면 여기를 수정하세요.
         thickness = 2  # 폰트 두께를 조절하고 싶다면 여기를 수정하세요.
@@ -218,8 +212,6 @@ class Drone:
             text_y = frame_resized.shape[0] - 20
             cv2.putText(frame_resized, drone_type, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (25, 65, 245), thickness)
 
-        print('d')
-    
         if best_data and best_confidence > self.confidence_threshold:
             print(best_confidence)
             center_x, center_y, width, height = self.get_center_and_dimensions(best_data)
@@ -242,9 +234,6 @@ class Drone:
             self.capture_count += 1
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0
 
-        print('e')
-
-    
     # drone camera 3
     def is_drone(self, frame, bbox):
         x, y, w, h = [int(v) for v in bbox]
@@ -419,7 +408,7 @@ if __name__ == '__main__':
         try:
             while True:
                 step += 1
-                if step% 10 == 1:
+                if step% 7 == 1:
                     drone.set_gimbal_angle(yaw, pitch)
                 
                 sending_array = drone.detect()
