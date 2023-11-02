@@ -261,7 +261,7 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal 2
+    # gimbal 2 modified 11/02
     def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
@@ -332,7 +332,7 @@ class Drone:
             print(f"Error receiving data via UDP: {e}")
             return None
     
-    # gimbal 7
+    # gimbal 7 modified 11/02
     def acquire_attitude(self, response):
         try:
             # CMD ID를 찾습니다.
@@ -352,7 +352,7 @@ class Drone:
 
             # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
             yaw = yaw_raw / 10.0
-            pitch = pitch_raw / 10.0
+            pitch = 180 - pitch_raw / 10.0 
             roll = roll_raw / 10.0
             yaw_velocity = yaw_velocity_raw / 10.0
             pitch_velocity = pitch_velocity_raw / 10.0
