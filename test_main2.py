@@ -264,7 +264,7 @@ class Drone:
     # gimbal 2
     def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
-        yaw_bytes = struct.pack('<h', int(yaw * 10))
+        yaw_bytes = struct.pack('<h', int(-yaw * 10))
         pitch_bytes = struct.pack('<h', int(-pitch * 10))
         data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
