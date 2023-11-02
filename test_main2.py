@@ -478,13 +478,16 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+        j = 0
         while True:
             response = drone.accquire_data()
             yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
             print("Yaw:", yaw_curr)
             print("Pitch:", pitch_curr)
             print("Roll:", roll_curr)
-            time.sleep(1)
+            time.sleep(5)
+            drone.set_gimbal_angle(0, j)
+            j += 10
             i = 1
             if i == 0:
                 break
