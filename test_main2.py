@@ -482,30 +482,30 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        while True:
-            try:
-                i = int(input("yaw 값을 입력하세요: "))
-                j = int(input("pitch 값을 입력하세요: "))
-            except ValueError:
-                print("숫자를 입력하세요.")
-                continue
+        # while True:
+        #     try:
+        #         i = int(input("yaw 값을 입력하세요: "))
+        #         j = int(input("pitch 값을 입력하세요: "))
+        #     except ValueError:
+        #         print("숫자를 입력하세요.")
+        #         continue
 
-            drone.set_gimbal_angle(i, j)
-            print(f"Yaw 가 {i}, Pitch가 {j}로 설정되었습니다.")
-            time.sleep(0.1)
-            while True:
-                response = drone.accquire_data()
-                yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+        #     drone.set_gimbal_angle(i, j)
+        #     print(f"Yaw 가 {i}, Pitch가 {j}로 설정되었습니다.")
+        #     time.sleep(0.1)
+        #     while True:
+        #         response = drone.accquire_data()
+        #         yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
                 
-                if abs(yaw_curr - i) < 5:
-                    print("Yaw:", yaw_curr)
-                    print("Pitch:", pitch_curr)
-                    print("Roll:", roll_curr)
-                    break
+        #         if abs(yaw_curr - i) < 5:
+        #             print("Yaw:", yaw_curr)
+        #             print("Pitch:", pitch_curr)
+        #             print("Roll:", roll_curr)
+        #             break
 
-            cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
-            if cont.lower() == 'q':
-                break
+        #     cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
+        #     if cont.lower() == 'q':
+        #         break
 
         drone.setup_connection() 
         # received_data = drone.receive_data()
