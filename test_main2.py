@@ -511,7 +511,7 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = 20  # -45, -90
+        pitch = 0  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch) # 초기 각도
         time.sleep(1.5)
@@ -564,8 +564,8 @@ if __name__ == '__main__':
                     yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
                     yaw += yaw_change
                     pitch += pitch_change
-                    # print(truth, yaw, pitch, yaw_change, pitch_change)
-                    print(pitch)
+                    print(truth, yaw, pitch, yaw_change, pitch_change)
+
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
         except KeyboardInterrupt:
