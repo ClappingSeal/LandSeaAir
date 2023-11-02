@@ -415,6 +415,9 @@ class Drone:
     def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=4):
         x_conversion = x - 425
         y_conversion = y - 240
+        print('-------------')
+        print(x_conversion)
+        print(y_conversion)
         if x_conversion > threshold:
             yaw_change = movement
         elif x_conversion < -threshold:
@@ -536,9 +539,9 @@ if __name__ == '__main__':
                     yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
                     
                     if abs(pitch_curr - pitch) < 5:
-                        print("Yaw:", yaw_curr)
-                        print("Pitch:", pitch_curr)
-                        print("Roll:", roll_curr)
+                        # print("Yaw:", yaw_curr)
+                        # print("Pitch:", pitch_curr)
+                        # print("Roll:", roll_curr)
                         break
                     else:
                         print('wrong')
@@ -553,7 +556,7 @@ if __name__ == '__main__':
                 drone.send_data(data_string)
                 print("data sending...")
                 # print(sending_array)
-                print(data_list)
+                # print(data_list)
                 # print(data_string)
 
                 # drone.sending_data(sending_data)
@@ -562,11 +565,9 @@ if __name__ == '__main__':
 
                 if step % 2 == 1:
                     yaw_change, pitch_change = drone.yaw_pitch(x_new, y_new, yaw_curr, pitch_curr)
-                    print("x_new",x_new)
-                    print("y_new",y_new)
                     yaw += yaw_change
                     pitch += pitch_change
-                    print(truth, yaw_curr, pitch_curr, yaw_change, pitch_change)
+                    print(truth, yaw, pitch, yaw_change, pitch_change)
 
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
