@@ -357,7 +357,7 @@ class Drone:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
 
-    def angle_cali(y, pitch, standard_pitch = -45): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
+    def angle_cali(y, pitch, standard_pitch = -30): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
         y_new =  y + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
         return y_new
@@ -474,7 +474,7 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = -90  # -45, -90
+        pitch = 0  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch) # 초기 각도
         time.sleep(1.5)
