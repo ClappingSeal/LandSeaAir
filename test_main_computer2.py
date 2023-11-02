@@ -341,12 +341,12 @@ if __name__ == "__main__":
                 data_list.append(data_received)
                 print("data_received")
                 print(data_list)
-                print(len(data_list))
+                # print(len(data_list))
                 # gt.sending_data([7, 80, 35, 8])
                 # receive_arr = np.array(gt.receiving_data())
                 # print(receive_arr)
                 # gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
-                if len(str(data_list[0])) == 3 and data_list[2] == 1:
+                if len(str(data_list[0])) == 3 and data_list[2] == 0:
                     # gt.locking_easy(data_list[0], data_list[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                     gt.locking_drl(data_list[0], data_list[1])
                 gt.update_past_pos_data()
