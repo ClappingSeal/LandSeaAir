@@ -528,12 +528,15 @@ if __name__ == '__main__':
                     yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
                     
                     if abs(pitch_curr - pitch) < 5:
-                        # print("Yaw:", yaw_curr)
-                        # print("Pitch:", pitch_curr)
-                        # print("Roll:", roll_curr)
+                        print("Yaw:", yaw_curr)
+                        print("Pitch:", pitch_curr)
+                        print("Roll:", roll_curr)
                         break
                     else:
                         print('wrong')
+                        print("Yaw:", yaw_curr)
+                        print("Pitch:", pitch_curr)
+                        print("Roll:", roll_curr)
                 # 계산식 적용
                 x_new = sending_array[0]
                 y_new = Drone.angle_cali(sending_array[1], pitch_curr)
@@ -553,7 +556,7 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 if step % 2 == 1:
-                    pitch_change = drone.yaw_pitch(y_new, pitch_curr)
+                    pitch_change = drone.yaw_pitch(sending_array[1], pitch_curr)
 
                     pitch += pitch_change
                     # print(truth, yaw, pitch, pitch_change)
