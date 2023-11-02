@@ -144,7 +144,7 @@ class Drone:
         self.vehicle.send_mavlink(msg)
 
     # Drone movement4 non-block (velocity 함수 사용)
-    def velocity_pid(self, target_x, target_y, history_positions, proportional=0.6, integral=0.001, derivative=0.5):
+    def velocity_pid(self, target_x, target_y, altitude, history_positions, proportional=0.6, integral=0.001, derivative=0.5):
         pos_x, pos_y = self.get_pos()
 
         error_x = target_x - pos_x
@@ -158,7 +158,14 @@ class Drone:
 
         velocity_x = proportional * error_x + integral * cumulative_error_x + derivative * error_delta_x
         velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
-        self.velocity(velocity_x, velocity_y, 0)
+
+        if altitude == 1:
+            velocity_z = 1
+        elif altitude == 2:
+            velocity_z = -1
+        else:
+            velocity_z = 0
+        self.velocity(velocity_x, velocity_y, velocity_z)
 
     # Drone movement5 non-block
     def goto_location(self, x, y, z, speed=10):
@@ -274,7 +281,7 @@ class Drone:
         self.vehicle.close()
 
     # DRL model
-    def locking_drl(self, x_frame, y_frame):
+    def locking_drl(self, x_frame, y_frame, altitude):
         obs = np.array([x_frame-425, y_frame-240])
         action, _ = self.model.predict(obs)
 
@@ -288,7 +295,7 @@ class Drone:
         y_conversion = -action[1] / 10 # Scale
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
-        self.velocity_pid(target_x, target_y, self.past_pos_data)
+        self.velocity_pid(target_x, target_y, altitude, self.past_pos_data)
         # print(target_x, target_y)
 
     # client 1
@@ -322,7 +329,7 @@ if __name__ == "__main__":
 
         # 미션 시작1
         if len(nums) == 2:
-            gt.arm_takeoff(2)
+            gt.arm_takeoff(10)
             gt.set_yaw_to_north()
             time.sleep(3)
 
@@ -334,13 +341,16 @@ if __name__ == "__main__":
                 data_list = []
                 # print(type(data_received))
                 # print(type(data_list))
-                data_list.append(data_received//100000)
-                data_received = data_received%100000
-                data_list.append(data_received//10-1000)
+                data_list.append(data_received//1000000)
+                data_received = data_received%1000000
+                data_list.append(data_received//100-10000)
+                data_received = data_received%100
+                data_list.append(data_received//10)
                 data_received = data_received%10
                 data_list.append(data_received)
                 print("data_received")
-                print(data_list)
+                print(data_list) # 0:x, 1:y, 2: truth 3: z(altitude)
+
                 # print(len(data_list))
                 # gt.sending_data([7, 80, 35, 8])
                 # receive_arr = np.array(gt.receiving_data())
@@ -348,7 +358,7 @@ if __name__ == "__main__":
                 # gt.locking_easy(receive_arr[0], receive_arr[1], 300) # 마지막 숫자가 줄어들면 빨라짐
                 if len(str(data_list[0])) == 3 and data_list[2] == 1:
                     # gt.locking_easy(data_list[0], data_list[1], 300) # 마지막 숫자가 줄어들면 빨라짐
-                    gt.locking_drl(data_list[0], data_list[1])
+                    gt.locking_drl(data_list[0], data_list[1],data_list[3])
                 gt.update_past_pos_data()
                 time.sleep(0.1)
                 # print(gt.battery_state())

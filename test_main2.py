@@ -243,7 +243,16 @@ class Drone:
 
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
-
+    
+    # altitude control for bounding box
+    def altitude_ctr(self, length):
+        if length < 100:
+            return 1 # 올라가라
+        elif length > 500:
+            return 2 # 내려가라
+        else:
+            return 0 # 유지해라
+        
     # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
@@ -474,7 +483,7 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = 0  # -45, -90
+        pitch = -10  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch) # 초기 각도
         time.sleep(1.5)
@@ -487,11 +496,11 @@ if __name__ == '__main__':
                 # cv2.imshow("frame", drone.frame)
                 # if sending_array == None:
                 #     sending_array = [425, 240, 0]
-
+                length = 50
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-                sending_data = [sending_array[0], sending_array[1], truth]
+                sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length)]
                 
                 # 각도 불러오기
                 while True:
@@ -510,9 +519,9 @@ if __name__ == '__main__':
                 y_new = Drone.angle_cali(sending_array[1], pitch_curr)
 
                 # server data send
-                data_list = [x_new, y_new, truth]
+                data_list = [x_new, y_new, truth, drone.altitude_ctr(length)]
                 #data_string = json.dumps(data_list)
-                data_string = str(int(x_new) * 100000 + int(y_new+1000) * 10 + truth)
+                data_string = str(int(x_new) * 1000000 + int(y_new+10000) * 100 + truth*10 + drone.altitude_ctr(length))
                 drone.send_data(data_string)
                 print("data sending...")
                 # print(sending_array)
