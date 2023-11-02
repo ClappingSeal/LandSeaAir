@@ -487,7 +487,7 @@ if __name__ == '__main__':
                 continue
 
             drone.set_gimbal_angle(i, j)
-            print(f"Yaw 가 {i}, Pitch가 {j})로 설정되었습니다.")
+            print(f"Yaw 가 {i}, Pitch가 {j}로 설정되었습니다.")
             time.sleep(0.1)
             while True:
                 response = drone.accquire_data()
@@ -533,7 +533,7 @@ if __name__ == '__main__':
                     
                     if abs(pitch_curr - pitch) < 5:
                         print("Yaw:", yaw_curr)
-                        print("Pitch:", pitch_curr)
+                        print("Pitch:", 180-pitch_curr)
                         print("Roll:", roll_curr)
                         break
                     else:
