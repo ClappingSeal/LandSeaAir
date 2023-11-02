@@ -487,7 +487,7 @@ if __name__ == '__main__':
             print("Roll:", roll_curr)
             time.sleep(5)
             drone.set_gimbal_angle(0, j)
-            j += 10
+            j -= 10
             i = 1
             if i == 0:
                 break
