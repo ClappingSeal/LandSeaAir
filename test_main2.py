@@ -495,7 +495,7 @@ if __name__ == '__main__':
                 
                 if abs(yaw_curr - i) < 5:
                     print("Yaw:", yaw_curr)
-                    print("Pitch:", pitch_curr)
+                    print("Pitch:", 180-pitch_curr)
                     print("Roll:", roll_curr)
                     break
 
@@ -533,7 +533,7 @@ if __name__ == '__main__':
                     
                     if abs(pitch_curr - pitch) < 5:
                         print("Yaw:", yaw_curr)
-                        print("Pitch:", 180-pitch_curr)
+                        print("Pitch:", pitch_curr)
                         print("Roll:", roll_curr)
                         break
                     else:
