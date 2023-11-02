@@ -486,8 +486,9 @@ if __name__ == '__main__':
         pitch = -10  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch) # 초기 각도
-        time.sleep(1.5)
-
+        print("control")
+        time.sleep(15)
+        
         try:
             while True:
                 step += 1
