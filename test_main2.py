@@ -480,15 +480,15 @@ if __name__ == '__main__':
         drone = Drone()
         while True:
             try:
-                i = int(input("i 값을 입력하세요: "))
-                j = int(input("j 값을 입력하세요: "))
+                i = int(input("yaw 값을 입력하세요: "))
+                j = int(input("pitch 값을 입력하세요: "))
             except ValueError:
                 print("숫자를 입력하세요.")
                 continue
 
             drone.set_gimbal_angle(i, j)
-            print(f"각도가 ({i}, {j})로 설정되었습니다.")
-
+            print(f"Yaw 가 {i}, Pitch가 {j})로 설정되었습니다.")
+            time.sleep(2)
             response = drone.accquire_data()
             yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
             print("Yaw:", yaw_curr)
@@ -498,7 +498,7 @@ if __name__ == '__main__':
             cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
             if cont.lower() == 'q':
                 break
-            
+
         drone.setup_connection() 
         # received_data = drone.receive_data()
 
