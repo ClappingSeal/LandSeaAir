@@ -414,9 +414,13 @@ if __name__ == '__main__':
         time.sleep(1.5)
         truth = 0
 
+        step = 0
+
         try:
             while True:
-                drone.set_gimbal_angle(yaw, pitch)
+                step += 1
+                if step% 10 == 1:
+                    drone.set_gimbal_angle(yaw, pitch)
                 
                 sending_array = drone.detect()
 
