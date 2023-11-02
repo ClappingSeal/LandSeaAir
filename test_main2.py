@@ -411,7 +411,8 @@ class Drone:
 
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
-
+   
+    # modified 11/02
     def yaw_pitch(self, y, current_pitch, threshold=100, movement=4):
         y_conversion = y - 240
 
