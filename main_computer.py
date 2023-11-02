@@ -360,7 +360,7 @@ if __name__ == "__main__":
                 gt.velocity_pid(target_x=5, target_y=10, velocity_z=0.2, history_positions=gt.past_pos_data)
                 gt.set_yaw_to_west_nonblock()
 
-                print(gt.get_pos())
+                # print(gt.get_pos())
 
                 if step % 30 == 0:
                     current_pos = gt.get_pos()
