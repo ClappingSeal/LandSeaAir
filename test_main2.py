@@ -425,7 +425,7 @@ class Drone:
 
         if (current_pitch + pitch_change < 0) or (current_pitch + pitch_change) > 90:
             pitch_change = 0
-        print("pitch:", pitch_change)
+        # print("pitch:", pitch_change)
         return pitch_change
     
     # server 1
@@ -532,8 +532,6 @@ if __name__ == '__main__':
                         print("Pitch:", pitch_curr)
                         print("Roll:", roll_curr)
                         break
-                    else:
-                        print('wrong')
                 # 계산식 적용
                 x_new = sending_array[0]
                 y_new = Drone.angle_cali(sending_array[1], pitch_curr)
