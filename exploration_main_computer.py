@@ -401,6 +401,7 @@ if __name__ == "__main__":
                 # receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
                 target_y += 10
+                step += 1
                 # gt.goto_location(5, 10, 1)
                 # gt.velocity_pid(target_x, target_y, velocity_z=0, history_positions=gt.past_pos_data)
                 if step % 10 == 1:
@@ -408,7 +409,7 @@ if __name__ == "__main__":
                     if yaw_set < 225 or yaw_set > 315:
                         direction = -direction
                         yaw_set += 2 * direction
-                        print('set')
+                    print('set')
 
                 time.sleep(0.1)
 
