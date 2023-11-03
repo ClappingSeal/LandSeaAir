@@ -293,7 +293,7 @@ class Drone:
         print(-action)
 
         x_conversion = -action[0] / 10 # Scale
-        y_conversion = -action[1] / 10 # Scale
+        y_conversion = action[1] / 10 # Scale
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
         self.velocity_pid(target_x, target_y, altitude, self.past_pos_data)
