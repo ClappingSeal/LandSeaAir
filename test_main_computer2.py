@@ -160,9 +160,9 @@ class Drone:
         velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
 
         if altitude == 1:
-            velocity_z = 1
-        elif altitude == 2:
             velocity_z = -1
+        elif altitude == 2:
+            velocity_z = 1
         else:
             velocity_z = 0
 
@@ -344,7 +344,7 @@ if __name__ == "__main__":
                 # print(type(data_list))
                 data_list.append(data_received//1000000)
                 data_received = data_received%1000000
-                data_list.append(data_received//100-10000)
+                data_list.append(data_received//100)
                 data_received = data_received%100
                 data_list.append(data_received//10)
                 data_received = data_received%10

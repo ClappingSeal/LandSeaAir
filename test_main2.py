@@ -370,7 +370,7 @@ class Drone:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
 
-    def angle_cali(y, pitch, standard_pitch = -30): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
+    def angle_cali(y, pitch, standard_pitch = 30): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
         y_new =  y + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
         return y_new
@@ -516,7 +516,7 @@ if __name__ == '__main__':
                 # cv2.imshow("frame", drone.frame)
                 # if sending_array == None:
                 #     sending_array = [425, 240, 0]
-                length = 50
+                length = 250
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
