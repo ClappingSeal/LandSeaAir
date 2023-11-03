@@ -423,7 +423,10 @@ if __name__ == "__main__":
                 time.sleep(0.1)
                 cnt = data_list[4]
                 print("cnt:", cnt)
-                if cnt == 5:
+                if cnt == 20:
+                    print('=========================')
+                    print('=========================')
+                    print('=========================')
                     break
 
             while True:
@@ -433,6 +436,7 @@ if __name__ == "__main__":
                 data_list = []
                 # print(type(data_received))
                 # print(type(data_list))
+                data_received = data_received%100000000000
                 data_list.append(data_received//100000000)   # x
                 data_received = data_received%100000000
                 data_list.append(data_received//10000-1000)  # y
