@@ -381,6 +381,7 @@ if __name__ == "__main__":
             yaw_set = 270
             target_x = 0
             target_y = 0
+            direction = 5
             while True:
                 # client data receive
                 data_received = int(gt.receive_data())
@@ -407,7 +408,7 @@ if __name__ == "__main__":
                 if step % 5 == 1:
                     gt.set_yaw_to_angle_nonblock(yaw_set)
                     if yaw_set < 225 or yaw_set > 315:
-                        direction = -direction
+                        direction = - direction
                         yaw_set += 2 * direction
                     yaw_set += direction
                     print('set', yaw_set)
