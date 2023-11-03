@@ -494,11 +494,14 @@ if __name__ == '__main__':
         cnt = 1
         try:
             while True:
-                drone.set_gimbal_angle(0, pitch)
-                print(pitch)
-                if pitch == 60 or pitch == 10 and direction == -5:
-                    direction = -direction
-                pitch += direction
+                step += 1
+                if step % 2 == 1:
+                    drone.set_gimbal_angle(0, pitch)
+                    print(pitch)
+                    if pitch == 60 or pitch == 10 and direction == -5:
+                        direction = -direction
+                    pitch += direction
+
                 time.sleep(0.1) 
 
                 # if 인지 성공 시 종료 및 드론 기동
