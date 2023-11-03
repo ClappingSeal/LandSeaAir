@@ -337,7 +337,7 @@ class Drone:
             print(f"Error receiving data via UDP: {e}")
             return None
     
-    # gimbal 7 modified 11/02
+    # gimbal 6
     def acquire_attitude(self, response):
         try:
             # CMD ID를 찾습니다.
@@ -374,7 +374,6 @@ class Drone:
         except ValueError as e:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
-
     
     # def capture_image(self, num1, num2, num3, num4, num5):
     #     for _ in range(5):  # 더미 이미지 5장 캡처
@@ -467,7 +466,6 @@ if __name__ == '__main__':
     if start_command == 's':
         
         drone = Drone()
-        k = 1
         while True:
             try:
                 i = int(input("yaw 값을 입력하세요: "))
@@ -488,12 +486,11 @@ if __name__ == '__main__':
                     print("Pitch:", pitch_curr)
                     print("Roll:", roll_curr)
                     break
-            drone.take_picture_on_keypress(k)
-            k += 1
+            drone.take_picture_on_keypress(i)
+            
             cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
             if cont.lower() == 'q':
                 break
-
         # # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         # yaws = [0]
         # pitches = [0, -15, -30, -45, -60, -75, -90]
