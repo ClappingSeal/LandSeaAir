@@ -508,7 +508,7 @@ if __name__ == '__main__':
                 sending_array = drone.detect_and_find_center()
                 if sending_array[1] != 240:
                     cnt +=1
-                elif cnt > 5: # 초기 탐지 5번
+                if cnt > 5: # 초기 탐지 5번
                     # sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length), cnt, cycle]
                     # x_new = sending_array[0]
                     # y_new = Drone.angle_cali(sending_array[1], pitch)
