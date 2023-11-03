@@ -506,8 +506,8 @@ if __name__ == '__main__':
                 sending_array = drone.detect_and_find_center()
                 if sending_array[1] != 240:
                     cnt +=1
-                elif cnt == 5:
-                    break
+                # elif cnt == 5:
+                #     break
 
                 length = 250
                 truth = 0
