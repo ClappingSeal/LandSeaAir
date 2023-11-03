@@ -6,6 +6,7 @@ import math
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import socket
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -131,6 +132,18 @@ class Drone:
     # Drone movement3 non-block
     def set_yaw_to_west_nonblock(self):
         yaw_angle = 270
+        is_relative = False
+
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system, self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
+            yaw_angle, 0, 0, is_relative, 0, 0, 0)
+
+        self.target_yaw = yaw_angle
+        self.yaw_tolerance = 0.1  # 단위는 도
+
+    # Drone movement4 non-block
+    def set_yaw_to_angle_nonblock(self, yaw_angle):
         is_relative = False
 
         self.vehicle._master.mav.command_long_send(
@@ -332,12 +345,31 @@ class Drone:
     def close_connection(self):
         self.vehicle.close()
 
+    # client 1
+    def set_connection(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect(("192.168.0.31",12345))
+    # client 2
+    def receive_data(self):
+        data = self.client_socket.recv(1024).decode('utf-8')
+        return data
+    # client 3
+    def send_data(self, data_to_send):
+        self.client_socket.send(data_to_send.encode('utf-8'))
+        reply = self.client_socket.recv(1024).decode('utf-8')
+        return reply
+    # client 4
+    def close_connection(self):
+        if self.client_socket:
+            self.client_socket.close()
 
 if __name__ == "__main__":
     gt = Drone()
 
     try:
         nums = 1, 1
+        
+        gt.set_connection() # client
 
         if len(nums) == 2:
             gt.arm_takeoff(1)
@@ -346,28 +378,34 @@ if __name__ == "__main__":
             time.sleep(0.1)
 
             step = 0
-            plt.ion()
-            fig, ax = plt.subplots()
-            ax.set_xlim(-3000, 3000)  # x축 범위 설정
-            ax.set_ylim(-3000, 3000)  # y축 범위 설정
-
+            yaw_set = 270
             while True:
-                step += 1
-                receive_arr = np.array(gt.receiving_data())
+                # client data receive
+                data_received = int(gt.receive_data())
+                # data_list = json.loads(data_received)
+                data_list = []
+                # print(type(data_received))
+                # print(type(data_list))
+                data_list.append(data_received//1000000)
+                data_received = data_received%1000000
+                data_list.append(data_received//100-1000)
+                data_received = data_received%100
+                data_list.append(data_received//10)
+                data_received = data_received%10
+                data_list.append(data_received)
+                print("data_received")
+                print(data_list) # 0:x, 1:y, 2: truth 3: z(altitude)
+
+                # receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
 
                 # gt.goto_location(5, 10, 1)
-                gt.velocity_pid(target_x=5, target_y=10, velocity_z=0.2, history_positions=gt.past_pos_data)
-                gt.set_yaw_to_west_nonblock()
-
-                # print(gt.get_pos())
-
-                if step % 30 == 0:
-                    current_pos = gt.get_pos()
-                    print(current_pos)
-                    ax.scatter(-current_pos[1], current_pos[0])
-                    plt.draw()
-                    plt.pause(0.1)
+                gt.velocity_pid(target_x=0, target_y=10, velocity_z=0, history_positions=gt.past_pos_data)
+                if step % 10 == 1:
+                    gt.set_yaw_to_angle_nonblock(yaw_set)
+                    if yaw_set < 225 or yaw_set > 315:
+                        direction = -direction
+                        yaw_set += 2 * direction
 
                 time.sleep(0.1)
 

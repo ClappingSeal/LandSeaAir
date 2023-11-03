@@ -495,22 +495,33 @@ if __name__ == '__main__':
         try:
             while True:
                 step += 1
-                if step % 2 == 1:
+                if step % 5 == 1:
                     drone.set_gimbal_angle(0, pitch)
                     print(pitch)
                     if pitch == 60 or pitch == 10 and direction == -5:
                         direction = -direction
                     pitch += direction
 
-                time.sleep(0.1) 
-
                 # if 인지 성공 시 종료 및 드론 기동
                 sending_array = drone.detect_and_find_center()
                 if sending_array[1] != 240:
                     cnt +=1
-                elif cnt == 10:
+                elif cnt == 5:
                     break
 
+                length = 250
+                truth = 0
+                if sending_array[1] != 240:
+                    truth = 1
+                sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length)]
+                x_new = sending_array[0]
+                y_new = Drone.angle_cali(sending_array[1], pitch)
+                data_list = [x_new, y_new, truth, drone.altitude_ctr(length)]
+                data_string = str(int(x_new) * 1000000 + int(y_new+1000) * 100 + truth*10 + drone.altitude_ctr(length))
+                drone.send_data(data_string)
+                print("data sending...")
+                print(data_list)
+                time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
