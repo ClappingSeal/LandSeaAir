@@ -98,7 +98,7 @@ class Drone:
             return
         
         #detection requirements
-        self.model = YOLO('Tech_piece/Detection/best3.onnx')
+        # self.model = YOLO('Tech_piece/Detection/best3.onnx')
         self.CONFIDENCE_THRESHOLD = 0.1
         self.tracker = None
         self.success = False
@@ -243,7 +243,16 @@ class Drone:
 
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
-
+    
+    # altitude control for bounding box
+    def altitude_ctr(self, length):
+        if length < 100:
+            return 1 # 올라가라
+        elif length > 500:
+            return 2 # 내려가라
+        else:
+            return 0 # 유지해라
+        
     # gimbal 1
     def CRC16_cal(self, ptr, len_, crc_init=0):
         crc = crc_init
@@ -252,11 +261,11 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal 2
+    # gimbal 2 modified 11/02
     def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
-        pitch_bytes = struct.pack('<h', int(pitch * 10))
+        pitch_bytes = struct.pack('<h', int(-pitch * 10))
         data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
@@ -323,7 +332,7 @@ class Drone:
             print(f"Error receiving data via UDP: {e}")
             return None
     
-    # gimbal 7
+    # gimbal 7 modified 11/02
     def acquire_attitude(self, response):
         try:
             # CMD ID를 찾습니다.
@@ -344,6 +353,10 @@ class Drone:
             # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
             yaw = yaw_raw / 10.0
             pitch = pitch_raw / 10.0
+            if pitch < 0 :
+                pitch = -(180 + pitch)
+            else:
+                pitch = 180 - pitch
             roll = roll_raw / 10.0
             yaw_velocity = yaw_velocity_raw / 10.0
             pitch_velocity = pitch_velocity_raw / 10.0
@@ -357,30 +370,10 @@ class Drone:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
 
-    # <계산식> 현재 각도 (yaw, pitch)에 대해 기준 (0, -90) 에 맞게 frame 값 출력
-    # def angle_cali(x, y, yaw, pitch, standard_pitch = -45): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
-    #     pivot_x=425
-    #     pivot_y=240
+    def angle_cali(y, pitch, standard_pitch = 0): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
+        y_new =  y + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
 
-    #     yaw_rad = math.radians(yaw)
-
-    #     translated_x = x - pivot_x
-    #     translated_y = y - pivot_y
-
-    #     rotated_x = translated_x * math.cos(yaw_rad) - translated_y * math.sin(yaw_rad)
-    #     rotated_y = translated_x * math.sin(yaw_rad) + translated_y * math.cos(yaw_rad)
-
-    #     x_new = rotated_x + pivot_x
-    #     y_new = rotated_y + pivot_y  + ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
-
-    #     return x_new, y_new
-    
-    def angle_cali(x, y, yaw, pitch, standard_yaw = 0, standard_pitch = -45): # 기준 yaw = 0, pitch = -90 ### pitch = -60을 기준으로 하려면 숫자 90 -> 60 수정해야 함.
-
-        x_new =  -((yaw - standard_yaw) * (130/15)) # 15도당 130프레임
-        y_new =  ((pitch - standard_pitch) * (130/15)) # 15도당 130프레임
-
-        return x_new, y_new
+        return y_new
 
     def close_connection(self):
         self.vehicle.close()
@@ -418,16 +411,10 @@ class Drone:
 
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
-
-    def yaw_pitch(self, x, y, current_yaw, current_pitch, threshold=100, movement=4):
-        x_conversion = x - 425
+   
+    # modified 11/02
+    def yaw_pitch(self, y, current_pitch, threshold=100, movement=4):
         y_conversion = y - 240
-        if x_conversion > threshold:
-            yaw_change = -movement
-        elif x_conversion < -threshold:
-            yaw_change = movement
-        else:
-            yaw_change = 0
 
         if y_conversion > threshold:
             pitch_change = movement
@@ -436,12 +423,10 @@ class Drone:
         else:
             pitch_change = 0
 
-        if (current_yaw + yaw_change > 135) or (current_yaw + yaw_change < -135):
-            yaw_change = 0
-        if (current_pitch + pitch_change > 0) or (current_pitch + pitch_change) < -90:
+        if (current_pitch + pitch_change < 0) or (current_pitch + pitch_change) > 90:
             pitch_change = 0
-
-        return yaw_change, pitch_change
+        # print("pitch:", pitch_change)
+        return pitch_change
     
     # server 1
     def setup_connection(self):
@@ -489,6 +474,30 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+        # while True:
+        #     try:
+        #         i = int(input("yaw 값을 입력하세요: "))
+        #         j = int(input("pitch 값을 입력하세요: "))
+        #     except ValueError:
+        #         print("숫자를 입력하세요.")
+        #         continue
+
+        #     drone.set_gimbal_angle(i, j)
+        #     print(f"Yaw 가 {i}, Pitch가 {j}로 설정되었습니다.")
+        #     time.sleep(0.1)
+        #     while True:
+        #         response = drone.accquire_data()
+        #         yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+                
+        #         if abs(yaw_curr - i) < 5:
+        #             print("Yaw:", yaw_curr)
+        #             print("Pitch:", pitch_curr)
+        #             print("Roll:", roll_curr)
+        #             break
+
+        #     cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
+        #     if cont.lower() == 'q':
+        #         break
 
         drone.setup_connection() 
         # received_data = drone.receive_data()
@@ -496,44 +505,44 @@ if __name__ == '__main__':
         yaw = 0
         pitch = 0  # -45, -90
         step = 0
-        drone.set_gimbal_angle(yaw, pitch)
+        drone.set_gimbal_angle(yaw, pitch) # 초기 각도
         time.sleep(1.5)
-        # drone.set_gimbal_angle(0, -45)
-        # time.sleep(1.5)
-
+        
         try:
             while True:
                 step += 1
                 sending_array = drone.detect_and_find_center()
                 # sending_array = drone.detect()
-                #cv2.imshow("frame", drone.frame)
+                # cv2.imshow("frame", drone.frame)
                 # if sending_array == None:
                 #     sending_array = [425, 240, 0]
-
+                length = 250
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-                sending_data = [sending_array[0], sending_array[1], truth]
+                sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length)]
                 
                 # 각도 불러오기
                 while True:
                     response = drone.accquire_data()
                     yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
-                    if abs(yaw_curr - yaw) < 5 and abs(pitch_curr - pitch) < 5:
+                    
+                    if abs(pitch_curr - pitch) < 5:
                         print("Yaw:", yaw_curr)
                         print("Pitch:", pitch_curr)
                         print("Roll:", roll_curr)
                         break
                 # 계산식 적용
-                x_new, y_new = Drone.angle_cali(sending_array[0], sending_array[1], yaw_curr, pitch_curr)
+                x_new = sending_array[0]
+                y_new = Drone.angle_cali(sending_array[1], pitch_curr)
 
                 # server data send
-                data_list = [x_new, y_new, truth]
+                data_list = [x_new, y_new, truth, drone.altitude_ctr(length)]
                 #data_string = json.dumps(data_list)
-                data_string = str(int(x_new) * 10000 + int(y_new) * 10 + truth)
+                data_string = str(int(x_new) * 1000000 + int(y_new+1000) * 100 + truth*10 + drone.altitude_ctr(length))
                 drone.send_data(data_string)
                 print("data sending...")
-                print(sending_array)
+                # print(sending_array)
                 print(data_list)
                 # print(data_string)
 
@@ -542,12 +551,12 @@ if __name__ == '__main__':
                 time.sleep(0.1)
 
                 if step % 2 == 1:
-                    yaw_change, pitch_change = drone.yaw_pitch(sending_array[0], sending_array[1], yaw, pitch)
-                    yaw += yaw_change
-                    pitch += pitch_change
-                    # print(truth, yaw, pitch, yaw_change, pitch_change)
+                    pitch_change = drone.yaw_pitch(sending_array[1], pitch_curr)
 
-                    drone.set_gimbal_angle(yaw, pitch)
+                    pitch += pitch_change
+                    # print(truth, yaw, pitch, pitch_change)
+
+                    drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")

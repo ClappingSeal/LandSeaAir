@@ -5,6 +5,7 @@ import logging
 import math
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -16,8 +17,8 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -28,7 +29,7 @@ class Drone:
         self.init_lon = self.vehicle.location.global_relative_frame.lon
 
         # Arming value
-        self.min_throttle = 1100
+        self.min_throttle = 1000
         self.arm_throttle = 1200
 
         if self.init_lat is None or self.init_lon is None:
@@ -67,6 +68,7 @@ class Drone:
     def arm_takeoff(self, h):
         self.vehicle.channels.overrides['3'] = self.min_throttle
         self.vehicle.mode = VehicleMode("STABILIZE")
+        time.sleep(0.1)
 
         cmds = self.vehicle.commands
         cmds.download()
@@ -76,19 +78,13 @@ class Drone:
                               mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, h)
         cmds.add(takeoff_cmd)
         cmds.upload()
-        time.sleep(0.1) # upload wait
+        time.sleep(0.1)  # upload wait
+
         self.vehicle.armed = True
         time.sleep(0.1)
         self.vehicle.channels.overrides['3'] = self.arm_throttle
-        time.sleep(1)
+        time.sleep(3)
         print("ARMED : ", self.vehicle.armed)
-        while not self.vehicle.armed:
-            self.vehicle.armed = True
-            self.vehicle.channels.overrides['3'] = self.arm_throttle
-            print("Waiting for arming...")
-            time.sleep(0.5)
-
-        print(self.vehicle.armed)
 
         self.vehicle._master.mav.command_long_send(
             self.vehicle._master.target_system, self.vehicle._master.target_component,
@@ -108,8 +104,8 @@ class Drone:
         self.vehicle.mode = VehicleMode("GUIDED")
 
     # Drone movement2 block
-    def set_yaw_to_north(self):
-        yaw_angle = 0
+    def set_yaw_to_west(self):
+        yaw_angle = 270
         is_relative = False
 
         self.vehicle._master.mav.command_long_send(
@@ -129,10 +125,23 @@ class Drone:
             print("Yaw : ", min(angle, 360 - angle))
             time.sleep(0.5)
 
-        print("Setting yaw to face North!!!!!!!!!!!!!!!!!!!!")
+        print("Setting yaw to face WEST!!!!!!!!!!!!!!!!!!!!")
         time.sleep(0.5)
 
     # Drone movement3 non-block
+    def set_yaw_to_west_nonblock(self):
+        yaw_angle = 270
+        is_relative = False
+
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system, self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
+            yaw_angle, 0, 0, is_relative, 0, 0, 0)
+
+        self.target_yaw = yaw_angle
+        self.yaw_tolerance = 0.1  # 단위는 도
+
+    # Drone movement4 non-block
     def velocity(self, vx, vy, vz):
         if self.vehicle.mode != VehicleMode("GUIDED"):
             self.vehicle.mode = VehicleMode("GUIDED")
@@ -144,13 +153,14 @@ class Drone:
             mavutil.mavlink.MAV_FRAME_LOCAL_NED,  # coordinate frame
             0b0000111111000111,  # type mask (enabling only velocity)
             0, 0, 0,  # x, y, z 위치
-            vy, vx, vz,  # x, y, z 속도
+            vx, -vy, -vz,  # x, y, z 속도
             0, 0, 0,  # x, y, z 가속도
             0, 0)  # yaw, yaw_rate
         self.vehicle.send_mavlink(msg)
 
-    # Drone movement4 non-block (velocity 함수 사용)
-    def velocity_pid(self, target_x, target_y, history_positions, proportional=0.6, integral=0.001, derivative=0.5):
+    # Drone movement5 non-block (velocity 함수 사용)
+    def velocity_pid(self, target_x, target_y, velocity_z, history_positions, proportional=0.6, integral=0.001,
+                     derivative=0.5):
         pos_x, pos_y = self.get_pos()
 
         error_x = target_x - pos_x
@@ -164,15 +174,15 @@ class Drone:
 
         velocity_x = proportional * error_x + integral * cumulative_error_x + derivative * error_delta_x
         velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
-        self.velocity(velocity_x, velocity_y, 0)
+        self.velocity(velocity_x, velocity_y, velocity_z)
 
-    # Drone movement5 non-block
+    # Drone movement6 non-block
     def goto_location(self, x, y, z, speed=10):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
-        target_lat = self.init_lat + (y / LATITUDE_CONVERSION)
-        target_lon = self.init_lon + (x / LONGITUDE_CONVERSION)
+        target_lat = self.init_lat + (x / LATITUDE_CONVERSION)
+        target_lon = self.init_lon - (y / LONGITUDE_CONVERSION)
         target_alt = z
 
         if self.vehicle.mode != VehicleMode("GUIDED"):
@@ -186,15 +196,15 @@ class Drone:
 
         # print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
 
-    # Drone movement6 block (get_pos 함수 사용)
+    # Drone movement7 block (get_pos 함수 사용)
     def goto_location_block(self, x, y, z):
         LATITUDE_CONVERSION = 111000
         LONGITUDE_CONVERSION = 88.649 * 1000
 
         print(self.init_lat, y, LONGITUDE_CONVERSION)
 
-        target_lat = self.init_lat + (y / LATITUDE_CONVERSION)
-        target_lon = self.init_lon + (x / LONGITUDE_CONVERSION)
+        target_lat = self.init_lat + (x / LATITUDE_CONVERSION)
+        target_lon = self.init_lon - (y / LONGITUDE_CONVERSION)
         target_alt = z
 
         def get_distance(lat1, lon1, lat2, lon2):
@@ -230,7 +240,7 @@ class Drone:
                 break
             time.sleep(0.5)
 
-    # Drone movement7 block
+    # Drone movement8 block
     def land(self):
         print("Initiating landing sequence")
         self.vehicle._master.mav.command_long_send(
@@ -260,8 +270,8 @@ class Drone:
         delta_lat = self.vehicle.location.global_relative_frame.lat - self.init_lat
         delta_lon = self.vehicle.location.global_relative_frame.lon - self.init_lon
 
-        y = delta_lat * LATITUDE_CONVERSION
-        x = delta_lon * LONGITUDE_CONVERSION
+        x = delta_lat * LATITUDE_CONVERSION
+        y = -delta_lon * LONGITUDE_CONVERSION
 
         return x, y
 
@@ -330,16 +340,35 @@ if __name__ == "__main__":
         nums = 1, 1
 
         if len(nums) == 2:
-            gt.arm_takeoff(100)
-            # gt.set_yaw_to_north()
+            gt.arm_takeoff(1)
+            gt.set_yaw_to_west()
 
             time.sleep(0.1)
 
+            step = 0
+            plt.ion()
+            fig, ax = plt.subplots()
+            ax.set_xlim(-3000, 3000)  # x축 범위 설정
+            ax.set_ylim(-3000, 3000)  # y축 범위 설정
+
             while True:
+                step += 1
                 receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
 
-                gt.locking_easy(receive_arr[0], receive_arr[1], 1000)
+                # gt.goto_location(5, 10, 1)
+                gt.velocity_pid(target_x=5, target_y=10, velocity_z=0.2, history_positions=gt.past_pos_data)
+                gt.set_yaw_to_west_nonblock()
+
+                # print(gt.get_pos())
+
+                if step % 30 == 0:
+                    current_pos = gt.get_pos()
+                    print(current_pos)
+                    ax.scatter(-current_pos[1], current_pos[0])
+                    plt.draw()
+                    plt.pause(0.1)
+
                 time.sleep(0.1)
 
         else:

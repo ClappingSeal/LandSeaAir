@@ -278,11 +278,11 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal 2
+    # gimbal 2 modified 11/02
     def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
-        pitch_bytes = struct.pack('<h', int(pitch * 10))
+        pitch_bytes = struct.pack('<h', int(-pitch * 10))
         data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
@@ -358,6 +358,10 @@ class Drone:
             # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
             yaw = yaw_raw / 10.0
             pitch = pitch_raw / 10.0
+            if pitch < 0 :
+                pitch = -(180 + pitch)
+            else:
+                pitch = 180 - pitch
             roll = roll_raw / 10.0
             yaw_velocity = yaw_velocity_raw / 10.0
             pitch_velocity = pitch_velocity_raw / 10.0
@@ -405,7 +409,7 @@ class Drone:
     def take_picture_on_keypress(self,i):
         while True:
             ret, frame = self.camera.read()
-            cv2.imshow('Camera', frame)
+            # cv2.imshow('Camera', frame)
 
             key = cv2.waitKey(1)
             if key == ord('n'):  # 'n' 키가 눌렸을 때
@@ -462,9 +466,23 @@ if __name__ == '__main__':
     if start_command == 's':
         
         drone = Drone()
-        
-        for i in range(30):
-            drone.take_picture_on_keypress(i)
+        k = 1
+        while True:
+            try:
+                i = int(input("yaw 값을 입력하세요: "))
+                j = int(input("pitch 값을 입력하세요: "))
+            except ValueError:
+                print("숫자를 입력하세요.")
+                continue
+
+            drone.set_gimbal_angle(i, j)
+            print(f"Yaw 가 {i}, Pitch가 {j}로 설정되었습니다.")
+            time.sleep(0.1)
+            drone.capture_image(k)
+            k+=1
+            cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
+            if cont.lower() == 'q':
+                break
         # # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         # yaws = [0]
         # pitches = [0, -15, -30, -45, -60, -75, -90]
