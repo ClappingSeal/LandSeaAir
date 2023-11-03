@@ -405,7 +405,7 @@ class Drone:
     def take_picture_on_keypress(self,i):
         while True:
             ret, frame = self.camera.read()
-            cv2.imshow('Camera', frame)
+            # cv2.imshow('Camera', frame)
 
             key = cv2.waitKey(1)
             if key == ord('n'):  # 'n' 키가 눌렸을 때
