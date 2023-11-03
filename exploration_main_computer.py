@@ -379,6 +379,8 @@ if __name__ == "__main__":
 
             step = 0
             yaw_set = 270
+            target_x = 0
+            target_y = 0
             while True:
                 # client data receive
                 data_received = int(gt.receive_data())
@@ -398,14 +400,15 @@ if __name__ == "__main__":
 
                 # receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
-
+                target_y += 10
                 # gt.goto_location(5, 10, 1)
-                gt.velocity_pid(target_x=0, target_y=10, velocity_z=0, history_positions=gt.past_pos_data)
+                # gt.velocity_pid(target_x, target_y, velocity_z=0, history_positions=gt.past_pos_data)
                 if step % 10 == 1:
                     gt.set_yaw_to_angle_nonblock(yaw_set)
                     if yaw_set < 225 or yaw_set > 315:
                         direction = -direction
                         yaw_set += 2 * direction
+                        print('set')
 
                 time.sleep(0.1)
 
