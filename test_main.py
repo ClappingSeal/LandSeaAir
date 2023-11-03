@@ -278,11 +278,11 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal 2
+    # gimbal 2 modified 11/02
     def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
-        pitch_bytes = struct.pack('<h', int(pitch * 10))
+        pitch_bytes = struct.pack('<h', int(-pitch * 10))
         data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
         calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
         checksum_bytes = struct.pack('<H', calculated_checksum)
@@ -337,7 +337,7 @@ class Drone:
             print(f"Error receiving data via UDP: {e}")
             return None
     
-    # gimbal 6
+    # gimbal 7 modified 11/02
     def acquire_attitude(self, response):
         try:
             # CMD ID를 찾습니다.
@@ -358,6 +358,10 @@ class Drone:
             # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
             yaw = yaw_raw / 10.0
             pitch = pitch_raw / 10.0
+            if pitch < 0 :
+                pitch = -(180 + pitch)
+            else:
+                pitch = 180 - pitch
             roll = roll_raw / 10.0
             yaw_velocity = yaw_velocity_raw / 10.0
             pitch_velocity = pitch_velocity_raw / 10.0
@@ -370,6 +374,7 @@ class Drone:
         except ValueError as e:
             print("Error: {}".format(e))
             return 10000, 10000, 10000, 10000, 10000, 10000
+
     
     # def capture_image(self, num1, num2, num3, num4, num5):
     #     for _ in range(5):  # 더미 이미지 5장 캡처
