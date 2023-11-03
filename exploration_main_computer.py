@@ -404,7 +404,7 @@ if __name__ == "__main__":
                 step += 1
                 # gt.goto_location(5, 10, 1)
                 # gt.velocity_pid(target_x, target_y, velocity_z=0, history_positions=gt.past_pos_data)
-                if step % 10 == 1:
+                if step % 5 == 1:
                     gt.set_yaw_to_angle_nonblock(yaw_set)
                     if yaw_set < 225 or yaw_set > 315:
                         direction = -direction
