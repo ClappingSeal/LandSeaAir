@@ -409,7 +409,8 @@ if __name__ == "__main__":
                     if yaw_set < 225 or yaw_set > 315:
                         direction = -direction
                         yaw_set += 2 * direction
-                    print('set')
+                    yaw_set += direction
+                    print('set', yaw_set)
 
                 time.sleep(0.1)
 
