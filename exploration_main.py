@@ -469,7 +469,7 @@ class Drone:
 
 ### 초기 탐색 코드
 # 카메라 pitch, 드론 yaw를 조절해가며 탐색한다.
-# 카메라 pitch는 10 ~ 60 반복
+# 카메라 pitch는 10 ~ 60 반복 (o)
 # 드론 yaw는 -45 ~ 45 반복
 # 탐지 성공 시 yaw 서쪽으로 고정하는 기동 수행
 
@@ -485,7 +485,7 @@ if __name__ == '__main__':
         # received_data = drone.receive_data()
 
         yaw = 0
-        pitch = 10  # -45, -90
+        pitch = 0  # -45, -90
         step = 0
         drone.set_gimbal_angle(yaw, pitch) # 초기 각도
         time.sleep(1.5)
@@ -503,6 +503,12 @@ if __name__ == '__main__':
                 # 10 20 30 40 50 60 50 40 30 20 10
 
                 # if 인지 성공 시 종료 및 드론 기동
+                truth = 0
+                sending_array = drone.detect_and_find_center()
+                if sending_array[1] != 240:
+                    truth = 1
+                    break
+
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
