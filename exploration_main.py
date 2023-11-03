@@ -527,7 +527,7 @@ if __name__ == '__main__':
                 x_new = sending_array[0]
                 y_new = Drone.angle_cali(sending_array[1], pitch)
                 data_list = [x_new, y_new, truth, drone.altitude_ctr(length), cnt, cycle] 
-                data_string = str(int(x_new) * 100000000 + int(y_new+1000) * 10000 + truth*1000 + drone.altitude_ctr(length)*100 + cnt*10 + cycle)
+                data_string = str(int(x_new) * 1000000000 + int(y_new+1000) * 100000 + truth*10000 + drone.altitude_ctr(length)*1000 + cnt*10 + cycle)
                 drone.send_data(data_string)
                 print("data sending...")
                 print(data_list)

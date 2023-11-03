@@ -390,14 +390,15 @@ if __name__ == "__main__":
                 data_list = []
                 # print(type(data_received))
                 # print(type(data_list))
-                data_list.append(data_received//100000000)   # x
-                data_received = data_received%100000000
-                data_list.append(data_received//10000-1000)  # y
+                data_received = data_received%1000000000000
+                data_list.append(data_received//1000000000)   # x
+                data_received = data_received%1000000000
+                data_list.append(data_received//100000-1000)  # y
+                data_received = data_received%100000
+                data_list.append(data_received//10000)        # truth
                 data_received = data_received%10000
-                data_list.append(data_received//1000)        # truth
+                data_list.append(data_received//1000)         # length
                 data_received = data_received%1000
-                data_list.append(data_received//100)         # length
-                data_received = data_received%100
                 data_list.append(data_received//10)          # cnt
                 data_received = data_received%10
                 data_list.append(data_received)              # cycle
@@ -427,30 +428,7 @@ if __name__ == "__main__":
                     print('=========================')
                     print('=========================')
                     print('=========================')
-                    break
-
-            while True:
-                # client data receive
-                data_received = int(gt.receive_data())
-                # data_list = json.loads(data_received)
-                data_list = []
-                # print(type(data_received))
-                # print(type(data_list))
-                data_received = data_received%100000000000
-                data_list.append(data_received//100000000)   # x
-                data_received = data_received%100000000
-                data_list.append(data_received//10000-1000)  # y
-                data_received = data_received%10000
-                data_list.append(data_received//1000)        # truth
-                data_received = data_received%1000
-                data_list.append(data_received//100)         # length
-                data_received = data_received%100
-                data_list.append(data_received//10)          # cnt
-                data_received = data_received%10
-                data_list.append(data_received)              # cycle
-                print("data_received")
-                print(data_list) # 0:x, 1:y, 2: truth 3: z(altitude) 4: cnt 5: cycle
-
+                    
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
 
