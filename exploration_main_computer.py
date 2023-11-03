@@ -372,7 +372,7 @@ if __name__ == "__main__":
         gt.set_connection() # client
 
         if len(nums) == 2:
-            gt.arm_takeoff(1)
+            gt.arm_takeoff(5)
             gt.set_yaw_to_west()
 
             time.sleep(0.1)
@@ -382,6 +382,7 @@ if __name__ == "__main__":
             target_x = 0
             target_y = 0
             direction = 5
+            delta = 0
             while True:
                 # client data receive
                 data_received = int(gt.receive_data())
@@ -389,31 +390,62 @@ if __name__ == "__main__":
                 data_list = []
                 # print(type(data_received))
                 # print(type(data_list))
-                data_list.append(data_received//1000000)
-                data_received = data_received%1000000
-                data_list.append(data_received//100-1000)
+                data_list.append(data_received//100000000)   # x
+                data_received = data_received%100000000
+                data_list.append(data_received//10000-1000)  # y
+                data_received = data_received%10000
+                data_list.append(data_received//1000)        # truth
+                data_received = data_received%1000
+                data_list.append(data_received//100)         # length
                 data_received = data_received%100
-                data_list.append(data_received//10)
+                data_list.append(data_received//10)          # cnt
                 data_received = data_received%10
-                data_list.append(data_received)
+                data_list.append(data_received)              # cycle
                 print("data_received")
-                print(data_list) # 0:x, 1:y, 2: truth 3: z(altitude)
+                print(data_list) # 0:x, 1:y, 2: truth 3: z(altitude) 4: cnt 5: cycle
 
                 # receive_arr = np.array(gt.receiving_data())
                 gt.update_past_pos_data()
-                target_y += 10
                 step += 1
                 # gt.goto_location(5, 10, 1)
-                gt.velocity_pid(target_x, target_y, velocity_z=0, history_positions=gt.past_pos_data)
-                if step % 50 == 1:
+                _, target_y = gt.get_pos()
+                print(target_y)
+                gt.velocity_pid(target_x, target_y+5, velocity_z=0, history_positions=gt.past_pos_data)
+
+                if delta == 1:
                     gt.set_yaw_to_angle_nonblock(yaw_set)
-                    if yaw_set < 225 or yaw_set > 315:
+                    if yaw_set < 240 or yaw_set > 300:
                         direction = - direction
                         yaw_set += 2 * direction
                     yaw_set += direction
                     print('set', yaw_set)
 
                 time.sleep(0.1)
+                cnt = data_list[4]
+                print("cnt:", cnt)
+                if cnt == 5:
+                    break
+
+            while True:
+                # client data receive
+                data_received = int(gt.receive_data())
+                # data_list = json.loads(data_received)
+                data_list = []
+                # print(type(data_received))
+                # print(type(data_list))
+                data_list.append(data_received//100000000)   # x
+                data_received = data_received%100000000
+                data_list.append(data_received//10000-1000)  # y
+                data_received = data_received%10000
+                data_list.append(data_received//1000)        # truth
+                data_received = data_received%1000
+                data_list.append(data_received//100)         # length
+                data_received = data_received%100
+                data_list.append(data_received//10)          # cnt
+                data_received = data_received%10
+                data_list.append(data_received)              # cycle
+                print("data_received")
+                print(data_list) # 0:x, 1:y, 2: truth 3: z(altitude) 4: cnt 5: cycle
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")

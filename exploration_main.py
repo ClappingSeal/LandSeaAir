@@ -492,6 +492,7 @@ if __name__ == '__main__':
         
         direction = 5 
         cnt = 1
+        cycle = 0
         try:
             while True:
                 step += 1
@@ -500,24 +501,33 @@ if __name__ == '__main__':
                     print(pitch)
                     if pitch == 60 or pitch == 10 and direction == -5:
                         direction = -direction
+                        cycle += 1
                     pitch += direction
 
                 # if 인지 성공 시 종료 및 드론 기동
                 sending_array = drone.detect_and_find_center()
                 if sending_array[1] != 240:
                     cnt +=1
-                # elif cnt == 5:
-                #     break
+                elif cnt == 5: # 초기 탐지 5번
+                    # sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length), cnt, cycle]
+                    # x_new = sending_array[0]
+                    # y_new = Drone.angle_cali(sending_array[1], pitch)
+                    # data_list = [x_new, y_new, truth, drone.altitude_ctr(length), cnt, cycle]
+                    # data_string = str(int(x_new) * 100000000 + int(y_new+1000) * 10000 + truth*1000 + drone.altitude_ctr(length)*100 + cnt*10 + cycle)
+                    # drone.send_data(data_string)
+                    # print("data sending...")
+                    # print(data_list)
+                    break
 
                 length = 250
                 truth = 0
                 if sending_array[1] != 240:
                     truth = 1
-                sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length)]
+                sending_data = [sending_array[0], sending_array[1], truth, drone.altitude_ctr(length), cnt, cycle]
                 x_new = sending_array[0]
                 y_new = Drone.angle_cali(sending_array[1], pitch)
-                data_list = [x_new, y_new, truth, drone.altitude_ctr(length)]
-                data_string = str(int(x_new) * 1000000 + int(y_new+1000) * 100 + truth*10 + drone.altitude_ctr(length))
+                data_list = [x_new, y_new, truth, drone.altitude_ctr(length), cnt, cycle] 
+                data_string = str(int(x_new) * 100000000 + int(y_new+1000) * 10000 + truth*1000 + drone.altitude_ctr(length)*100 + cnt*10 + cycle)
                 drone.send_data(data_string)
                 print("data sending...")
                 print(data_list)
