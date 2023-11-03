@@ -545,7 +545,7 @@ if __name__ == '__main__':
                 drone.send_data(data_string)
                 print("data sending...")
                 # print(sending_array)
-                # print(data_list)
+                print(data_list)
                 # print(data_string)
 
                 # drone.sending_data(sending_data)
@@ -554,10 +554,10 @@ if __name__ == '__main__':
 
                 if step % 2 == 1:
                     pitch_change = drone.yaw_pitch(sending_array[1], pitch_curr)
-                    print("x_frame", sending_array[1])
+
                     pitch += pitch_change
                     # print(truth, yaw, pitch, pitch_change)
-                    print("ctr:", pitch)
+
                     drone.set_gimbal_angle(0, pitch) # yaw = 0 -> 제어 x
 
         except KeyboardInterrupt:
