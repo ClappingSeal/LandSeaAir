@@ -491,7 +491,7 @@ if __name__ == '__main__':
         time.sleep(1.5)
         
         direction = 10 
-
+        cnt = 1
         try:
             while True:
                 drone.set_gimbal_angle(0, pitch)
@@ -503,10 +503,10 @@ if __name__ == '__main__':
                 # 10 20 30 40 50 60 50 40 30 20 10
 
                 # if 인지 성공 시 종료 및 드론 기동
-                truth = 0
                 sending_array = drone.detect_and_find_center()
                 if sending_array[1] != 240:
-                    truth = 1
+                    cnt +=1
+                elif cnt == 20:
                     break
 
 
