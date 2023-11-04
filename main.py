@@ -392,6 +392,7 @@ if __name__ == '__main__':
             while True:
                 ret, frame = drone.camera.read()
                 sending_array = drone.detect(frame)
+                sending_array = np.array(sending_array)
 
                 # sending data
                 drone.sending_data(sending_array)
