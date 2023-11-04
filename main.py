@@ -105,7 +105,7 @@ class Drone:
 
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if area < 100:
+                if area < 1000:
                     x, y, w, h = cv2.boundingRect(contour)
                     centers.append((x + w // 2, y + h // 2))
                     sizes.append((w, h))
@@ -164,7 +164,22 @@ class Drone:
             else:
                 return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
-        return detect2(img_piece)
+        if self.detect_call_counter % self.rescheduled_count == 0:
+            x, y, w, h, label_idx = detect2(img_piece)
+            if (label_idx >= 0) and (label_idx <= 3):
+                return x, y, w, h, label_idx
+
+        # if (self.detection_in_detect2_for_detect3[4] > -0.5) and (
+        #         self.detect_call_counter % self.rescheduled_count != 0):
+        #     x, y, w, h, label_idx = detect3(img_piece)
+        #     if (label_idx >= 0) and (label_idx <= 3):
+        #         return x, y, w, h, label_idx
+        #     else:
+        #         self.detection_in_detect2_for_detect3 = (
+        #             self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -4)
+        #         return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -4
+            
+        return detect1(img_piece)
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
