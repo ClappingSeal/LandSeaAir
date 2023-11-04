@@ -27,7 +27,7 @@ class Drone:
         self.label = None
 
     def detect_and_find_center(self):
-        ret, frame = self.cap.read()
+        ret, self.frame = self.cap.read()
         conf = 0
 
         #cam check
@@ -37,7 +37,7 @@ class Drone:
 
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = get_prediction(frame, self.detection_model)
+            detection = get_prediction(self.frame, self.detection_model)
             #Sliced inference
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.to_coco_annotations()[:3]:
@@ -71,7 +71,7 @@ class Drone:
             self.tframe += 1
             if self.success:
                 (x, y, w, h) = tuple(map(int, roi))
-                #cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 if (x+w/2 < 5) or (x+w/2 > self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) - 5) or (y+h/2 < 5) or (y+h/2 > self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) - 5):
                     print('out of frame')
                     self.tracker = None
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
         while True:
             re = drone.detect_and_find_center()
-            #cv2.imshow('frame', drone.frame)
+            cv2.imshow('frame', drone.frame)
             print(re)
             if cv2.waitKey(1) == ord('q'):
                 break
