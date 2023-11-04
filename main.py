@@ -174,7 +174,7 @@ class Drone:
         if self.detect_call_counter % self.rescheduled_count == 0:
             x, y, w, h, label_idx = detect2(img_piece)
 
-        return detect1(img_piece)
+        return detect2(img_piece)
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
