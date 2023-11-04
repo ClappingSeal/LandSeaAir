@@ -178,16 +178,6 @@ class Drone:
             else:
                 self.tracking_active = False
 
-        if self.tracking_active:
-            x, y, w, h, label_idx = detect3(img_piece)
-
-            if self.detect_call_counter % self.rescheduled_count == 0:
-                if label_idx < 0 or self.detect2_threshold > self.detect2_threshold:
-                    self.tracking_active = False
-
-        if not self.tracking_active:
-            x, y, w, h, label_idx = detect1(img_piece)
-
         return x, y, w, h, label_idx
 
     # Receiving 1
