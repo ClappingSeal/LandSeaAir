@@ -396,7 +396,7 @@ if __name__ == '__main__':
                 print(x_center, y_center, w, h, label_idx)
 
                 if w > 0 and h > 0:
-                    cv2.rectangle(frame, (x-w, y), (x, y + h), (0, 255, 0), 2)
+                    cv2.rectangle(frame, (x - w // 2, y - h // 2), (x + w // 2, y + h // 2), (0, 255, 0), 2)
                     if label_idx >= 0:
                         label_text = str(label_idx)
                         text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
