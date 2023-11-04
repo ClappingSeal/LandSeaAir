@@ -164,7 +164,7 @@ class Drone:
             else:
                 return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
-        return detect1(img_piece)
+        return detect2(img_piece)
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
