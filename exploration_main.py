@@ -496,7 +496,7 @@ if __name__ == '__main__':
             while True:
                 step += 1
 
-                if cnt <= 100: # 두리번두리번
+                if cnt <= 50: # 두리번두리번
                     if step % 5 == 1:
                         drone.set_gimbal_angle(0, pitch)
                         if pitch == 60 or pitch == 10 and direction == -5:
