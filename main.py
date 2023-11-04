@@ -158,8 +158,7 @@ class Drone:
 
                 bbox = (X, Y, width, height)
                 if self.tracker is None:
-                    self.tracker = cv2.TrackerKCF_create()
-                    self.tracker.init(img, bbox)
+                    return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
                 self.success, bbox = self.tracker.update(img)
                 X, Y, width, height = tuple(map(int, bbox))
