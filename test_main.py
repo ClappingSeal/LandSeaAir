@@ -467,22 +467,22 @@ if __name__ == '__main__':
         
         drone = Drone()
         k = 1
-        while True:
+        try:
+
             try:
                 i = int(input("yaw 값을 입력하세요: "))
                 j = int(input("pitch 값을 입력하세요: "))
             except ValueError:
                 print("숫자를 입력하세요.")
-                continue
 
-            drone.set_gimbal_angle(i, j)
             print(f"Yaw 가 {i}, Pitch가 {j}로 설정되었습니다.")
-            time.sleep(0.1)
-            drone.capture_image(k)
-            k+=1
-            cont = input("계속하려면 Enter를 누르세요. 종료하려면 'q'를 입력하세요: ")
-            if cont.lower() == 'q':
-                break
+            
+            while True:
+                drone.set_gimbal_angle(i, j)
+                time.sleep(0.1)
+                drone.capture_image(k)
+                k+=1
+
         # # yaws = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90]
         # yaws = [0]
         # pitches = [0, -15, -30, -45, -60, -75, -90]
@@ -521,12 +521,6 @@ if __name__ == '__main__':
         #         time.sleep(0.2)
         #         drone.capture_image(yaw, pitch, yaw_wr, pitch_wr, roll_wr)
         #         time.sleep(0.2)
-
-        try:
-            while True:
-                print('finish!!!')
-
-                time.sleep(0.1)
 
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
