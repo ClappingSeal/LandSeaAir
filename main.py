@@ -326,7 +326,7 @@ class Drone:
 
     # gimbal 8 added 11/04
     def set_gimbal_angle_feedback(self, yaw, pitch):
-        while True:
+        for i in range(5):
             self.set_gimbal_angle(yaw, pitch)
             yaw_set = self.current_yaw
             pitch_set = self.current_pitch
@@ -336,6 +336,7 @@ class Drone:
             if abs(yaw_set - yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
                 print("all set angles")
                 break
+            time.sleep(2)
 
     # end
     def close_connection(self):
