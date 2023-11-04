@@ -409,25 +409,27 @@ if __name__ == "__main__":
                 gt.update_past_pos_data()
                 step += 1
                 # gt.goto_location(5, 10, 1)
-                _, target_y = gt.get_pos()
-                print(target_y)
-                gt.velocity_pid(target_x, target_y+5, velocity_z=0, history_positions=gt.past_pos_data)
+                if cnt < 100:
+                    _, target_y = gt.get_pos()
+                    print(target_y)
+                    gt.velocity_pid(target_x, target_y+5, velocity_z=0, history_positions=gt.past_pos_data)
 
-                if delta == 1:
-                    gt.set_yaw_to_angle_nonblock(yaw_set)
-                    if yaw_set < 240 or yaw_set > 300:
-                        direction = - direction
-                        yaw_set += 2 * direction
-                    yaw_set += direction
-                    print('set', yaw_set)
-
+                    if delta == 1:
+                        gt.set_yaw_to_angle_nonblock(yaw_set)
+                        if yaw_set < 240 or yaw_set > 300:
+                            direction = - direction
+                            yaw_set += 2 * direction
+                        yaw_set += direction
+                        print('set', yaw_set)
+                elif cnt > 100:
+                    print('=========================')
+                    print('=========================')
+                    print('=========================')
+                    
                 time.sleep(0.1)
                 cnt = data_list[4]
                 print("cnt:", cnt)
-                if cnt == 20:
-                    print('=========================')
-                    print('=========================')
-                    print('=========================')
+
                     
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
