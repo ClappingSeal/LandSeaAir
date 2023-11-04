@@ -383,7 +383,6 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        ret, frame = drone.camera.read()
         drone.set_gimbal_angle_feedback(0, 30)
         time.sleep(2)
 
@@ -391,7 +390,8 @@ if __name__ == '__main__':
 
         try:
             while True:
-                sending_array = drone.detect(drone.camera)
+                ret, frame = drone.camera.read()
+                sending_array = drone.detect(frame)
 
                 # sending data
                 drone.sending_data(sending_array)
