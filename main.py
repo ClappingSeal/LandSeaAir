@@ -92,6 +92,10 @@ class Drone:
         self.frame_height_divide_2 = self.frame_height // 2
 
     def detect(self, img_piece):
+        original_height, original_width = img_piece.shape[:2]
+        new_width = int(original_width * 1.3275)
+        img_piece = cv2.resize(img_piece, (new_width, original_height), interpolation=cv2.INTER_LINEAR)
+
         model = self.model
 
         self.detect_call_counter += 1
@@ -169,16 +173,14 @@ class Drone:
             if (label_idx >= 0) and (label_idx <= 3):
                 return x, y, w, h, label_idx
 
-        # if (self.detection_in_detect2_for_detect3[4] > -0.5) and (
-        #         self.detect_call_counter % self.rescheduled_count != 0):
-        #     x, y, w, h, label_idx = detect3(img_piece)
-        #     if (label_idx >= 0) and (label_idx <= 3):
-        #         return x, y, w, h, label_idx
+        elif self.detection_in_detect2_for_detect3[4] > -0.5:
+            x, y, w, h, label_idx = detect3(img_piece)
+            return x, y, w, h, label_idx
         #     else:
         #         self.detection_in_detect2_for_detect3 = (
         #             self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -4)
         #         return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -4
-            
+
         return detect1(img_piece)
 
     # Receiving 1
