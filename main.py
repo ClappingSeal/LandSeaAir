@@ -91,9 +91,8 @@ class Drone:
         self.frame_width_divide_2 = self.frame_width // 2
         self.frame_height_divide_2 = self.frame_height // 2
 
-    def detect(self):
+    def detect(self, img_piece):
         model = self.model
-        img_piece = self.camera
 
         self.detect_call_counter += 1
 
@@ -392,7 +391,7 @@ if __name__ == '__main__':
 
         try:
             while True:
-                sending_array = drone.detect()
+                sending_array = drone.detect(drone.camera)
 
                 # sending data
                 drone.sending_data(sending_array)
