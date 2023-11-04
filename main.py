@@ -173,12 +173,8 @@ class Drone:
 
         if self.detect_call_counter % self.rescheduled_count == 0:
             x, y, w, h, label_idx = detect2(img_piece)
-            if label_idx >= 0:
-                self.tracking_active = True
-            else:
-                self.tracking_active = False
 
-        return x, y, w, h, label_idx
+        return detect1(img_piece)
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
