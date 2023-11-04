@@ -170,10 +170,30 @@ class Drone:
 
         if self.detect_call_counter % self.rescheduled_count == 0:
             x, y, w, h, label_idx = detect2(img_piece)
-            if (label_idx >= 0) and (label_idx <= 3):
-                return x, y, w, h, label_idx
+            if label_idx >= 0:
+                # If label_idx is non-negative, initiate or continue with detect3 tracking
+                self.tracking_active = True  # You should define this attribute in your class __init__
+            else:
+                # If label_idx is negative, disable tracking
+                self.tracking_active = False
 
-        return detect1(img_piece)
+        if self.tracking_active:
+            # If tracking is active, run detect3
+            x, y, w, h, label_idx = detect3(img_piece)
+
+            # Periodically check with detect2 to confirm detection
+            # You could define a check frequency, for example, every 5 calls
+            if self.detect_call_counter % 5 == 0:
+                check_x, check_y, check_w, check_h, check_label_idx = detect2(img_piece)
+                if check_label_idx < 0 or self.detect2_threshold > highest_confidence:
+                    # If detect2 fails to confirm the detection, switch back to detect1
+                    self.tracking_active = False
+
+        if not self.tracking_active:
+            # If not tracking, use detect1
+            x, y, w, h, label_idx = detect1(img_piece)
+
+        return x, y, w, h, label_idx
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
