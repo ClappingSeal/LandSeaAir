@@ -80,14 +80,14 @@ class Drone:
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
         self.tracking_active = False
-        self.scale_factor = 1.3275
+        self.scale_factor = 1
         self.tracker = None
         self.detection_in_detect2_for_detect3 = (425, 240, 0, 0, -0.7)
         self.detect_call_counter = 0
         self.detect2_threshold = 0.4
         self.rescheduled_count = 100
 
-        self.frame_width = 850
+        self.frame_width = 640
         self.frame_height = 480
         self.frame_width_divide_2 = self.frame_width // 2
         self.frame_height_divide_2 = self.frame_height // 2
@@ -410,14 +410,10 @@ if __name__ == '__main__':
                                       cv2.FILLED)
                         cv2.putText(frame, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
-                new_width = int(frame.shape[1] * 1.3275)
-                new_height = frame.shape[0]
-                resized_frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
-
-                cv2.imshow('Resized Frame', resized_frame)
+                cv2.imshow('Frame', frame)
 
                 image_name = f"resized_{image_counter}.jpg"
-                cv2.imwrite(image_name, resized_frame)
+                cv2.imwrite(image_name, frame)
                 image_counter += 1
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
