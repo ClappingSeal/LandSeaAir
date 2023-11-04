@@ -167,7 +167,6 @@ class Drone:
         if self.detect_call_counter % self.rescheduled_count == 0:
             x, y, w, h, label_idx = detect2(img_piece)
             if (label_idx >= 0) and (label_idx <= 3):
-                detection_in_detect2_for_detect3 = (x, y, w, h, label_idx)
                 return x, y, w, h, label_idx
 
         if (self.detection_in_detect2_for_detect3[4] > -0.5) and (
