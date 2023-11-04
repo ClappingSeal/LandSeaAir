@@ -383,6 +383,9 @@ if __name__ == '__main__':
         try:
             while True:
                 ret, frame = drone.camera.read()
+                if not ret:
+                    print("Failed to grab frame")
+                    break
                 sending_array = drone.detect(frame)
                 sending_data = [sending_array[0], sending_array[1], sending_array[2], sending_array[3]]
 
@@ -395,22 +398,13 @@ if __name__ == '__main__':
                 y_center = drone.frame_height - (y + h // 2)
                 print(x_center, y_center, w, h, label_idx)
 
-                if w > 0 and h > 0:
-                    cv2.rectangle(frame, (x - w // 2, y - h // 2), (x + w // 2, y + h // 2), (0, 255, 0), 2)
-                    if label_idx >= 0:
-                        label_text = str(label_idx)
-                        text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                        text_w, text_h = text_size[0]
-                        text_x, text_y = frame.shape[1] - text_w - 10, frame.shape[0] - 10
-                        cv2.rectangle(frame, (text_x, text_y + 5), (text_x + text_w, text_y - text_h - 5), (0, 255, 0),
-                                      cv2.FILLED)
-                        cv2.putText(frame, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+                # Draw bounding box
+                if w > 0 and h > 0:  # if width and height are positive, we have a valid box to draw
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.putText(frame, f'Label {label_idx}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
-                cv2.imshow('Frame', frame)
-
-                image_name = f"resized_{image_counter}.jpg"
-                cv2.imwrite(image_name, frame)
-                image_counter += 1
+                # Display the resulting frame
+                cv2.imshow('Drone Camera Feed', frame)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -419,3 +413,4 @@ if __name__ == '__main__':
             drone.close_connection()
             drone.camera.release()
             cv2.destroyAllWindows()
+
