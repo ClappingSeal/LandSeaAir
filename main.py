@@ -105,7 +105,7 @@ class Drone:
 
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if area < 1000:
+                if area < 100:
                     x, y, w, h = cv2.boundingRect(contour)
                     centers.append((x + w // 2, y + h // 2))
                     sizes.append((w, h))
