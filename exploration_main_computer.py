@@ -410,6 +410,10 @@ if __name__ == "__main__":
                 step += 1
                 # gt.goto_location(5, 10, 1)
 
+                time.sleep(0.1)
+                cnt = data_list[4]
+                print("cnt:", cnt)
+                
                 ### 드론 기동
                 if cnt < 100: # 두리번두리번
                     _, target_y = gt.get_pos()
@@ -423,14 +427,11 @@ if __name__ == "__main__":
                             yaw_set += 2 * direction
                         yaw_set += direction
                         print('set', yaw_set)
-                elif cnt > 100: # 서쪽 고정을 위한 기동 및 서쪽 고정
+                elif cnt > 100: # 서쪽 고정을 위한 기동 및 서쪽
                     print('=========================')
                     print('=========================')
                     print('=========================')
 
-                time.sleep(0.1)
-                cnt = data_list[4]
-                print("cnt:", cnt)
 
                     
         else:
