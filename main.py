@@ -441,4 +441,4 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.images_to_avi("captured_image", "output.avi")
             print("Video saved as output.avi")
-            drone.close_connection()
+            # drone.close_connection()
