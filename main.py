@@ -79,12 +79,12 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.tracking_active = None
+        self.tracking_active = False
         self.scale_factor = 1.3275
         self.tracker = None
         self.detection_in_detect2_for_detect3 = (425, 240, 0, 0, -0.7)
         self.detect_call_counter = 0
-        self.detect2_threshold = 0.4
+        self.detect2_threshold = 0.2
         self.rescheduled_count = 100
 
         self.frame_width = 850
@@ -169,29 +169,23 @@ class Drone:
             else:
                 return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
+        x, y, w, h, label_idx = self.detection_in_detect2_for_detect3
+
         if self.detect_call_counter % self.rescheduled_count == 0:
             x, y, w, h, label_idx = detect2(img_piece)
             if label_idx >= 0:
-                # If label_idx is non-negative, initiate or continue with detect3 tracking
-                self.tracking_active = True  # You should define this attribute in your class __init__
+                self.tracking_active = True
             else:
-                # If label_idx is negative, disable tracking
                 self.tracking_active = False
 
         if self.tracking_active:
-            # If tracking is active, run detect3
             x, y, w, h, label_idx = detect3(img_piece)
 
-            # Periodically check with detect2 to confirm detection
-            # You could define a check frequency, for example, every 5 calls
-            if self.detect_call_counter % 5 == 0:
-                check_x, check_y, check_w, check_h, check_label_idx = detect2(img_piece)
-                if check_label_idx < 0 or self.detect2_threshold > highest_confidence:
-                    # If detect2 fails to confirm the detection, switch back to detect1
+            if self.detect_call_counter % self.rescheduled_count == 0:
+                if label_idx < 0 or self.detect2_threshold > self.detect2_threshold:
                     self.tracking_active = False
 
         if not self.tracking_active:
-            # If not tracking, use detect1
             x, y, w, h, label_idx = detect1(img_piece)
 
         return x, y, w, h, label_idx
