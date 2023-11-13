@@ -79,25 +79,29 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.scale_factor = 1.3275
+        self.tracking_active = False
+        self.scale_factor = 1
         self.tracker = None
         self.detection_in_detect2_for_detect3 = (425, 240, 0, 0, -0.7)
         self.detect_call_counter = 0
-        self.detect2_threshold = 0.2
+        self.detect2_threshold = 0.4
         self.rescheduled_count = 100
 
-        self.frame_width = 850
+        self.frame_width = 640
         self.frame_height = 480
         self.frame_width_divide_2 = self.frame_width // 2
         self.frame_height_divide_2 = self.frame_height // 2
 
     def detect(self, img_piece):
+        original_height, original_width = img_piece.shape[:2]
+        new_width = int(original_width * 1.3275)
+        img_piece = cv2.resize(img_piece, (new_width, original_height), interpolation=cv2.INTER_LINEAR)
+
         model = self.model
 
         self.detect_call_counter += 1
 
         def detect1(img):
-            print('1')
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -123,7 +127,6 @@ class Drone:
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -1
 
         def detect2(img):
-            print('2')
             CONFIDENCE_THRESHOLD = self.detect2_threshold
             detection = model(img, verbose=False)[0]
 
@@ -150,7 +153,6 @@ class Drone:
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -2
 
         def detect3(img):
-            print('3')
             if self.detection_in_detect2_for_detect3:
                 X, Y, width, height, label_idx = self.detection_in_detect2_for_detect3
                 if width <= 0 or height <= 0 or X + width > img.shape[1] or Y + height > img.shape[0]:
@@ -167,24 +169,12 @@ class Drone:
             else:
                 return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
+        x, y, w, h, label_idx = self.detection_in_detect2_for_detect3
+
         if self.detect_call_counter % self.rescheduled_count == 0:
-            self.tracker = None
             x, y, w, h, label_idx = detect2(img_piece)
-            if (label_idx >= 0) and (label_idx <= 3):
-                detection_in_detect2_for_detect3 = (x, y, w, h, label_idx)
-                return x, y, w, h, label_idx
 
-        if (self.detection_in_detect2_for_detect3[4] > -0.5) and (
-                self.detect_call_counter % self.rescheduled_count != 0):
-            x, y, w, h, label_idx = detect3(img_piece)
-            if (label_idx >= 0) and (label_idx <= 3):
-                return x, y, w, h, label_idx
-            else:
-                self.detection_in_detect2_for_detect3 = (
-                    self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -4)
-                return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -4
-
-        return detect1(img_piece)
+        return detect2(img_piece)
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -235,7 +225,6 @@ class Drone:
     def send_command_to_gimbal(self, command_bytes):
         try:
             self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
-            # print("Command sent successfully!")
         except socket.error as e:
             print(f"Error sending command via UDP: {e}")
 
@@ -394,12 +383,14 @@ if __name__ == '__main__':
         try:
             while True:
                 ret, frame = drone.camera.read()
+                if not ret:
+                    print("Failed to grab frame")
+                    break
                 sending_array = drone.detect(frame)
                 sending_data = [sending_array[0], sending_array[1], sending_array[2], sending_array[3]]
 
                 # sending data
                 drone.sending_data(sending_data)
-                print(sending_array)
 
                 # image show, process
                 x, y, w, h, label_idx = sending_array
@@ -407,23 +398,13 @@ if __name__ == '__main__':
                 y_center = drone.frame_height - (y + h // 2)
                 print(x_center, y_center, w, h, label_idx)
 
-                if w > 0 and h > 0:
+                # Draw bounding box
+                if w > 0 and h > 0:  # if width and height are positive, we have a valid box to draw
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    if label_idx >= 0:
-                        label_text = str(label_idx)
-                        text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                        text_w, text_h = text_size[0]
-                        text_x, text_y = frame.shape[1] - text_w - 10, frame.shape[0] - 10
-                        cv2.rectangle(frame, (text_x, text_y + 5), (text_x + text_w, text_y - text_h - 5), (0, 255, 0),
-                                      cv2.FILLED)
-                        cv2.putText(frame, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+                    cv2.putText(frame, f'Label {label_idx}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
-                cv2.imshow('Frame', frame)
-
-                # 이미지 저장
-                image_name = f"{image_counter}.jpg"
-                cv2.imwrite(image_name, frame)
-                image_counter += 1
+                # Display the resulting frame
+                cv2.imshow('Drone Camera Feed', frame)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -432,3 +413,4 @@ if __name__ == '__main__':
             drone.close_connection()
             drone.camera.release()
             cv2.destroyAllWindows()
+
