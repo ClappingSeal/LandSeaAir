@@ -6,7 +6,8 @@ class Drone:
     def __init__(self):
 
         self.cap = cv2.VideoCapture(0)
-
+        #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
+        #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
         self.tracker = None
         self.success = False
         self.model = YOLO('yolov5s300.pt')
@@ -21,7 +22,7 @@ class Drone:
     def detect_and_find_center(self):
         ret, self.frame = self.cap.read()
         conf = 0
-
+        #self.frame = cv2.resize(self.frame, (1024, 768))
         #cam check
         if not ret:
             print('Cam Error')
@@ -29,7 +30,7 @@ class Drone:
 
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = self.model(self.frame, verbose=False, device='cpu')[0]
+            detection = self.model(self.frame, verbose=False, device='cpu', imgsz=1024)[0]
             #Sliced inference
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
