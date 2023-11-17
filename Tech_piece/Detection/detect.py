@@ -10,7 +10,7 @@ class Drone:
         #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
         self.tracker = None
         self.success = False
-        self.model = YOLO('yolov5s300.pt')
+        self.model = YOLO('yolov5n300_full_integer_quant.tflite')
         #max tracking frame
         self.maxtrack = 180
         self.tframe = 0
@@ -30,7 +30,7 @@ class Drone:
 
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = self.model(self.frame, verbose=False, device='cpu', imgsz=1024)[0]
+            detection = self.model(self.frame, verbose=False, device='cpu', imgsz=1024)
             #Sliced inference
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
