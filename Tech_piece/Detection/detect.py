@@ -30,7 +30,7 @@ class Drone:
 
         #Detection
         if (self.tracker is None) or (self.tframe > self.maxtrack):
-            detection = self.model(self.frame, verbose=False, device='cpu', imgsz=1024)
+            detection = self.model(self.frame, verbose=False, device='cpu', imgsz=1024)[0]
             #Sliced inference
             #detection = get_sliced_prediction(frame, self.detection_model, slice_height=480, slice_width=480, overlap_height_ratio=0.2, overlap_width_ratio=0.2)
             for data in detection.boxes.data.tolist():
