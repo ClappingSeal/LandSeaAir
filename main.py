@@ -403,7 +403,7 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(0, 45)
+        drone.set_gimbal_angle(0, 30)
         time.sleep(2)
 
         image_counter = 1
