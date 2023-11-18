@@ -411,6 +411,8 @@ if __name__ == '__main__':
                 if not ret:
                     print("Failed to grab frame")
                     break
+
+                frame = cv2.resize(frame, (drone.frame_width, drone.frame_height))
                 sending_array = drone.detect(frame)
                 sending_data = [sending_array[0], sending_array[1], sending_array[2], sending_array[3]]
 
