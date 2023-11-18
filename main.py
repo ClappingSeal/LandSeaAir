@@ -120,9 +120,11 @@ class Drone:
 
                 min_size = max(sizes, key=lambda size: size[0] * size[1])
                 width, height = min_size
-
+                
+                time.sleep(0.1)
                 return avg_x, avg_y, width, height, -1
 
+            time.sleep(0.1)
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -1
 
         def detect2(img):
