@@ -96,7 +96,7 @@ class Drone:
         self.using_detect3 = False
 
         # for time 아끼기
-        detection = model(self.camera, verbose=False)
+        detection = self.model(self.camera, verbose=False)
 
     def detect(self, img_piece):
         model = self.model
