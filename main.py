@@ -85,7 +85,7 @@ class Drone:
         self.detect_call_counter = 0
         self.detect3_call_counter = 0
         self.detect2_threshold = 0.7
-        self.rescheduled_count = 100
+        self.rescheduled_count = 60
         self.tracking_rescheduled_count = 100
 
         self.frame_width = 850
