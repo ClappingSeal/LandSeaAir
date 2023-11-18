@@ -416,7 +416,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             drone.close_connection()
             drone.camera.release()
-            drone.images_to_avi("captured_image", "output.avi")
+            drone.images_to_avi("", "output.avi")
             cv2.destroyAllWindows()
             
             
