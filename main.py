@@ -406,6 +406,11 @@ if __name__ == '__main__':
                 # Display the resulting frame
                 # cv2.imshow('Drone Camera Feed', frame)
 
+                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                # 이미지에 시간 표시
+                cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+  
                 filename = f"{image_counter}.jpg"
                 cv2.imwrite(filename, frame)
                 image_counter += 1
