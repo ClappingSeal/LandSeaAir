@@ -404,7 +404,7 @@ if __name__ == '__main__':
                     cv2.putText(frame, f'Label {label_idx}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                 # Display the resulting frame
-                cv2.imshow('Drone Camera Feed', frame)
+                # cv2.imshow('Drone Camera Feed', frame)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
