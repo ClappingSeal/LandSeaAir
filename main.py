@@ -80,18 +80,22 @@ class Drone:
 
         # detection requirements
         self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.tracking_active = False
-        self.scale_factor = 1
         self.tracker = None
         self.detection_in_detect2_for_detect3 = (425, 240, 0, 0, -0.7)
         self.detect_call_counter = 0
-        self.detect2_threshold = 0.1
+        self.detect3_call_counter = 0
+        self.detect2_threshold = 0.7
         self.rescheduled_count = 100
+        self.tracking_rescheduled_count = 100
 
-        self.frame_width = 640
+        self.camera = cv2.VideoCapture('sky2.mp4')
+
+        self.frame_width = 850
         self.frame_height = 480
         self.frame_width_divide_2 = self.frame_width // 2
         self.frame_height_divide_2 = self.frame_height // 2
+        self.scale_factor = 1.3275
+        self.using_detect3 = False
 
     def detect(self, img_piece):
         model = self.model
