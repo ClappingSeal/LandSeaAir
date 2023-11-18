@@ -94,10 +94,6 @@ class Drone:
         self.frame_height_divide_2 = self.frame_height // 2
 
     def detect(self, img_piece):
-        original_height, original_width = img_piece.shape[:2]
-        new_width = int(original_width * 1.3275)
-        img_piece = cv2.resize(img_piece, (new_width, original_height), interpolation=cv2.INTER_LINEAR)
-
         model = self.model
 
         self.detect_call_counter += 1
@@ -161,21 +157,41 @@ class Drone:
 
                 bbox = (X, Y, width, height)
                 if self.tracker is None:
+                    if hasattr(self, 'tracker') and self.tracker:
+                        self.tracker.clear()
                     self.tracker = cv2.TrackerKCF_create()
                     self.tracker.init(img, bbox)
 
-                self.success, bbox = self.tracker.update(img)
-                X, Y, width, height = tuple(map(int, bbox))
-                return X, Y, width, height, label_idx
+                success, bbox = self.tracker.update(img)
+                if success:
+                    X, Y, width, height = tuple(map(int, bbox))
+                    return X, Y, width, height, label_idx
+                else:
+                    # 추적 실패 처리
+                    self.tracker = None  # 트래커 재초기화
+                    return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
             else:
                 return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
-        x, y, w, h, label_idx = self.detection_in_detect2_for_detect3
-
+        # detect2 used
         if self.detect_call_counter % self.rescheduled_count == 0:
-            x, y, w, h, label_idx = detect2(img_piece)
+            bbox = detect2(img_piece)
+            if bbox[4] < 0:
+                return detect1(img_piece)
+            self.detection_in_detect2_for_detect3 = bbox
+            self.using_detect3 = True
+            return bbox
 
-        return detect2(img_piece)
+        if (self.detect_call_counter % self.rescheduled_count != 0) and self.using_detect3:
+            bbox = detect3(img_piece)
+            self.detect3_call_counter += 1
+            self.detection_in_detect2_for_detect3 = bbox
+            if self.detect3_call_counter % self.tracking_rescheduled_count == 0:
+                self.using_detect3 = False
+                self.detect_call_counter = 98
+            return bbox
+
+        return detect1(img_piece)
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
