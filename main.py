@@ -428,6 +428,13 @@ if __name__ == '__main__':
                 # Draw bounding box
                 if w > 0 and h > 0:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    center_x = x + w // 2
+                    center_y = y + h // 2
+
+                    # 중심점 좌표 표시
+                    center_text = f"Center: ({center_x}, {center_y})"
+                    cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
                     if label_idx >= 0:
                         label_text = str(label_idx)
                         text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
