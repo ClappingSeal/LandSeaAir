@@ -95,7 +95,9 @@ class Drone:
         self.scale_factor = 1.3275
         self.using_detect3 = False
 
-        # detection_for_time_save = self.model(self.camera, verbose=False)[0]
+        # for time save in detection2
+        ret, frame = self.camera.read()
+        detection_for_time_save = self.model(frame, verbose=False)[0]
 
     def detect(self, img_piece):
         model = self.model
