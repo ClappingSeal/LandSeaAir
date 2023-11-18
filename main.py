@@ -418,10 +418,17 @@ if __name__ == '__main__':
                 print(x_center, y_center, w, h, label_idx)
 
                 # Draw bounding box
-                if w > 0 and h > 0:  # if width and height are positive, we have a valid box to draw
+                if w > 0 and h > 0:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.putText(frame, f'Label {label_idx}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
+                    if label_idx >= 0:
+                        label_text = str(label_idx)
+                        text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                        text_w, text_h = text_size[0]
+                        text_x, text_y = frame.shape[1] - text_w - 10, frame.shape[0] - 10
+                        cv2.rectangle(frame, (text_x, text_y + 5), (text_x + text_w, text_y - text_h - 5), (0, 255, 0),
+                                      cv2.FILLED)
+                        cv2.putText(frame, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+                    
                 # Display the resulting frame
                 # cv2.imshow('Drone Camera Feed', frame)
 
