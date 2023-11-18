@@ -68,7 +68,7 @@ class Drone:
     def arm_takeoff(self, h):
         self.vehicle.channels.overrides['3'] = self.min_throttle
         self.vehicle.mode = VehicleMode("STABILIZE")
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         cmds = self.vehicle.commands
         cmds.download()
@@ -78,10 +78,10 @@ class Drone:
                               mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, h)
         cmds.add(takeoff_cmd)
         cmds.upload()
-        time.sleep(0.1)  # upload wait
+        time.sleep(0.5)  # upload wait
 
         self.vehicle.armed = True
-        time.sleep(0.1)
+        time.sleep(0.5)
         self.vehicle.channels.overrides['3'] = self.arm_throttle
         time.sleep(3)
         print("ARMED : ", self.vehicle.armed)
