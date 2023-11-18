@@ -88,8 +88,6 @@ class Drone:
         self.rescheduled_count = 100
         self.tracking_rescheduled_count = 100
 
-        self.camera = cv2.VideoCapture('sky2.mp4')
-
         self.frame_width = 850
         self.frame_height = 480
         self.frame_width_divide_2 = self.frame_width // 2
