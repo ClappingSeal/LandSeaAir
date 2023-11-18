@@ -334,7 +334,7 @@ class Drone:
         self.vehicle.close()
 
     # to avi
-    def images_to_avi(self, image_prefix, base_output_filename, fps=20):
+    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
         files = os.listdir()
         jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
 
@@ -406,11 +406,18 @@ if __name__ == '__main__':
                 # Display the resulting frame
                 # cv2.imshow('Drone Camera Feed', frame)
 
+                filename = f"{image_counter}.jpg"
+                cv2.imwrite(filename, frame)
+                image_counter += 1
+
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
         except KeyboardInterrupt:
             drone.close_connection()
             drone.camera.release()
+            drone.images_to_avi("captured_image", "output.avi")
             cv2.destroyAllWindows()
+            
+            
 
