@@ -168,7 +168,7 @@ class Drone:
                 if self.tracker is None:
                     if hasattr(self, 'tracker') and self.tracker:
                         self.tracker.clear()
-                    self.tracker = cv2.TrackerKCF_create()
+                    self.tracker = cv2.TrackerCSRT_create()
                     self.tracker.init(img, bbox)
 
                 success, bbox = self.tracker.update(img)
