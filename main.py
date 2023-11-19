@@ -85,7 +85,7 @@ class Drone:
         self.detect_call_counter = 0
         self.detect3_call_counter = 0
         self.detect2_threshold = 0.1
-        self.rescheduled_count = 30
+        self.rescheduled_count = 100
         self.tracking_rescheduled_count = 100
 
         self.frame_width = 850
@@ -174,7 +174,6 @@ class Drone:
                 success, bbox = self.tracker.update(img)
                 if success:
                     X, Y, width, height = tuple(map(int, bbox))
-                    print('222')
                     return X, Y, width, height, label_idx
                 else:
                     # 추적 실패 처리
