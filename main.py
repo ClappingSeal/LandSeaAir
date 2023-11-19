@@ -322,7 +322,7 @@ if __name__ == '__main__':
                 image_counter += 1
                 
                 # sending data
-                drone.sending_data(sending_data)
+                # drone.sending_data(sending_data)
                 # Display the resulting frame
                 # cv2.imshow('Drone Camera Feed', frame)
 
