@@ -200,8 +200,7 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
-    # gimbal 2 modified 11/02
-    def set_gimbal_angle(self, yaw, pitch):  # 각도 체크섬 생성 및 각도 조종 명령 주기
+    def set_gimbal_angle(self, yaw, pitch):
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
         pitch_bytes = struct.pack('<h', int(-pitch * 10))
@@ -213,114 +212,6 @@ class Drone:
 
         self.current_yaw = yaw
         self.current_pitch = pitch
-
-    # gimbal 3
-    def send_command_to_gimbal(self, command_bytes):
-        try:
-            self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
-        except socket.error as e:
-            print(f"Error sending command via UDP: {e}")
-
-    # gimbal 4
-    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
-
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
-
-        yaw_adjustment = self.current_yaw + diff_x
-        pitch_adjustment = self.current_pitch - diff_y
-
-        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
-        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
-
-        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
-        print(target_x, target_y)
-        print(yaw_adjustment, -pitch_adjustment)
-
-    # gimbal 5
-    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
-        center_x = self.frame_width // 2
-        center_y = self.frame_height // 2
-
-        diff_x = target_x - center_x
-        diff_y = target_y - center_y
-
-        scale_factor_yaw = 135 / center_x
-        scale_factor_pitch = (25 + 90) / center_y
-
-        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
-        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
-
-        yaw_adjustment = max(-135, min(135, yaw_adjustment))
-        pitch_adjustment = max(-90, min(25, pitch_adjustment))
-
-        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
-
-    # gimbal 6
-    def accquire_data(self):
-        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
-
-        try:
-            response, addr = self.udp_socket.recvfrom(1024)
-            # print("Received:", response)
-            return response
-        except socket.error as e:
-            print(f"Error receiving data via UDP: {e}")
-            return None
-
-    # gimbal 7 modified 11/02
-    def acquire_attitude(self, response):
-        try:
-            # CMD ID를 찾습니다.
-            index_0d = response.find(b'\x0D')
-
-            # Yaw, Pitch, Roll 데이터를 추출합니다.
-            data_06 = response[index_0d + 1:index_0d + 7]
-            yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
-
-            # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-            data_0c = response[index_0d + 7:index_0d + 15]
-            # print(len(data_0c))
-            if len(data_0c) != 8:
-                raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
-
-            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
-
-            # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
-            yaw = yaw_raw / 10.0
-            pitch = pitch_raw / 10.0
-            if pitch < 0:
-                pitch = -(180 + pitch)
-            else:
-                pitch = 180 - pitch
-            roll = roll_raw / 10.0
-            yaw_velocity = yaw_velocity_raw / 10.0
-            pitch_velocity = pitch_velocity_raw / 10.0
-            roll_velocity = roll_velocity_raw / 10.0
-
-            return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
-        except struct.error as e:
-            print("Error in unpacking data: {}".format(e))
-            return 10000, 10000, 10000, 10000, 10000, 10000
-        except ValueError as e:
-            print("Error: {}".format(e))
-            return 10000, 10000, 10000, 10000, 10000, 10000
-
-    # gimbal 8 added 11/04
-    def set_gimbal_angle_feedback(self, yaw, pitch):
-        for i in range(5):
-            self.set_gimbal_angle(yaw, pitch)
-            yaw_set = self.current_yaw
-            pitch_set = self.current_pitch
-
-            response = self.accquire_data()
-            yaw_current, pitch_current, _, _, _, _ = self.acquire_attitude(response)
-            if abs(yaw_set - yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
-                print("all set angles")
-                break
-            time.sleep(2)
 
     # end
     def close_connection(self):
@@ -409,22 +300,22 @@ if __name__ == '__main__':
                     center_y = drone.frame_height - (y + h // 2)
 
                     # 중심점 좌표 표시
-                    # center_text = f"Center: ({center_x}, {center_y})"
-                    # cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                    center_text = f"Center: ({center_x}, {center_y})"
+                    cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
                 # 이미지에 시간 표시
-                # current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                # cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
                 
                 # 이미지 저장
-                # filename = f"{image_counter}.jpg"
-                # cv2.imwrite(filename, frame)
+                filename = f"{image_counter}.jpg"
+                cv2.imwrite(filename, frame)
                 image_counter += 1
                 
                 # sending data
-                # drone.sending_data(sending_data)
+                drone.sending_data(sending_data)
                 # Display the resulting frame
-                cv2.imshow('Drone Camera Feed', frame)
+                # cv2.imshow('Drone Camera Feed', frame)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
