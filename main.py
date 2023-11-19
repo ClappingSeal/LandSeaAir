@@ -311,11 +311,17 @@ if __name__ == '__main__':
 
                     # 중심점 좌표 표시
                     center_text = f"Center: ({center_x}, {center_y})"
-                    cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                    cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 120, 50), 1)
 
                 # 이미지에 시간 표시
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+
+                # 이미지에 기종 식별 결과 표시
+                text_size = cv2.getTextSize(vote_result, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+                text_x = frame.shape[1] - text_size[0] - 10
+                text_y = frame.shape[0] - 10
+                cv2.putText(frame, vote_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
                 
                 # 이미지 저장
                 filename = f"{image_counter}.jpg"
