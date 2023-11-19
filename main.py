@@ -79,132 +79,95 @@ class Drone:
                           ]
 
         # detection requirements
-        self.model = YOLO('Tech_piece/Detection/best3.onnx')
-        self.tracker = None
-        self.detection_in_detect2_for_detect3 = (425, 240, 0, 0, -0.7)
-        self.detect_call_counter = 0
-        self.detect3_call_counter = 0
-        self.detect2_threshold = 0
-        self.rescheduled_count = 100
-        self.tracking_rescheduled_count = 100
+        self.model = YOLO('best.pt')
 
         self.frame_width = 850
         self.frame_height = 480
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+
         self.frame_width_divide_2 = self.frame_width // 2
         self.frame_height_divide_2 = self.frame_height // 2
-        self.scale_factor = 1.3275
-        self.using_detect3 = False
+        self.using_detect2_wait = 100
+        self.using_detect2_period = 50
+        self.using_detect2_count = 5
 
         # for time save in detection2
         ret, frame = self.camera.read()
         detection_for_time_save = self.model(frame, verbose=False)[0]
 
-    def detect(self, img_piece):
-        model = self.model
+    def detect1(self, img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        centers = []
+        sizes = []
 
-        self.detect_call_counter += 1
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < 10000:
+                x, y, w, h = cv2.boundingRect(contour)
+                centers.append((x + w // 2, y + h // 2))
+                sizes.append((w, h))
 
-        def detect1(img):
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
-            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            centers = []
-            sizes = []
+        if centers:
+            avg_x = sum([c[0] for c in centers]) // len(centers)
+            avg_y = sum([c[1] for c in centers]) // len(centers)
 
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area < 1000:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    centers.append((x + w // 2, y + h // 2))
-                    sizes.append((w, h))
-
-            if centers:
-                avg_x = sum([c[0] for c in centers]) // len(centers)
-                avg_y = sum([c[1] for c in centers]) // len(centers)
-
-                min_size = max(sizes, key=lambda size: size[0] * size[1])
-                width, height = min_size
-                
-                time.sleep(0.1)
-                return avg_x, avg_y, width, height, -1
-
+            min_size = max(sizes, key=lambda size: size[0] * size[1])
+            width, height = min_size
             time.sleep(0.1)
-            return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -1
+            return avg_x, avg_y, width, height, 100
 
-        def detect2(img):
-            CONFIDENCE_THRESHOLD = self.detect2_threshold
-            detection = model(img, verbose=False)[0]
+        time.sleep(0.1)
+        return 0, 0, 0, 0, 100
 
-            highest_confidence = 0
-            best_bbox = None
+    def detect2(self, x, y, w, h, frame):
+        center_x = x + w // 2
+        center_y = y + h // 2
 
-            for data in detection.boxes.data.tolist():
-                confidence = float(data[4])
-                if confidence > highest_confidence and confidence > CONFIDENCE_THRESHOLD:
-                    highest_confidence = confidence
-                    x_min = int(data[0])
-                    y_min = int(data[1])
-                    x_len = int(data[2]) - int(data[0])
-                    y_len = int(data[3]) - int(data[1])
-                    label_idx = int(data[5])
+        expanded_width = w * 10
+        expanded_height = h * 10
 
-                    best_bbox = (x_min, y_min, x_len, y_len, label_idx)
+        start_x = max(center_x - expanded_width // 2, 0)
+        start_y = max(center_y - expanded_height // 2, 0)
 
-            if best_bbox:
-                self.detection_in_detect2_for_detect3 = best_bbox
-                return best_bbox
+        end_x = min(start_x + expanded_width, frame.shape[1])
+        end_y = min(start_y + expanded_height, frame.shape[0])
 
-            # 만약 조건을 만족하는 bounding box가 없다면 기본 값을 반환
-            return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -2
+        expanded_area = frame[start_y:end_y, start_x:end_x]
+        resized_area = cv2.resize(expanded_area, (expanded_width, expanded_height))
 
-        def detect3(img):
-            if self.detection_in_detect2_for_detect3:
-                X, Y, width, height, label_idx = self.detection_in_detect2_for_detect3
-                if width <= 0 or height <= 0 or X + width > img.shape[1] or Y + height > img.shape[0]:
-                    time.sleep(0.1)
-                    return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
+        enlarged_area = cv2.resize(resized_area, (expanded_width * 20, expanded_height * 20))
+        cv2.imwrite('enlarged_area.jpg', enlarged_area)
 
-                bbox = (X, Y, width, height)
-                if self.tracker is None:
-                    if hasattr(self, 'tracker') and self.tracker:
-                        self.tracker.clear()
-                    self.tracker = cv2.TrackerKCF_create()
-                    self.tracker.init(img, bbox)
+        detection = self.model(enlarged_area, verbose=False)[0]
+        probs = list(detection.probs.data.tolist())
+        classes = detection.names
+        highest_prob = max(probs)
+        highest_prob_index = probs.index(highest_prob)
+        type = classes[highest_prob_index]
 
-                success, bbox = self.tracker.update(img)
-                if success:
-                    X, Y, width, height = tuple(map(int, bbox))
-                    time.sleep(0.1)
-                    return X, Y, width, height, label_idx
-                else:
-                    # 추적 실패 처리
-                    self.tracker = None  # 트래커 재초기화
-                    time.sleep(0.1)
-                    return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
+        return type
+
+    def voting(self, strings):
+        if 'quad' in strings:
+            return 'quad'
+        frequency_dict = {}
+        max_count = 0
+        most_common = strings[0]
+
+        for string in strings:
+            if string in frequency_dict:
+                frequency_dict[string] += 1
             else:
-                time.sleep(0.1)
-                return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
+                frequency_dict[string] = 1
 
-        # detect2 used
-        if self.detect_call_counter % self.rescheduled_count == 0:
-            bbox = detect2(img_piece)
-            if bbox[4] < 0:
-                self.using_detect3 = False
-                return detect1(img_piece)
-            self.detection_in_detect2_for_detect3 = bbox
-            self.using_detect3 = True
-            return bbox
+            if frequency_dict[string] > max_count:
+                max_count = frequency_dict[string]
+                most_common = string
 
-        if (self.detect_call_counter % self.rescheduled_count != 0) and self.using_detect3:
-            bbox = detect3(img_piece)
-            self.detect3_call_counter += 1
-            self.detection_in_detect2_for_detect3 = bbox
-            if self.detect3_call_counter % self.tracking_rescheduled_count == 0:
-                self.using_detect3 = False
-                self.detect_call_counter = 98
-            return bbox
-
-        return detect1(img_piece)
+        return most_common
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -405,10 +368,14 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
+        detect2_period = 0
+        detect2_count = 0
+        vote_array = []
+        vote_result = 'None'
+        image_counter = 1
+        
         drone.set_gimbal_angle(0, 60)
         time.sleep(2)
-
-        image_counter = 1
 
         try:
             while True:
@@ -418,18 +385,22 @@ if __name__ == '__main__':
                     print("Failed to grab frame")
                     break
 
+                # detect1 start !!!!!!!!!!!!!!!
                 frame = cv2.resize(frame, (drone.frame_width, drone.frame_height))
-                sending_array = drone.detect(frame)
-                sending_data = [sending_array[0], sending_array[1], sending_array[2], sending_array[3]]
+                x, y, w, h, _ = drone.detect1(frame)
 
-                # sending data
-                drone.sending_data(sending_data)
-
-                # image show, process
-                x, y, w, h, label_idx = sending_array
-                x_center = x + w // 2
-                y_center = drone.frame_height - (y + h // 2)
-                print(x_center, y_center, w, h, label_idx)
+                # detect2 start !!!!!!!!!!!!!!!
+                if x > 0:
+                    detect2_period += 1
+                if detect2_period > drone.using_detect2_wait:
+                    if (detect2_period % drone.using_detect2_period == 0) and (
+                            detect2_count < drone.using_detect2_count):
+                        vote_array.append(drone.detect2(x, y, w, h, frame))
+                        print(vote_array)
+                        detect2_count += 1
+                    elif detect2_count == drone.using_detect2_count:
+                        vote_result = drone.voting(vote_array)
+                        drone.using_detect2_count -= 1
 
                 # Draw bounding box
                 if w > 0 and h > 0:
@@ -441,26 +412,19 @@ if __name__ == '__main__':
                     center_text = f"Center: ({center_x}, {center_y})"
                     cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
-                    if label_idx >= 0:
-                        label_text = str(label_idx)
-                        text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                        text_w, text_h = text_size[0]
-                        text_x, text_y = frame.shape[1] - text_w - 10, frame.shape[0] - 10
-                        cv2.rectangle(frame, (text_x, text_y + 5), (text_x + text_w, text_y - text_h - 5), (0, 255, 0),
-                                      cv2.FILLED)
-                        cv2.putText(frame, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-                    
-                # Display the resulting frame
-                # cv2.imshow('Drone Camera Feed', frame)
-
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
                 # 이미지에 시간 표시
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-  
+                
+                # 이미지 저장
                 filename = f"{image_counter}.jpg"
                 cv2.imwrite(filename, frame)
                 image_counter += 1
+                
+                # sending data
+                # drone.sending_data(sending_data)
+                # Display the resulting frame
+                cv2.imshow('Drone Camera Feed', frame)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -470,6 +434,3 @@ if __name__ == '__main__':
             drone.camera.release()
             drone.images_to_avi("", "output.avi")
             cv2.destroyAllWindows()
-            
-            
-
