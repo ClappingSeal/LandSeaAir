@@ -221,7 +221,7 @@ class Drone:
         # Packing Data
         packed_data = bytearray()
         for item in data:
-            packed_data += item.to_bytes(4, 'little')
+            packed_data += item.to_bytes(4, 'little', signed=True)
 
         while len(packed_data) < 64:
             packed_data += b'\x00'
