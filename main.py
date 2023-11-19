@@ -405,13 +405,14 @@ if __name__ == '__main__':
 
     if start_command == 's':
         drone = Drone()
-        drone.set_gimbal_angle(0, 30)
+        drone.set_gimbal_angle(0, 60)
         time.sleep(2)
 
         image_counter = 1
 
         try:
             while True:
+                drone.set_gimbal_angle(0, 60)
                 ret, frame = drone.camera.read()
                 if not ret:
                     print("Failed to grab frame")
