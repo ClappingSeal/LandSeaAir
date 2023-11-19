@@ -105,7 +105,7 @@ class Drone:
 
         for contour in contours:
             area = cv2.contourArea(contour)
-            if area < 10000:
+            if area < 1000:
                 x, y, w, h = cv2.boundingRect(contour)
                 centers.append((x + w // 2, y + h // 2))
                 sizes.append((w, h))
@@ -138,7 +138,7 @@ class Drone:
         expanded_area = frame[start_y:end_y, start_x:end_x]
         resized_area = cv2.resize(expanded_area, (expanded_width, expanded_height))
 
-        enlarged_area = cv2.resize(resized_area, (expanded_width * 20, expanded_height * 20))
+        enlarged_area = cv2.resize(resized_area, (expanded_width * 5, expanded_height * 5))
         cv2.imwrite('enlarged_area.jpg', enlarged_area)
 
         detection = self.model(enlarged_area, verbose=False)[0]
@@ -301,6 +301,7 @@ if __name__ == '__main__':
                     elif detect2_count == drone.using_detect2_count:
                         vote_result = drone.voting(vote_array)
                         drone.using_detect2_count -= 1
+                print(vote_array)
 
                 # Draw bounding box
                 if w > 0 and h > 0:
