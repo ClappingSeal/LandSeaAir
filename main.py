@@ -164,7 +164,6 @@ class Drone:
             if self.detection_in_detect2_for_detect3:
                 X, Y, width, height, label_idx = self.detection_in_detect2_for_detect3
                 if width <= 0 or height <= 0 or X + width > img.shape[1] or Y + height > img.shape[0]:
-                    time.sleep(0.1)
                     return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
                 bbox = (X, Y, width, height)
@@ -181,10 +180,8 @@ class Drone:
                 else:
                     # 추적 실패 처리
                     self.tracker = None  # 트래커 재초기화
-                    time.sleep(0.1)
                     return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
             else:
-                time.sleep(0.1)
                 return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -3
 
         # detect2 used
