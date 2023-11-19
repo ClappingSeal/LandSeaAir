@@ -105,6 +105,7 @@ class Drone:
         self.detect_call_counter += 1
 
         def detect1(img):
+            print("1 used")
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -132,6 +133,7 @@ class Drone:
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -1
 
         def detect2(img):
+            print("2 used")
             CONFIDENCE_THRESHOLD = self.detect2_threshold
             detection = model(img, verbose=False)[0]
 
@@ -158,6 +160,7 @@ class Drone:
             return self.frame_width_divide_2, self.frame_height_divide_2, 0, 0, -2
 
         def detect3(img):
+            print("3 used")
             if self.detection_in_detect2_for_detect3:
                 X, Y, width, height, label_idx = self.detection_in_detect2_for_detect3
                 if width <= 0 or height <= 0 or X + width > img.shape[1] or Y + height > img.shape[0]:
