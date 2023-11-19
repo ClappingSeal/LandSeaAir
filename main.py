@@ -311,10 +311,10 @@ if __name__ == '__main__':
                 drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
                 drone.init_pitch += 0.01 * ((drone.frame_height - y) - drone.frame_height_divide_2)
 
-                if drone.init_yaw > 45:
-                    drone.init_yaw = 45
-                if drone.init_yaw < -45:
-                    drone.init_yaw = -45
+                if drone.init_yaw > 59:
+                    drone.init_yaw = 59
+                if drone.init_yaw < -59:
+                    drone.init_yaw = -59
                 if drone.init_pitch > 60:
                     drone.init_pitch = 60
                 if drone.init_yaw < 32:
