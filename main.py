@@ -409,16 +409,16 @@ if __name__ == '__main__':
                     center_y = drone.frame_height - (y + h // 2)
 
                     # 중심점 좌표 표시
-                    center_text = f"Center: ({center_x}, {center_y})"
-                    cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                    # center_text = f"Center: ({center_x}, {center_y})"
+                    # cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
                 # 이미지에 시간 표시
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                # current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
                 
                 # 이미지 저장
-                filename = f"{image_counter}.jpg"
-                cv2.imwrite(filename, frame)
+                # filename = f"{image_counter}.jpg"
+                # cv2.imwrite(filename, frame)
                 image_counter += 1
                 
                 # sending data
