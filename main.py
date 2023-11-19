@@ -318,10 +318,10 @@ if __name__ == '__main__':
                 cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
 
                 # 이미지에 기종 식별 결과 표시
-                text_size = cv2.getTextSize(vote_result, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+                text_size = cv2.getTextSize(vote_result, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
                 text_x = frame.shape[1] - text_size[0] - 10
                 text_y = frame.shape[0] - 10
-                cv2.putText(frame, vote_result, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                cv2.putText(frame, vote_result, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
                 
                 # 이미지 저장
                 filename = f"{image_counter}.jpg"
