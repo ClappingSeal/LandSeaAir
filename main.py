@@ -95,6 +95,11 @@ class Drone:
         # for time save in detection2
         ret, frame = self.camera.read()
         detection_for_time_save = self.model(frame, verbose=False)[0]
+        detect = detection_for_time_save  # ???
+        
+        # gimbal initial angle
+        self.init_yaw = 0
+        self.init_pitch = 45
 
     def detect1(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -273,13 +278,12 @@ if __name__ == '__main__':
         vote_array = []
         vote_result = 'None'
         image_counter = 1
-        
-        drone.set_gimbal_angle(0, 60)
+
+        drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
         time.sleep(2)
 
         try:
             while True:
-                drone.set_gimbal_angle(0, 60)
                 ret, frame = drone.camera.read()
                 if not ret:
                     print("Failed to grab frame")
@@ -303,6 +307,13 @@ if __name__ == '__main__':
                         drone.using_detect2_count -= 1
                 print(vote_array)
 
+                # camera centering
+                drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
+                drone.init_pitch += 0.01 * ((drone.frame_height-y)- drone.frame_height_divide_2)
+                drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
+                
+                print(drone.init_yaw, drone.init_pitch)
+
                 # Draw bounding box
                 if w > 0 and h > 0:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -322,12 +333,12 @@ if __name__ == '__main__':
                 text_x = frame.shape[1] - text_size[0] - 10
                 text_y = frame.shape[0] - 10
                 cv2.putText(frame, vote_result, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-                
+
                 # 이미지 저장
                 filename = f"{image_counter}.jpg"
                 cv2.imwrite(filename, frame)
                 image_counter += 1
-                
+
                 # sending data
                 # drone.sending_data(sending_data)
                 # Display the resulting frame
