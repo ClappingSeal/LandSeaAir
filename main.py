@@ -201,7 +201,7 @@ class Drone:
             self.detection_in_detect2_for_detect3 = bbox
             if self.detect3_call_counter % self.tracking_rescheduled_count == 0:
                 self.using_detect3 = False
-                self.detect_call_counter = self.rescheduled_count - 2
+                self.detect_call_counter = 98
             return bbox
 
         return detect1(img_piece)
