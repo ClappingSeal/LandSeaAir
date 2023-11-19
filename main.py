@@ -188,6 +188,7 @@ class Drone:
         if self.detect_call_counter % self.rescheduled_count == 0:
             bbox = detect2(img_piece)
             if bbox[4] < 0:
+                self.using_detect3 = False
                 return detect1(img_piece)
             self.detection_in_detect2_for_detect3 = bbox
             self.using_detect3 = True
