@@ -200,6 +200,15 @@ class Drone:
             crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
         return crc
 
+    # gimbal 2
+    def send_command_to_gimbal(self, command_bytes):
+        try:
+            self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
+            # print("Command sent successfully!")
+        except socket.error as e:
+            print(f"Error sending command via UDP: {e}")
+
+    # gimbal 3
     def set_gimbal_angle(self, yaw, pitch):
         cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
         yaw_bytes = struct.pack('<h', int(yaw * 10))
