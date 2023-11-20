@@ -99,7 +99,7 @@ class Drone:
 
         # gimbal initial angle
         self.init_yaw = 0
-        self.init_pitch = 45
+        self.init_pitch = 60
 
     def detect1(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -406,17 +406,17 @@ if __name__ == '__main__':
                 print(vote_array)
 
                 # camera centering
-                drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
+                # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
                 drone.init_pitch += 0.01 * (x - drone.frame_width_divide_2)
 
-                if drone.init_yaw > 59:
-                    drone.init_yaw = 59
-                if drone.init_yaw < -59:
-                    drone.init_yaw = -59
-                if drone.init_pitch > 60:
+                # if drone.init_yaw > 59:
+                    # drone.init_yaw = 59
+                # if drone.init_yaw < -59:
+                    # drone.init_yaw = -59
+                if drone.init_pitch > 90:
+                    drone.init_pitch = 90
+                if drone.init_pitch < 60:
                     drone.init_pitch = 60
-                if drone.init_pitch < 32:
-                    drone.init_pitch = 32
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
 
