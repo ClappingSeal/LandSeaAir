@@ -18,11 +18,11 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.standard_pit = 70
+        self.standard_pit = 60
         self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
@@ -136,8 +136,8 @@ class Drone:
         time.sleep(0.5)
 
     # Drone movement3 non-block
-    def set_yaw_to_west_nonblock(self):
-        yaw_angle = 270
+    def set_yaw_to_west_nonblock(self, angle):
+        yaw_angle = angle  # 270이 서쪽
         is_relative = False
 
         self.vehicle._master.mav.command_long_send(
@@ -242,7 +242,7 @@ class Drone:
             alt_diff = abs(current_location.alt - target_alt)
             print("current pos : ", self.get_pos())
 
-            if distance_to_target < 1 and alt_diff < 1:
+            if distance_to_target < 2 and alt_diff < 2:
                 print("Arrived at target location!!!!!!!!!!!!!!!!!!!!!")
                 break
             time.sleep(0.5)
@@ -270,7 +270,7 @@ class Drone:
         print(target_x, target_y)
 
     # locking 2
-    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, vel_z=0):
+    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, altitude):
         # 카메라 초기 각도
         standard_pitch = self.standard_pit
         standard_yaw = 0
@@ -289,7 +289,7 @@ class Drone:
         y_conversion = action[1] * 0.5  # Scale
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
-        self.velocity_pid(target_x, target_y, vel_z, self.past_pos_data)
+        self.goto_location(target_x, target_y, altitude)
         print(x_conversion, "and", y_conversion)
 
     # get position (m)
@@ -370,8 +370,8 @@ if __name__ == "__main__":
         nums = 1, 1
 
         if len(nums) == 2:
-            # gt.arm_takeoff(1)
-            # gt.set_yaw_to_west()
+            gt.arm_takeoff(1)
+            gt.set_yaw_to_west()
 
             time.sleep(0.1)
 
@@ -381,16 +381,47 @@ if __name__ == "__main__":
             ax.set_xlim(-3000, 3000)  # x축 범위 설정
             ax.set_ylim(-3000, 3000)  # y축 범위 설정
 
+            init_value = True
+            init_count = 0
+            yaw_set = 270
+            direction = 5
+
             while True:
                 step += 1
                 receive_arr = np.array(gt.receiving_data())
                 # print(receive_arr)
 
-                gt.update_past_pos_data()
-                gt.set_yaw_to_west_nonblock()
+                # 초기 기동
+                if init_count < 5:
+                    # 고개를 계속 돌림
+                    gt.set_yaw_to_west_nonblock(yaw_set)
+                    if yaw_set < 240 or yaw_set > 300:
+                        direction = - direction
+                        yaw_set += 2 * direction
+                    yaw_set += direction
+                    time.sleep(0.1)
+                    # gt.goto_location(x, y ,z)
 
-                # print(gt.get_pos())
+                    # 찾으면 +1
+                    receive_arr = np.array(gt.receiving_data())
+                    if init_value and (receive_arr[0] > 0):
+                        init_count += 1
 
+                        # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
+                        if init_count >= 5:
+                            gt.set_yaw_to_west()
+                            while (gt.receiving_data()[0] > 5) and (-5 > gt.receiving_data()[0]):
+                                x, y = gt.get_pos()
+                                x_yaw = yaw_set - 270
+                                gt.goto_location(x + x_yaw, y)
+
+                # 일반 기동
+                else:
+                    print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
+                    gt.locking_drl(gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1]))
+                    time.sleep(0.1)
+
+                # 그래프 그리기
                 if step % 30 == 0:
                     current_pos = gt.get_pos()
                     print(current_pos)
@@ -398,14 +429,8 @@ if __name__ == "__main__":
                     plt.draw()
                     plt.pause(0.1)
 
-                time.sleep(0.1)
-                print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])
-
-                gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])
-
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
-
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
