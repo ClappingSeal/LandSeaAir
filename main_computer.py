@@ -418,11 +418,9 @@ if __name__ == "__main__":
                 # 일반 기동
                 else:
                     print("Normal maneuver...")
-
                     print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
 
-                    # gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], 0)
-                    gt.locking_drl(receive_arr[4], 70, receive_arr[0], receive_arr[1], altitude)
+                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], 0)
                     time.sleep(0.1)
 
                 # 그래프 그리기
