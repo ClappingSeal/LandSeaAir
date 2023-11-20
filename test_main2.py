@@ -512,7 +512,7 @@ if __name__ == '__main__':
         #     if cont.lower() == 'q':
         #         break
 
-        drone.setup_connection() 
+        # drone.setup_connection() 
         # received_data = drone.receive_data()
 
         yaw = 0
