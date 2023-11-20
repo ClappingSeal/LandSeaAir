@@ -307,7 +307,7 @@ if __name__ == '__main__':
 
                 # camera centering
                 drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
-                drone.init_pitch += 0.01 * ((drone.frame_height - y) - drone.frame_height_divide_2)
+                drone.init_pitch += 0.01 * (x - drone.frame_width_divide_2)
 
                 if drone.init_yaw > 59:
                     drone.init_yaw = 59
@@ -320,7 +320,7 @@ if __name__ == '__main__':
 
                 drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
 
-                print(drone.init_yaw, drone.init_pitch)
+                print(0.01 * (x - drone.frame_width_divide_2), 0.01 * (x - drone.frame_width_divide_2))
 
                 # 송신 데이터 지정/데이터 송신
                 data = [x, y, w, h, int(drone.init_yaw), int(drone.init_pitch)]
