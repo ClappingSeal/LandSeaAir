@@ -406,8 +406,12 @@ if __name__ == '__main__':
                 print(vote_array)
 
                 # camera centering
-                # drone.init_yaw += 0.001 * (x - drone.frame_width_divide_2)
-                drone.init_pitch += 0.001 * (drone.frame_height_divide_2 - y)
+                # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
+                
+                drone.init_pitch += 0.01 * (drone.frame_height_divide_2 - y)
+                
+                response = drone.accquire_data()
+                yaw_current, pitch_current, _,_,_,_ = drone.acquire_attitude(response)
 
                 # if drone.init_yaw > 59:
                     # drone.init_yaw = 59
@@ -415,15 +419,15 @@ if __name__ == '__main__':
                     # drone.init_yaw = -59
                 if drone.init_pitch > 80:
                     drone.init_pitch = 80
-                if drone.init_pitch < 30:
-                    drone.init_pitch = 30
+                if drone.init_pitch < 60:
+                    drone.init_pitch = 60
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
 
-                print(drone.init_yaw, drone.init_pitch)
+                print(yaw_current, pitch_current)
 
                 # 송신 데이터 지정/데이터 송신
-                data = [x, y, w, h, int(drone.init_yaw), int(drone.init_pitch)]
+                data = [x, y, w, h, int(yaw_current), int(pitch_current)]
                 drone.sending_data(data)
 
                 # 바운딩 박스
@@ -463,15 +467,3 @@ if __name__ == '__main__':
             drone.close_connection()
             drone.camera.release()
             cv2.destroyAllWindows()
-
-
-# # 각도 불러오기
-# while True:
-#         response = drone.accquire_data()
-#         yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
-        
-#         if abs(pitch_curr - pitch) < 5:
-#             print("Yaw:", yaw_curr)
-#             print("Pitch:", pitch_curr)
-#             print("Roll:", roll_curr)
-#             break
