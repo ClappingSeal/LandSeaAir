@@ -463,3 +463,15 @@ if __name__ == '__main__':
             drone.close_connection()
             drone.camera.release()
             cv2.destroyAllWindows()
+
+
+# # 각도 불러오기
+# while True:
+#         response = drone.accquire_data()
+#         yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+        
+#         if abs(pitch_curr - pitch) < 5:
+#             print("Yaw:", yaw_curr)
+#             print("Pitch:", pitch_curr)
+#             print("Roll:", roll_curr)
+#             break
