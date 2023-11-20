@@ -99,7 +99,7 @@ class Drone:
 
         # gimbal initial angle
         self.init_yaw = 0
-        self.init_pitch = 60
+        self.init_pitch = 30
 
     def detect1(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -129,8 +129,8 @@ class Drone:
         center_x = x + w // 2
         center_y = y + h // 2
 
-        expanded_width = w * 10
-        expanded_height = h * 10
+        expanded_width = w * 8
+        expanded_height = h * 8
 
         start_x = max(center_x - expanded_width // 2, 0)
         start_y = max(center_y - expanded_height // 2, 0)
@@ -141,7 +141,7 @@ class Drone:
         expanded_area = frame[start_y:end_y, start_x:end_x]
         resized_area = cv2.resize(expanded_area, (expanded_width, expanded_height))
 
-        enlarged_area = cv2.resize(resized_area, (expanded_width * 5, expanded_height * 5))
+        enlarged_area = cv2.resize(resized_area, (expanded_width * 4, expanded_height * 4))
         cv2.imwrite('enlarged_area.jpg', enlarged_area)
 
         detection = self.model(enlarged_area, verbose=False)[0]
@@ -406,17 +406,17 @@ if __name__ == '__main__':
                 print(vote_array)
 
                 # camera centering
-                # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
-                drone.init_pitch += 0.01 * (y - drone.frame_width_divide_2)
+                # drone.init_yaw += 0.001 * (x - drone.frame_width_divide_2)
+                drone.init_pitch += 0.001 * (drone.frame_width_divide_2 - y)
 
                 # if drone.init_yaw > 59:
                     # drone.init_yaw = 59
                 # if drone.init_yaw < -59:
                     # drone.init_yaw = -59
-                if drone.init_pitch > 90:
-                    drone.init_pitch = 90
-                if drone.init_pitch < 60:
-                    drone.init_pitch = 60
+                if drone.init_pitch > 80:
+                    drone.init_pitch = 80
+                if drone.init_pitch < 30:
+                    drone.init_pitch = 30
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
 
@@ -463,3 +463,15 @@ if __name__ == '__main__':
             drone.close_connection()
             drone.camera.release()
             cv2.destroyAllWindows()
+
+
+# # 각도 불러오기
+# while True:
+#         response = drone.accquire_data()
+#         yaw_curr, pitch_curr, roll_curr, _, _, _ = drone.acquire_attitude(response)
+        
+#         if abs(pitch_curr - pitch) < 5:
+#             print("Yaw:", yaw_curr)
+#             print("Pitch:", pitch_curr)
+#             print("Roll:", roll_curr)
+#             break
