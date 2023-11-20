@@ -354,7 +354,7 @@ if __name__ == '__main__':
                 # sending data
                 # drone.sending_data(sending_data)
                 # Display the resulting frame
-                cv2.imshow('Drone Camera Feed', frame)
+                # cv2.imshow('Drone Camera Feed', frame)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
