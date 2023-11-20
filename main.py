@@ -331,7 +331,7 @@ class Drone:
         while True:
             yaw, pitch = yaw_pitch_pairs[index]
             self.set_gimbal_angle(yaw, pitch)
-            time.sleep(0.5)
+            time.sleep(1)
 
             ret, frame = self.camera.read()
             if not ret:
@@ -344,7 +344,7 @@ class Drone:
                 count += 1
                 print("find", count, "time")
                 if count > 3:
-                    print("find three times")
+                    print("find four times")
                     break
             index = (index + 1) % len(yaw_pitch_pairs)
 
