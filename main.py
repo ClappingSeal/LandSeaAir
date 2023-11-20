@@ -225,6 +225,106 @@ class Drone:
         self.current_yaw = yaw
         self.current_pitch = pitch
 
+    # gimbal 4
+    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
+
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
+
+        yaw_adjustment = self.current_yaw + diff_x
+        pitch_adjustment = self.current_pitch - diff_y
+
+        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
+        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
+
+        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
+        print(target_x, target_y)
+        print(yaw_adjustment, -pitch_adjustment)
+
+    # gimbal 5
+    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
+
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
+
+        scale_factor_yaw = 135 / center_x
+        scale_factor_pitch = (25 + 90) / center_y
+
+        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
+        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
+
+        yaw_adjustment = max(-135, min(135, yaw_adjustment))
+        pitch_adjustment = max(-90, min(25, pitch_adjustment))
+
+        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
+
+    # gimbal 6
+    def accquire_data(self):
+        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
+        
+        try:
+            response, addr = self.udp_socket.recvfrom(1024) 
+            # print("Received:", response)
+            return response
+        except socket.error as e:
+            print(f"Error receiving data via UDP: {e}")
+            return None
+    
+    # gimbal 7 modified 11/02
+    def acquire_attitude(self, response):
+        try:
+            # CMD ID를 찾습니다.
+            index_0d = response.find(b'\x0D')
+
+            # Yaw, Pitch, Roll 데이터를 추출합니다.
+            data_06 = response[index_0d+1:index_0d+7]
+            yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
+
+            # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
+            data_0c = response[index_0d+7:index_0d+15]
+            # print(len(data_0c))
+            if len(data_0c) != 8:
+                raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
+
+            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
+
+            # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
+            yaw = yaw_raw / 10.0
+            pitch = pitch_raw / 10.0
+            if pitch < 0 :
+                pitch = -(180 + pitch)
+            else:
+                pitch = 180 - pitch
+            roll = roll_raw / 10.0
+            yaw_velocity = yaw_velocity_raw / 10.0
+            pitch_velocity = pitch_velocity_raw / 10.0
+            roll_velocity = roll_velocity_raw / 10.0
+
+            return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+        except struct.error as e:
+            print("Error in unpacking data: {}".format(e))
+            return 10000, 10000, 10000, 10000, 10000, 10000
+        except ValueError as e:
+            print("Error: {}".format(e))
+            return 10000, 10000, 10000, 10000, 10000, 10000
+
+    # gimbal 8 added 11/04
+    def set_gimbal_angle_feedback(self,yaw,pitch):
+        for i in range (0, 3):
+            self.set_gimbal_angle(yaw,pitch)
+            yaw_set = self.current_yaw
+            pitch_set = self.current_pitch
+
+            response = self.accquire_data()
+            yaw_current, pitch_current, _,_,_,_ = self.acquire_attitude(response)
+            if abs(yaw_set-yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
+                print("all set angles")
+                break
+    
     # end
     def close_connection(self):
         self.vehicle.close()
@@ -318,7 +418,7 @@ if __name__ == '__main__':
                 if drone.init_pitch < 32:
                     drone.init_pitch = 32
 
-                drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
+                drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
 
                 print(drone.init_yaw, drone.init_pitch)
 
