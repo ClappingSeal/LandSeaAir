@@ -322,7 +322,11 @@ if __name__ == '__main__':
 
                 print(drone.init_yaw, drone.init_pitch)
 
-                # Draw bounding box
+                # 송신 데이터 지정/데이터 송신
+                data = [x, y, w, h, drone.init_yaw, drone.init_pitch]
+                drone.sending_data(data)
+
+                # 바운딩 박스
                 if w > 0 and h > 0:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     center_x = x + w // 2
