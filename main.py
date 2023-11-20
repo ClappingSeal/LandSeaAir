@@ -423,7 +423,7 @@ if __name__ == '__main__':
                 print(drone.init_yaw, drone.init_pitch)
 
                 # 송신 데이터 지정/데이터 송신
-                data = [x, y, w, h, int(drone.init_yaw), int(drone.init_pitch)]
+                data = [int(drone.init_yaw), int(drone.init_pitch), x, y, w, h]
                 drone.sending_data(data)
 
                 # 바운딩 박스
