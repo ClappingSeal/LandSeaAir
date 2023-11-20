@@ -129,8 +129,8 @@ class Drone:
         center_x = x + w // 2
         center_y = y + h // 2
 
-        expanded_width = w * 10
-        expanded_height = h * 10
+        expanded_width = w * 8
+        expanded_height = h * 8
 
         start_x = max(center_x - expanded_width // 2, 0)
         start_y = max(center_y - expanded_height // 2, 0)
@@ -141,7 +141,7 @@ class Drone:
         expanded_area = frame[start_y:end_y, start_x:end_x]
         resized_area = cv2.resize(expanded_area, (expanded_width, expanded_height))
 
-        enlarged_area = cv2.resize(resized_area, (expanded_width * 5, expanded_height * 5))
+        enlarged_area = cv2.resize(resized_area, (expanded_width * 4, expanded_height * 4))
         cv2.imwrite('enlarged_area.jpg', enlarged_area)
 
         detection = self.model(enlarged_area, verbose=False)[0]
