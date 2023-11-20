@@ -22,7 +22,7 @@ class Drone:
         self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.standard_pit = 60
+        self.standard_pit = 90 # 추후 60으로 변경
         self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
@@ -36,14 +36,14 @@ class Drone:
         # Arming value
         self.min_throttle = 1000
         self.arm_throttle = 1200
-        #
-        # # Check position
-        # if self.init_lat is None or self.init_lon is None:
-        #     raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
-        # print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
-        #
-        # if self.init_lat == 0 or self.init_lon == 0:
-        #     raise ValueError("Cannot get Location. Class initialization aborted.")
+
+        # Check position
+        if self.init_lat is None or self.init_lon is None:
+            raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
+        print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
+
+        if self.init_lat == 0 or self.init_lon == 0:
+            raise ValueError("Cannot get Location. Class initialization aborted.")
 
         # pid d value
         self.past_pos_data = np.zeros((30, 2))
@@ -285,12 +285,12 @@ class Drone:
         if speed_magnitude > 10:
             action = (action / speed_magnitude) * 10
 
-        x_conversion = -action[0] * 0.5  # Scale
-        y_conversion = action[1] * 0.5  # Scale
+        x_conversion = -action[0] * 0.3  # Scale
+        y_conversion = action[1] * 0.3  # Scale
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
         self.goto_location(target_x, target_y, altitude)
-        print(x_conversion, "and", y_conversion)
+        print(x_conversion, y_conversion)
 
     # get position (m)
     def get_pos(self):
@@ -367,28 +367,29 @@ if __name__ == "__main__":
     gt = Drone()
 
     try:
+        altitude = 1
+        gt.arm_takeoff(altitude)
+        gt.set_yaw_to_west()
+        time.sleep(0.1)
+
         nums = 1, 1
+        # raw_input = input("위도, 경도: ")
+        # nums = [float(num.strip()) for num in raw_input.split(",")]
 
         if len(nums) == 2:
-            gt.arm_takeoff(1)
-            gt.set_yaw_to_west()
-
-            time.sleep(0.1)
-
             step = 0
             plt.ion()
             fig, ax = plt.subplots()
             ax.set_xlim(-3000, 3000)  # x축 범위 설정
             ax.set_ylim(-3000, 3000)  # y축 범위 설정
 
-            init_count = 100  # 0으로 하면 초기 기동 작동
+            init_count = 8  # 0으로 하면 초기 기동 작동
             yaw_set = 270
             direction = 5
 
             while True:
                 step += 1
                 receive_arr = np.array(gt.receiving_data())
-                # print(receive_arr)
 
                 # 초기 기동
                 if init_count < 5:
@@ -409,21 +410,24 @@ if __name__ == "__main__":
                         # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
                         if init_count >= 5:
                             gt.set_yaw_to_west()
-                            while (gt.receiving_data()[0] > 430) and (420 > gt.receiving_data()[0]):
+                            while (gt.receiving_data()[0] > 550) and (300 > gt.receiving_data()[0]):
                                 x, y = gt.get_pos()
                                 x_yaw = yaw_set - 270
-                                gt.goto_location(x + x_yaw/10, y)
+                                gt.goto_location(x + x_yaw / 10, y)
 
                 # 일반 기동
                 else:
+                    print("Normal maneuver...")
+
                     print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
-                    gt.locking_drl(gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1]))
+
+                    # gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], 0)
+                    gt.locking_drl(receive_arr[4], 70, receive_arr[0], receive_arr[1], altitude)
                     time.sleep(0.1)
 
                 # 그래프 그리기
                 if step % 30 == 0:
                     current_pos = gt.get_pos()
-                    print(current_pos)
                     ax.scatter(-current_pos[1], current_pos[0])
                     plt.draw()
                     plt.pause(0.1)
@@ -433,5 +437,6 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
+        gt.goto_location_block(0, 0, altitude)
         gt.land()
         gt.close_connection()
