@@ -381,8 +381,7 @@ if __name__ == "__main__":
             ax.set_xlim(-3000, 3000)  # x축 범위 설정
             ax.set_ylim(-3000, 3000)  # y축 범위 설정
 
-            init_value = True
-            init_count = 0
+            init_count = 100  # 0으로 하면 초기 기동 작동
             yaw_set = 270
             direction = 5
 
@@ -404,7 +403,7 @@ if __name__ == "__main__":
 
                     # 찾으면 +1
                     receive_arr = np.array(gt.receiving_data())
-                    if init_value and (receive_arr[0] > 0):
+                    if receive_arr[0] > 0:
                         init_count += 1
 
                         # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
