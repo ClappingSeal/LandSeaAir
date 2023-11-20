@@ -99,7 +99,7 @@ class Drone:
 
         # gimbal initial angle
         self.init_yaw = 0
-        self.init_pitch = 70
+        self.init_pitch = 15
 
     def detect1(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
