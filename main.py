@@ -320,7 +320,7 @@ if __name__ == '__main__':
 
                 drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
 
-                print(0.01 * (x - drone.frame_width_divide_2), 0.01 * (x - drone.frame_width_divide_2))
+                print(drone.init_yaw, drone.init_pitch)
 
                 # 송신 데이터 지정/데이터 송신
                 data = [x, y, w, h, int(drone.init_yaw), int(drone.init_pitch)]
