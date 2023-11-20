@@ -99,7 +99,7 @@ class Drone:
 
         # gimbal initial angle
         self.init_yaw = 0
-        self.init_pitch = 30
+        self.init_pitch = 45
 
     def detect1(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -322,7 +322,6 @@ class Drone:
             response = self.accquire_data()
             yaw_current, pitch_current, _,_,_,_ = self.acquire_attitude(response)
             if abs(yaw_set-yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
-                print("all set angles")
                 break
     
     # end
@@ -403,7 +402,6 @@ if __name__ == '__main__':
                     elif detect2_count == drone.using_detect2_count:
                         vote_result = drone.voting(vote_array)
                         drone.using_detect2_count -= 1
-                print(vote_array)
 
                 # camera centering
                 # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
@@ -423,12 +421,11 @@ if __name__ == '__main__':
                     drone.init_pitch = 45
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
-
-                print(yaw_current, pitch_current)
-
                 # 송신 데이터 지정/데이터 송신
                 data = [x, y, w, h, int(yaw_current), int(pitch_current)]
                 drone.sending_data(data)
+
+                print(x, y ,0.01 * (x - drone.frame_width_divide_2), 0.01 * (drone.frame_height_divide_2 - y))
 
                 # 바운딩 박스
                 if w > 0 and h > 0:
