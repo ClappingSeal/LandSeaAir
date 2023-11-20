@@ -424,7 +424,7 @@ if __name__ == '__main__':
                 data = [x, y, w, h, int(yaw_current), int(pitch_current)]
                 drone.sending_data(data)
 
-                print(x, y ,0.01 * (x - drone.frame_width_divide_2), 0.01 * (drone.frame_height_divide_2 - y))
+                print(data)
 
                 # 바운딩 박스
                 if w > 0 and h > 0:
