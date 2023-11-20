@@ -281,7 +281,7 @@ class Drone:
     def close_connection(self):
         self.vehicle.close()
 
-    # DRL model
+    # DRL model modified 11/20
     def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, altitude):
         # 카메라 초기 각도
         standard_pitch = 30
