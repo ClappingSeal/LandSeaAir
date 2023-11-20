@@ -414,10 +414,10 @@ if __name__ == '__main__':
                 # drone.init_yaw = 59
                 # if drone.init_yaw < -59:
                 # drone.init_yaw = -59
-                if drone.init_pitch > 80:
-                    drone.init_pitch = 80
-                if drone.init_pitch < 60:
-                    drone.init_pitch = 60
+                if drone.init_pitch > 20:
+                    drone.init_pitch = 20
+                if drone.init_pitch < 10:
+                    drone.init_pitch = 10
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
                 # 송신 데이터 지정/데이터 송신
