@@ -365,7 +365,6 @@ class Drone:
 
 if __name__ == "__main__":
     gt = Drone()
-    difference = 100
 
     try:
         nums = 1, 1
@@ -398,7 +397,6 @@ if __name__ == "__main__":
                     ax.scatter(-current_pos[1], current_pos[0])
                     plt.draw()
                     plt.pause(0.1)
-                    difference = difference * -1
 
                 time.sleep(0.1)
                 print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])
