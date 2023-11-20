@@ -282,7 +282,14 @@ class Drone:
         self.vehicle.close()
 
     # DRL model
-    def locking_drl(self, x_frame, y_frame, altitude):
+    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, altitude):
+        # 카메라 초기 각도
+        standard_pitch = 30
+        standard_yaw = 0
+        # 프레임 변경
+        x_frame = x_frame + ((yaw_cam - standard_yaw) * (130/15))
+        y_frame =  y_frame + ((pitch_cam - standard_pitch) * (130/15))
+
         obs = np.array([(x_frame-425)/10, (y_frame-240)/10])
         action, _ = self.model.predict(obs)
 
