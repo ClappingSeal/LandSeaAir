@@ -324,30 +324,6 @@ class Drone:
             if abs(yaw_set - yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
                 break
 
-    def camera_finding(self):
-        yaw_pitch_pairs = [(yaw, pitch) for pitch in [45, 60] for yaw in range(-60, 61, 15)]
-        count = 0
-        index = 0
-        while True:
-            yaw, pitch = yaw_pitch_pairs[index]
-            self.set_gimbal_angle(yaw, pitch)
-            time.sleep(1)
-
-            ret, frame = self.camera.read()
-            if not ret:
-                print("Failed to grab frame")
-                continue
-
-            x, y, w, h, _ = self.detect1(frame)
-
-            if x > 0:
-                count += 1
-                print("find", count, "time")
-                if count > 3:
-                    print("find four times")
-                    break
-            index = (index + 1) % len(yaw_pitch_pairs)
-
     # end
     def close_connection(self):
         self.vehicle.close()
@@ -402,7 +378,6 @@ if __name__ == '__main__':
 
         drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
         time.sleep(2)
-        drone.camera_finding()
 
         try:
             while True:
