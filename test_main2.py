@@ -553,7 +553,7 @@ if __name__ == '__main__':
                 data_list = [x_new, y_new, truth, drone.altitude_ctr(length)]
                 #data_string = json.dumps(data_list)
                 data_string = str(int(x_new) * 1000000 + int(y_new+1000) * 100 + truth*10 + drone.altitude_ctr(length))
-                drone.send_data(data_string)
+                # drone.send_data(data_string)
                 print("data sending...")
                 # print(sending_array)
                 print(data_list)
