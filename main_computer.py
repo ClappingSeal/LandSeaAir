@@ -410,10 +410,10 @@ if __name__ == "__main__":
                         # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
                         if init_count >= 5:
                             gt.set_yaw_to_west()
-                            while (gt.receiving_data()[0] > 5) and (-5 > gt.receiving_data()[0]):
+                            while (gt.receiving_data()[0] > 430) and (420 > gt.receiving_data()[0]):
                                 x, y = gt.get_pos()
                                 x_yaw = yaw_set - 270
-                                gt.goto_location(x + x_yaw, y)
+                                gt.goto_location(x + x_yaw/10, y)
 
                 # 일반 기동
                 else:
