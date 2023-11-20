@@ -397,7 +397,6 @@ if __name__ == '__main__':
                     if (detect2_period % drone.using_detect2_period == 0) and (
                             detect2_count < drone.using_detect2_count):
                         vote_array.append(drone.detect2(x, y, w, h, frame))
-                        print(vote_array)
                         detect2_count += 1
                     elif detect2_count == drone.using_detect2_count:
                         vote_result = drone.voting(vote_array)
