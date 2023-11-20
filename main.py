@@ -315,8 +315,8 @@ if __name__ == '__main__':
                     drone.init_yaw = -59
                 if drone.init_pitch > 60:
                     drone.init_pitch = 60
-                if drone.init_yaw < 32:
-                    drone.init_yaw = 32
+                if drone.init_pitch < 32:
+                    drone.init_pitch = 32
 
                 drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
 
