@@ -331,6 +331,7 @@ class Drone:
         while True:
             yaw, pitch = yaw_pitch_pairs[index]
             self.set_gimbal_angle(yaw, pitch)
+            time.sleep(0.5)
 
             ret, frame = self.camera.read()
             if not ret:
