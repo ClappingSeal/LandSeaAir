@@ -265,15 +265,15 @@ class Drone:
     # gimbal 6
     def accquire_data(self):
         self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
-        
+
         try:
-            response, addr = self.udp_socket.recvfrom(1024) 
+            response, addr = self.udp_socket.recvfrom(1024)
             # print("Received:", response)
             return response
         except socket.error as e:
             print(f"Error receiving data via UDP: {e}")
             return None
-    
+
     # gimbal 7 modified 11/02
     def acquire_attitude(self, response):
         try:
@@ -281,11 +281,11 @@ class Drone:
             index_0d = response.find(b'\x0D')
 
             # Yaw, Pitch, Roll 데이터를 추출합니다.
-            data_06 = response[index_0d+1:index_0d+7]
+            data_06 = response[index_0d + 1:index_0d + 7]
             yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
 
             # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
-            data_0c = response[index_0d+7:index_0d+15]
+            data_0c = response[index_0d + 7:index_0d + 15]
             # print(len(data_0c))
             if len(data_0c) != 8:
                 raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
@@ -295,7 +295,7 @@ class Drone:
             # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
             yaw = yaw_raw / 10.0
             pitch = pitch_raw / 10.0
-            if pitch < 0 :
+            if pitch < 0:
                 pitch = -(180 + pitch)
             else:
                 pitch = 180 - pitch
@@ -313,17 +313,39 @@ class Drone:
             return 10000, 10000, 10000, 10000, 10000, 10000
 
     # gimbal 8 added 11/04
-    def set_gimbal_angle_feedback(self,yaw,pitch):
-        for i in range (0, 2):
-            self.set_gimbal_angle(yaw,pitch)
+    def set_gimbal_angle_feedback(self, yaw, pitch):
+        for i in range(0, 2):
+            self.set_gimbal_angle(yaw, pitch)
             yaw_set = self.current_yaw
             pitch_set = self.current_pitch
 
             response = self.accquire_data()
-            yaw_current, pitch_current, _,_,_,_ = self.acquire_attitude(response)
-            if abs(yaw_set-yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
+            yaw_current, pitch_current, _, _, _, _ = self.acquire_attitude(response)
+            if abs(yaw_set - yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
                 break
-    
+
+    def camera_finding(self):
+        yaw_pitch_pairs = [(yaw, pitch) for pitch in [45, 60] for yaw in range(-60, 61, 15)]
+        count = 0
+        index = 0
+        while True:
+            yaw, pitch = yaw_pitch_pairs[index]
+            self.set_gimbal_angle(yaw, pitch)
+
+            ret, frame = self.camera.read()
+            if not ret:
+                print("Failed to grab frame")
+                continue
+
+            x, y, w, h, _ = self.detect1(frame)
+
+            if x > 0:
+                count += 1
+                print("find", count, "time")
+                if count > 3:
+                    break
+            index = (index + 1) % len(yaw_pitch_pairs)
+
     # end
     def close_connection(self):
         self.vehicle.close()
@@ -378,6 +400,7 @@ if __name__ == '__main__':
 
         drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
         time.sleep(2)
+        drone.camera_finding()
 
         try:
             while True:
@@ -404,16 +427,16 @@ if __name__ == '__main__':
 
                 # camera centering
                 # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
-                
+
                 drone.init_pitch += 0.01 * (drone.frame_height_divide_2 - y)
-                
+
                 response = drone.accquire_data()
-                yaw_current, pitch_current, _,_,_,_ = drone.acquire_attitude(response)
+                yaw_current, pitch_current, _, _, _, _ = drone.acquire_attitude(response)
 
                 # if drone.init_yaw > 59:
-                    # drone.init_yaw = 59
+                # drone.init_yaw = 59
                 # if drone.init_yaw < -59:
-                    # drone.init_yaw = -59
+                # drone.init_yaw = -59
                 if drone.init_pitch > 80:
                     drone.init_pitch = 80
                 if drone.init_pitch < 60:
@@ -423,7 +446,7 @@ if __name__ == '__main__':
                 # 송신 데이터 지정/데이터 송신
                 data = [x, y, w, h, int(yaw_current), int(pitch_current)]
 
-                if (yaw_current<90) and (yaw_current>-90) and (pitch_current>0) and (pitch_current<90):
+                if (yaw_current < 90) and (yaw_current > -90) and (pitch_current > 0) and (pitch_current < 90):
                     drone.sending_data(data)
                     print(data)
 
