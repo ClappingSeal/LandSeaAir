@@ -406,8 +406,8 @@ if __name__ == '__main__':
                 print(vote_array)
 
                 # camera centering
-                # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
-                drone.init_pitch += 0.01 * (x - drone.frame_width_divide_2)
+                # drone.init_yaw += 0.03 * (x - drone.frame_width_divide_2)
+                drone.init_pitch += 0.03 * (x - drone.frame_width_divide_2)
 
                 # if drone.init_yaw > 59:
                     # drone.init_yaw = 59
