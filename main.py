@@ -422,9 +422,10 @@ if __name__ == '__main__':
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
                 # 송신 데이터 지정/데이터 송신
                 data = [x, y, w, h, int(yaw_current), int(pitch_current)]
-                drone.sending_data(data)
 
-                print(data)
+                if (yaw_current<90) and (yaw_current>-90) and (pitch_current>0) and (pitch_current<90):
+                    drone.sending_data(data)
+                    print(data)
 
                 # 바운딩 박스
                 if w > 0 and h > 0:
