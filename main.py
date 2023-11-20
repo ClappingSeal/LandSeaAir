@@ -99,7 +99,7 @@ class Drone:
 
         # gimbal initial angle
         self.init_yaw = 0
-        self.init_pitch = 15
+        self.init_pitch = 60
 
     def detect1(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -414,10 +414,10 @@ if __name__ == '__main__':
                 # drone.init_yaw = 59
                 # if drone.init_yaw < -59:
                 # drone.init_yaw = -59
-                if drone.init_pitch > 20:
-                    drone.init_pitch = 20
-                if drone.init_pitch < 10:
-                    drone.init_pitch = 10
+                if drone.init_pitch > 90:
+                    drone.init_pitch = 90
+                if drone.init_pitch < 90:
+                    drone.init_pitch = 90
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
                 # 송신 데이터 지정/데이터 송신
