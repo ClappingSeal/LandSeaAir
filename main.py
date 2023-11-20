@@ -343,6 +343,7 @@ class Drone:
                 count += 1
                 print("find", count, "time")
                 if count > 3:
+                    print("find three times")
                     break
             index = (index + 1) % len(yaw_pitch_pairs)
 
