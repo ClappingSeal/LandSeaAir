@@ -6,6 +6,7 @@ import math
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+from stable_baselines3 import PPO
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -17,12 +18,16 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.received_data = (425, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.standard_pit = 70
+        self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
+
+        # DRL model load
+        self.model = PPO.load("ppo_model")
 
         # Position value
         self.init_lat = self.vehicle.location.global_relative_frame.lat
@@ -31,14 +36,16 @@ class Drone:
         # Arming value
         self.min_throttle = 1000
         self.arm_throttle = 1200
+        #
+        # # Check position
+        # if self.init_lat is None or self.init_lon is None:
+        #     raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
+        # print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
+        #
+        # if self.init_lat == 0 or self.init_lon == 0:
+        #     raise ValueError("Cannot get Location. Class initialization aborted.")
 
-        if self.init_lat is None or self.init_lon is None:
-            raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
-        print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
-
-        if self.init_lat == 0 or self.init_lon == 0:
-            raise ValueError("Cannot get Location. Class initialization aborted.")
-
+        # pid d value
         self.past_pos_data = np.zeros((30, 2))
 
     # Receiving 1
@@ -262,6 +269,29 @@ class Drone:
         self.velocity_pid(target_x, target_y, self.past_pos_data)
         print(target_x, target_y)
 
+    # locking 2
+    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, vel_z=0):
+        # 카메라 초기 각도
+        standard_pitch = self.standard_pit
+        standard_yaw = 0
+        # 프레임 변경
+        x_frame = x_frame + ((yaw_cam - standard_yaw) * (130 / 15))
+        y_frame = y_frame + ((pitch_cam - standard_pitch) * (130 / 15))
+
+        obs = np.array([(x_frame - 425) / 10, (y_frame - 240) / 10])
+        action, _ = self.model.predict(obs)
+
+        speed_magnitude = np.linalg.norm(action)
+        if speed_magnitude > 10:
+            action = (action / speed_magnitude) * 10
+
+        x_conversion = -action[0] * 0.5  # Scale
+        y_conversion = action[1] * 0.5  # Scale
+        target_x = self.get_pos()[0] + x_conversion
+        target_y = self.get_pos()[1] + y_conversion
+        self.velocity_pid(target_x, target_y, vel_z, self.past_pos_data)
+        print(x_conversion, "and", y_conversion)
+
     # get position (m)
     def get_pos(self):
         LATITUDE_CONVERSION = 111000
@@ -335,13 +365,14 @@ class Drone:
 
 if __name__ == "__main__":
     gt = Drone()
+    difference = 100
 
     try:
         nums = 1, 1
 
         if len(nums) == 2:
-            gt.arm_takeoff(1)
-            gt.set_yaw_to_west()
+            # gt.arm_takeoff(1)
+            # gt.set_yaw_to_west()
 
             time.sleep(0.1)
 
@@ -354,10 +385,9 @@ if __name__ == "__main__":
             while True:
                 step += 1
                 receive_arr = np.array(gt.receiving_data())
-                gt.update_past_pos_data()
+                # print(receive_arr)
 
-                # gt.goto_location(5, 10, 1)
-                gt.velocity_pid(target_x=5, target_y=10, velocity_z=0.2, history_positions=gt.past_pos_data)
+                gt.update_past_pos_data()
                 gt.set_yaw_to_west_nonblock()
 
                 # print(gt.get_pos())
@@ -368,8 +398,12 @@ if __name__ == "__main__":
                     ax.scatter(-current_pos[1], current_pos[0])
                     plt.draw()
                     plt.pause(0.1)
+                    difference = difference * -1
 
                 time.sleep(0.1)
+                print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])
+
+                gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
