@@ -314,7 +314,7 @@ class Drone:
 
     # gimbal 8 added 11/04
     def set_gimbal_angle_feedback(self,yaw,pitch):
-        for i in range (0, 3):
+        for i in range (0, 2):
             self.set_gimbal_angle(yaw,pitch)
             yaw_set = self.current_yaw
             pitch_set = self.current_pitch
@@ -406,8 +406,8 @@ if __name__ == '__main__':
                 print(vote_array)
 
                 # camera centering
-                # drone.init_yaw += 0.03 * (x - drone.frame_width_divide_2)
-                drone.init_pitch += 0.03 * (x - drone.frame_width_divide_2)
+                # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
+                drone.init_pitch += 0.01 * (x - drone.frame_width_divide_2)
 
                 # if drone.init_yaw > 59:
                     # drone.init_yaw = 59
