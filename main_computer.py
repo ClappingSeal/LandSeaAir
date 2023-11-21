@@ -364,7 +364,7 @@ class Drone:
 
 
 if __name__ == "__main__":
-    altitude = 3
+    altitude = 5
     gt = Drone()
 
     try:
