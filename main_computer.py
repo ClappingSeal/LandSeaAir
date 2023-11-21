@@ -364,10 +364,10 @@ class Drone:
 
 
 if __name__ == "__main__":
+    altitude = 3
     gt = Drone()
 
     try:
-        altitude = 3
         gt.arm_takeoff(altitude)
         gt.set_yaw_to_west()
         time.sleep(0.1)
