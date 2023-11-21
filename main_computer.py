@@ -242,7 +242,7 @@ class Drone:
             alt_diff = abs(current_location.alt - target_alt)
             print("current pos : ", self.get_pos())
 
-            if distance_to_target < 2 and alt_diff < 2:
+            if distance_to_target < 3 and alt_diff < 3:
                 print("Arrived at target location!!!!!!!!!!!!!!!!!!!!!")
                 break
             time.sleep(0.5)
@@ -255,7 +255,7 @@ class Drone:
             mavutil.mavlink.MAV_CMD_NAV_LAND, 0,
             0, 0, 0, 0, 0, 0, 0, 0)
 
-        while self.vehicle.location.global_relative_frame.alt > 0.1:
+        while self.vehicle.location.global_relative_frame.alt > -100:
             print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
             time.sleep(1)
         print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
@@ -435,6 +435,7 @@ if __name__ == "__main__":
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
+        print("initialize")
         gt.goto_location_block(0, 0, altitude)
         gt.land()
         gt.close_connection()
