@@ -12,14 +12,14 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM14', baudrate=57600):
+    def __init__(self, connection_string='COM15', baudrate=57600):
         print('vehicle connecting...')
 
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.standard_pit = 90 # 추후 60으로 변경
@@ -270,7 +270,7 @@ class Drone:
         print(target_x, target_y)
 
     # locking 2
-    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, vel_z):
+    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, vel_z=0, velocity =0.3):
         # 카메라 초기 각도
         standard_pitch = self.standard_pit
         standard_yaw = 0
@@ -285,8 +285,8 @@ class Drone:
         if speed_magnitude > 10:
             action = (action / speed_magnitude) * 10
 
-        x_conversion = -action[0] * 0.1  # Scale
-        y_conversion = action[1] * 0.1  # Scale
+        x_conversion = -action[0] * velocity
+        y_conversion = action[1] * velocity
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
 
@@ -366,7 +366,7 @@ class Drone:
 
 
 if __name__ == "__main__":
-    altitude = 5
+    altitude = 7
     gt = Drone()
 
     try:
@@ -422,7 +422,7 @@ if __name__ == "__main__":
                     print("Normal maneuver...")
                     print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
 
-                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], vel_z=0)
+                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], vel_z=0, velocity=0.3)
                     time.sleep(0.1)
 
                 # 그래프 그리기
