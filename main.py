@@ -373,13 +373,16 @@ class Drone:
 
 
 def draw_velocity_arrow(image, vn, ve):
+    x = vn
+    y = -ve
+    
     # 이미지 오른쪽 상단을 기준으로 시작점 설정
     h, w = image.shape[:2]
     start_point = (w - 100, 50)  # 예를 들어, 오른쪽 상단에서 100px 왼쪽, 50px 아래
 
     # 화살표 끝점 계산 (스케일 조정 필요)
     scale = 10  # 이 값을 조절하여 화살표의 길이를 조절할 수 있습니다.
-    end_point = (int(start_point[0] + ve * scale), int(start_point[1] - vn * scale))
+    end_point = (int(start_point[0] + x * scale), int(start_point[1] - y * scale))
 
     # 화살표 그리기
     cv2.arrowedLine(image, start_point, end_point, (0, 0, 255), 2, tipLength=0.3)
