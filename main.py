@@ -420,6 +420,10 @@ if __name__ == '__main__':
                 data = [x, y, w, h, int(yaw_current), int(pitch_current)]
 
                 if (yaw_current < 90) and (yaw_current > -90) and (pitch_current > 0) and (pitch_current < 90):
+                    height, width = frame.shape[:2]
+                    text_position = (10, height - 10)
+                    cv2.putText(frame, str(int(pitch_current)), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                    
                     drone.sending_data(data)
                     print(data)
 
