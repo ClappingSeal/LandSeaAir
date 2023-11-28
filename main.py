@@ -475,7 +475,7 @@ if __name__ == '__main__':
                 vn, ve = drone.get_velocity()
                 frame = draw_velocity_arrow(frame, vn, ve)
 
-                # 드론 고도 데이터 얻기
+                # 드론 고도 데이터 표시
                 altitude = drone.get_altitude()
                 height, width = frame.shape[:2]
                 altitude_text = f"Altitude: {altitude:.2f}m"
