@@ -382,7 +382,7 @@ def draw_velocity_arrow(image, vn, ve):
     end_point = (int(start_point[0] + ve * scale), int(start_point[1] - vn * scale))
 
     # 화살표 그리기
-    cv2.arrowedLine(image, start_point, end_point, (0, 255, 0), 2, tipLength=0.3)
+    cv2.arrowedLine(image, start_point, end_point, (0, 0, 255), 2, tipLength=0.3)
 
     return image
 
@@ -479,7 +479,7 @@ if __name__ == '__main__':
                 altitude = drone.get_altitude()
                 height, width = frame.shape[:2]
                 altitude_text = f"Altitude: {altitude:.2f}m"
-                cv2.putText(frame, altitude_text, (width - 200, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                cv2.putText(frame, altitude_text, (width - 200, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
                 # 이미지 저장
                 filename = f"{image_counter}.jpg"
