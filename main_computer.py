@@ -18,12 +18,12 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.standard_pit = 70 # 추후 60으로 변경
-        self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.standard_pit = 80 # 늘 주시
+        self.received_data = (425, 280, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
         # DRL model load
@@ -366,7 +366,7 @@ class Drone:
 
 
 if __name__ == "__main__":
-    altitude = 7
+    altitude = 5
     gt = Drone()
 
     try:
@@ -381,13 +381,14 @@ if __name__ == "__main__":
         if len(nums) == 2:
             step = 0
             plt.ion()
-            fig, ax = plt.subplots()
-            ax.set_xlim(-3000, 3000)  # x축 범위 설정
-            ax.set_ylim(-3000, 3000)  # y축 범위 설정
+            fig, ax = plt.subplots(figsize=(6, 6))
+            ax.set_xlim(-15, 15)  # x축 범위 설정
+            ax.set_ylim(-15, 15)  # y축 범위 설정
 
             init_count = 8  # 0으로 하면 초기 기동 작동
             yaw_set = 270
             direction = 5
+            positions = []
 
             while True:
                 step += 1
@@ -422,22 +423,36 @@ if __name__ == "__main__":
                     print("Normal maneuver...")
                     print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
 
-                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], vel_z=0, velocity=0.3)
+                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], vel_z=0, velocity=0.1)
                     time.sleep(0.1)
 
-                # 그래프 그리기
-                if step % 30 == 0:
+
+                if step % 10 == 0:
                     current_pos = gt.get_pos()
-                    ax.scatter(-current_pos[1], current_pos[0])
+                    ax.clear()
+                    ax.set_xlim(-15, 15)  # x축 범위 설정
+                    ax.set_ylim(-15, 15)  # y축 범위 설정
+                    # 현재 위치를 리스트에 추가
+                    positions.append((-current_pos[1], current_pos[0]))
+                    # 리스트에 있는 위치들을 파란색 선으로 연결
+                    ax.scatter(-current_pos[1], current_pos[0], color='green', s=20)
+                    if len(positions) > 1:
+                        xs, ys = zip(*positions)
+                        ax.plot(xs, ys, color='orange')
+
+                    # 현재 위치에 보라색 점 찍기 (점 크기를 작게 설정)
+
+
                     plt.draw()
                     plt.pause(0.1)
+                    plt.savefig(f'graph_at_step_{step}.png')
+
 
         else:
             print("정확하게 두 개의 실수를 입력하세요.")
     except ValueError:
         print("올바른 형식의 실수를 입력하세요.")
     except KeyboardInterrupt:
-        print("initialize")
-        gt.goto_location_block(0, 0, altitude)
+        print("LANDLANdLAnd")
         gt.land()
         gt.close_connection()
