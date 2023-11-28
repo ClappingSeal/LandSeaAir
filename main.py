@@ -374,7 +374,7 @@ class Drone:
 
 def draw_velocity_arrow(image, vn, ve):
     x = vn
-    y = -ve
+    y = ve
     
     # 이미지 오른쪽 상단을 기준으로 시작점 설정
     h, w = image.shape[:2]
