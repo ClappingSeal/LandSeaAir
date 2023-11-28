@@ -324,6 +324,14 @@ class Drone:
             if abs(yaw_set - yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
                 break
 
+    def get_velocity(self):
+        vn, ve, vd = self.vehicle.velocity
+        return vn, ve
+
+    def get_altitude(self):
+        altitude = self.vehicle.location.global_relative_frame.alt
+        return altitude
+
     # end
     def close_connection(self):
         self.vehicle.close()
@@ -362,6 +370,21 @@ class Drone:
 
             out.release()
             print(f"Saved video with {codec} codec to {output_filename}")
+
+
+def draw_velocity_arrow(image, vn, ve):
+    # 이미지 오른쪽 상단을 기준으로 시작점 설정
+    h, w = image.shape[:2]
+    start_point = (w - 100, 50)  # 예를 들어, 오른쪽 상단에서 100px 왼쪽, 50px 아래
+
+    # 화살표 끝점 계산 (스케일 조정 필요)
+    scale = 10  # 이 값을 조절하여 화살표의 길이를 조절할 수 있습니다.
+    end_point = (int(start_point[0] + ve * scale), int(start_point[1] - vn * scale))
+
+    # 화살표 그리기
+    cv2.arrowedLine(image, start_point, end_point, (0, 255, 0), 2, tipLength=0.3)
+
+    return image
 
 
 if __name__ == '__main__':
@@ -422,8 +445,9 @@ if __name__ == '__main__':
                 if (yaw_current < 90) and (yaw_current > -90) and (pitch_current > 0) and (pitch_current < 90):
                     height, width = frame.shape[:2]
                     text_position = (10, height - 10)
-                    cv2.putText(frame, str(int(pitch_current)), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-                    
+                    cv2.putText(frame, str(int(pitch_current)), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.9,
+                                (0, 0, 255), 2)
+
                     drone.sending_data(data)
                     print(data)
 
@@ -446,6 +470,16 @@ if __name__ == '__main__':
                 text_x = frame.shape[1] - text_size[0] - 10
                 text_y = frame.shape[0] - 10
                 cv2.putText(frame, vote_result, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+
+                # 이미지에 화샆표 표시
+                vn, ve = drone.get_velocity()
+                frame = draw_velocity_arrow(frame, vn, ve)
+
+                # 드론 고도 데이터 얻기
+                altitude = drone.get_altitude()
+                height, width = frame.shape[:2]
+                altitude_text = f"Altitude: {altitude:.2f}m"
+                cv2.putText(frame, altitude_text, (width - 200, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
                 # 이미지 저장
                 filename = f"{image_counter}.jpg"
