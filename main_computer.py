@@ -22,7 +22,7 @@ class Drone:
         # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.standard_pit = 80 # 늘 주시
+        self.standard_pit = 80  # 늘 주시
         self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
@@ -286,7 +286,7 @@ class Drone:
             action = (action / speed_magnitude) * 10
 
         x_conversion = -action[0] * velocity
-        y_conversion = action[1] * velocity
+        y_conversion = -action[1] * velocity
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
 
@@ -390,7 +390,6 @@ if __name__ == "__main__":
             positions = []
 
             while True:
-                print(gt.get_velocity())
                 step += 1
                 receive_arr = np.array(gt.receiving_data())
 
@@ -423,7 +422,12 @@ if __name__ == "__main__":
                     print("Normal maneuver...")
                     print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
 
-                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=0.3)
+                    if receive_arr[0] == 0:
+                        receive_arr[0] = 425
+                        receive_arr[1] = 240
+
+                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], 480 - receive_arr[1], alt=5,
+                                   velocity=0.3)
                     time.sleep(0.1)
 
                 if step % 10 == 0:
@@ -440,7 +444,6 @@ if __name__ == "__main__":
                         ax.plot(xs, ys, color='orange')
 
                     # 현재 위치에 보라색 점 찍기 (점 크기를 작게 설정)
-
 
                     plt.draw()
                     plt.pause(0.1)
