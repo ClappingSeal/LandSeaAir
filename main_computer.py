@@ -432,17 +432,13 @@ if __name__ == "__main__":
                 if step % 10 == 0:
                     current_pos = gt.get_pos()
                     ax.clear()
-                    ax.set_xlim(-15, 15)  # x축 범위 설정
-                    ax.set_ylim(-15, 15)  # y축 범위 설정
-                    # 현재 위치를 리스트에 추가
+                    ax.set_xlim(-15, 15)
+                    ax.set_ylim(-15, 15)
                     positions.append((-current_pos[1], current_pos[0]))
-                    # 리스트에 있는 위치들을 파란색 선으로 연결
                     ax.scatter(-current_pos[1], current_pos[0], color='green', s=20)
                     if len(positions) > 1:
                         xs, ys = zip(*positions)
                         ax.plot(xs, ys, color='orange')
-
-                    # 현재 위치에 보라색 점 찍기 (점 크기를 작게 설정)
 
                     plt.draw()
                     plt.pause(0.1)
