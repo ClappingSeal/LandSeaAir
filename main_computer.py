@@ -23,7 +23,7 @@ class Drone:
 
         # Communication
         self.standard_pit = 80 # 늘 주시
-        self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.received_data = (400, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
         # DRL model load
@@ -270,7 +270,7 @@ class Drone:
         print(target_x, target_y)
 
     # locking 2
-    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, vel_z=0, velocity =0.3):
+    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, alt=5, velocity=0.3):
         # 카메라 초기 각도
         standard_pitch = self.standard_pit
         standard_yaw = 0
@@ -290,8 +290,7 @@ class Drone:
         target_x = self.get_pos()[0] + x_conversion
         target_y = self.get_pos()[1] + y_conversion
 
-        self.update_past_pos_data()
-        self.velocity_pid(target_x, target_y, vel_z, self.past_pos_data)
+        self.goto_location(target_x, target_y, alt)
         print(x_conversion, y_conversion)
 
     # get position (m)
@@ -391,6 +390,7 @@ if __name__ == "__main__":
             positions = []
 
             while True:
+                print(gt.get_velocity())
                 step += 1
                 receive_arr = np.array(gt.receiving_data())
 
@@ -423,9 +423,8 @@ if __name__ == "__main__":
                     print("Normal maneuver...")
                     print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
 
-                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], vel_z=0, velocity=0.1)
+                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=0.3)
                     time.sleep(0.1)
-
 
                 if step % 10 == 0:
                     current_pos = gt.get_pos()
