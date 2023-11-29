@@ -426,7 +426,7 @@ if __name__ == "__main__":
                         receive_arr[0] = 425
                         receive_arr[1] = 240
 
-                    gt.locking_drl(receive_arr[4], receive_arr[5], receive_arr[0], 480 - receive_arr[1], alt=5,
+                    gt.locking_drl(0, receive_arr[5], receive_arr[0], 480 - receive_arr[1], alt=5,
                                    velocity=0.3)
                     time.sleep(0.1)
 
