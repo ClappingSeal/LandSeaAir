@@ -16,7 +16,10 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 class Drone:
     def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="0.0.0.0", udp_port=37260):
-
+        # pitch angle
+        self.max_pitch = 80
+        self.min_pitch = 80
+        
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
@@ -436,10 +439,10 @@ if __name__ == '__main__':
                 response = drone.accquire_data()
                 yaw_current, pitch_current, _, _, _, _ = drone.acquire_attitude(response)
 
-                if drone.init_pitch > 80:
-                    drone.init_pitch = 80
-                if drone.init_pitch < 80:
-                    drone.init_pitch = 80
+                if drone.init_pitch > drone.max_pitch:
+                    drone.init_pitch = drone.max_pitch
+                if drone.init_pitch < drone.min_pitch:
+                    drone.init_pitch = drone.min_pitch
 
                 drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
                 # 송신 데이터 지정/데이터 송신
