@@ -13,6 +13,9 @@ logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 class Drone:
     def __init__(self, connection_string='COM15', baudrate=57600):
+        self.standard_pit = 80  # 늘 주시
+        self.moving_velocity = 0.5
+
         print('vehicle connecting...')
 
         # Connecting values
@@ -426,7 +429,7 @@ if __name__ == "__main__":
                         receive_arr[1] = 240
 
                     print(0, receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
-                    gt.locking_drl(0, receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=1)
+                    gt.locking_drl(0, receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=gt.moving_velocity)
                     time.sleep(0.1)
 
                 if step % 10 == 0:
