@@ -18,12 +18,12 @@ class Drone:
         # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
         self.standard_pit = 80  # 늘 주시
-        self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.received_data = (10, 480, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
         # DRL model load
@@ -420,14 +420,13 @@ if __name__ == "__main__":
                 # 일반 기동
                 else:
                     print("Normal maneuver...")
-                    print(receive_arr[4], receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
 
                     if receive_arr[0] == 0:
                         receive_arr[0] = 425
                         receive_arr[1] = 240
 
-                    gt.locking_drl(0, receive_arr[5], receive_arr[0], 480 - receive_arr[1], alt=5,
-                                   velocity=0.3)
+                    print(0, receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
+                    gt.locking_drl(0, receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=0.3)
                     time.sleep(0.1)
 
                 if step % 10 == 0:
