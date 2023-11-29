@@ -1,55 +1,179 @@
-from dronekit import connect, VehicleMode, Command, LocationGlobalRelative
-from pymavlink import mavutil
+from dronekit import connect
+import cv2
 import time
+import socket
+import struct
 import logging
-import math
 import numpy as np
-import random
-import matplotlib.pyplot as plt
-from stable_baselines3 import PPO
+import os
+import math
+import json
+from ultralytics import YOLO
+from datetime import datetime
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
 
 class Drone:
-    def __init__(self, connection_string='COM15', baudrate=57600):
-        self.standard_pit = 80  # 늘 주시
-        self.moving_velocity = 0.5
+    def __init__(self, connection_string='/dev/ttyACM0', baudrate=115200, udp_ip="0.0.0.0", udp_port=37260):
+        # pitch angle
+        self.max_pitch = 80
+        self.min_pitch = 80
         
-        print('vehicle connecting...')
-
-        # Connecting values
+        # Connecting value
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        self.vehicle = connect(self.connection_string, wait_ready=False, baud=self.baudrate, timeout=100)
 
         # Communication
-        self.standard_pit = 80  # 늘 주시
-        self.received_data = (10, 480, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.received_data = None
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
-        # DRL model load
-        self.model = PPO.load("ppo_model")
+        # Camera connection
+        self.camera = cv2.VideoCapture(0)
+        if not self.camera.isOpened():
+            print("Error: Couldn't open the camera.")
+            return
 
-        # Position value
-        self.init_lat = self.vehicle.location.global_relative_frame.lat
-        self.init_lon = self.vehicle.location.global_relative_frame.lon
+        # Gimbal UDP Settings
+        self.udp_ip = udp_ip
+        self.udp_port = udp_port
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            self.udp_socket.bind((self.udp_ip, self.udp_port))
+            print("UDP socket bound successfully!")
+        except socket.error as e:
+            print(f"Error binding UDP socket: {e}")
+            return
 
-        # Arming value
-        self.min_throttle = 1000
-        self.arm_throttle = 1200
+        # Gimbal
+        self.crc16_tab = [0x0, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
+                          0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
+                          0x1231, 0x210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
+                          0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c, 0xf3ff, 0xe3de,
+                          0x2462, 0x3443, 0x420, 0x1401, 0x64e6, 0x74c7, 0x44a4, 0x5485,
+                          0xa56a, 0xb54b, 0x8528, 0x9509, 0xe5ee, 0xf5cf, 0xc5ac, 0xd58d,
+                          0x3653, 0x2672, 0x1611, 0x630, 0x76d7, 0x66f6, 0x5695, 0x46b4,
+                          0xb75b, 0xa77a, 0x9719, 0x8738, 0xf7df, 0xe7fe, 0xd79d, 0xc7bc,
+                          0x48c4, 0x58e5, 0x6886, 0x78a7, 0x840, 0x1861, 0x2802, 0x3823,
+                          0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948, 0x9969, 0xa90a, 0xb92b,
+                          0x5af5, 0x4ad4, 0x7ab7, 0x6a96, 0x1a71, 0xa50, 0x3a33, 0x2a12,
+                          0xdbfd, 0xcbdc, 0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a,
+                          0x6ca6, 0x7c87, 0x4ce4, 0x5cc5, 0x2c22, 0x3c03, 0xc60, 0x1c41,
+                          0xedae, 0xfd8f, 0xcdec, 0xddcd, 0xad2a, 0xbd0b, 0x8d68, 0x9d49,
+                          0x7e97, 0x6eb6, 0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0xe70,
+                          0xff9f, 0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a, 0x9f59, 0x8f78,
+                          0x9188, 0x81a9, 0xb1ca, 0xa1eb, 0xd10c, 0xc12d, 0xf14e, 0xe16f,
+                          0x1080, 0xa1, 0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046, 0x6067,
+                          0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c, 0xe37f, 0xf35e,
+                          0x2b1, 0x1290, 0x22f3, 0x32d2, 0x4235, 0x5214, 0x6277, 0x7256,
+                          0xb5ea, 0xa5cb, 0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d,
+                          0x34e2, 0x24c3, 0x14a0, 0x481, 0x7466, 0x6447, 0x5424, 0x4405,
+                          0xa7db, 0xb7fa, 0x8799, 0x97b8, 0xe75f, 0xf77e, 0xc71d, 0xd73c,
+                          0x26d3, 0x36f2, 0x691, 0x16b0, 0x6657, 0x7676, 0x4615, 0x5634,
+                          0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9, 0xb98a, 0xa9ab,
+                          0x5844, 0x4865, 0x7806, 0x6827, 0x18c0, 0x8e1, 0x3882, 0x28a3,
+                          0xcb7d, 0xdb5c, 0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a,
+                          0x4a75, 0x5a54, 0x6a37, 0x7a16, 0xaf1, 0x1ad0, 0x2ab3, 0x3a92,
+                          0xfd2e, 0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b, 0x9de8, 0x8dc9,
+                          0x7c26, 0x6c07, 0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0xcc1,
+                          0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8,
+                          0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0xed1, 0x1ef0
+                          ]
 
-        # Check position
-        if self.init_lat is None or self.init_lon is None:
-            raise ValueError("Latitude or Longitude value is None. Class initialization aborted.")
-        print("Drone current location : ", self.init_lat, "lat, ", self.init_lon, "lon")
+        # detection requirements
+        self.model = YOLO('best.pt')
 
-        if self.init_lat == 0 or self.init_lon == 0:
-            raise ValueError("Cannot get Location. Class initialization aborted.")
+        self.frame_width = 850
+        self.frame_height = 480
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
 
-        # pid d value
-        self.past_pos_data = np.zeros((30, 2))
+        self.frame_width_divide_2 = self.frame_width // 2
+        self.frame_height_divide_2 = self.frame_height // 2
+        self.using_detect2_wait = 100
+        self.using_detect2_period = 50
+        self.using_detect2_count = 5
+
+        # for time save in detection2
+        ret, frame = self.camera.read()
+        detection_for_time_save = self.model(frame, verbose=False)[0]
+        detect = detection_for_time_save  # ???
+
+        # gimbal initial angle
+        self.init_yaw = 0
+        self.init_pitch = 60
+
+    def detect1(self, img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        centers = []
+        sizes = []
+
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < 1000:
+                x, y, w, h = cv2.boundingRect(contour)
+                centers.append((x + w // 2, y + h // 2))
+                sizes.append((w, h))
+
+        if centers:
+            avg_x = sum([c[0] for c in centers]) // len(centers)
+            avg_y = sum([c[1] for c in centers]) // len(centers)
+
+            min_size = max(sizes, key=lambda size: size[0] * size[1])
+            width, height = min_size
+            return avg_x, avg_y, width, height, 100
+
+        return 0, 0, 0, 0, 100
+
+    def detect2(self, x, y, w, h, frame):
+        center_x = x + w // 2
+        center_y = y + h // 2
+
+        expanded_width = w * 8
+        expanded_height = h * 8
+
+        start_x = max(center_x - expanded_width // 2, 0)
+        start_y = max(center_y - expanded_height // 2, 0)
+
+        end_x = min(start_x + expanded_width, frame.shape[1])
+        end_y = min(start_y + expanded_height, frame.shape[0])
+
+        expanded_area = frame[start_y:end_y, start_x:end_x]
+        resized_area = cv2.resize(expanded_area, (expanded_width, expanded_height))
+
+        enlarged_area = cv2.resize(resized_area, (expanded_width * 4, expanded_height * 4))
+        cv2.imwrite('enlarged_area.jpg', enlarged_area)
+
+        detection = self.model(enlarged_area, verbose=False)[0]
+        probs = list(detection.probs.data.tolist())
+        classes = detection.names
+        highest_prob = max(probs)
+        highest_prob_index = probs.index(highest_prob)
+        type = classes[highest_prob_index]
+
+        return type
+
+    def voting(self, strings):
+        if 'quad' in strings:
+            return 'quad'
+        frequency_dict = {}
+        max_count = 0
+        most_common = strings[0]
+
+        for string in strings:
+            if string in frequency_dict:
+                frequency_dict[string] += 1
+            else:
+                frequency_dict[string] = 1
+
+            if frequency_dict[string] > max_count:
+                max_count = frequency_dict[string]
+                most_common = string
+
+        return most_common
 
     # Receiving 1
     def data64_callback(self, vehicle, name, message):
@@ -66,7 +190,7 @@ class Drone:
         # Packing Data
         packed_data = bytearray()
         for item in data:
-            packed_data += item.to_bytes(4, 'little')
+            packed_data += item.to_bytes(4, 'little', signed=True)
 
         while len(packed_data) < 64:
             packed_data += b'\x00'
@@ -74,385 +198,309 @@ class Drone:
         msg = self.vehicle.message_factory.data64_encode(0, len(packed_data), packed_data)
         self.vehicle.send_mavlink(msg)
 
-    # Drone movement1 block
-    def arm_takeoff(self, h):
-        self.vehicle.channels.overrides['3'] = self.min_throttle
-        self.vehicle.mode = VehicleMode("STABILIZE")
-        time.sleep(0.5)
+    # gimbal 1
+    def CRC16_cal(self, ptr, len_, crc_init=0):
+        crc = crc_init
+        for i in range(len_):
+            temp = (crc >> 8) & 0xff
+            crc = ((crc << 8) ^ self.crc16_tab[ptr[i] ^ temp]) & 0xffff
+        return crc
 
-        cmds = self.vehicle.commands
-        cmds.download()
-        cmds.wait_ready()
-        cmds.clear()
-        takeoff_cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                              mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, h)
-        cmds.add(takeoff_cmd)
-        cmds.upload()
-        time.sleep(0.5)  # upload wait
+    # gimbal 2
+    def send_command_to_gimbal(self, command_bytes):
+        try:
+            self.udp_socket.sendto(command_bytes, ("192.168.144.25", self.udp_port))
+            # print("Command sent successfully!")
+        except socket.error as e:
+            print(f"Error sending command via UDP: {e}")
 
-        self.vehicle.armed = True
-        time.sleep(0.5)
-        self.vehicle.channels.overrides['3'] = self.arm_throttle
-        time.sleep(3)
-        print("ARMED : ", self.vehicle.armed)
+    # gimbal 3
+    def set_gimbal_angle(self, yaw, pitch):
+        cmd_header = b'\x55\x66\x01\x04\x00\x00\x00\x0E'
+        yaw_bytes = struct.pack('<h', int(yaw * 10))
+        pitch_bytes = struct.pack('<h', int(-pitch * 10))
+        data_to_checksum = cmd_header + yaw_bytes + pitch_bytes
+        calculated_checksum = self.CRC16_cal(data_to_checksum, len(data_to_checksum))
+        checksum_bytes = struct.pack('<H', calculated_checksum)
+        command = data_to_checksum + checksum_bytes
+        self.send_command_to_gimbal(command)
 
-        self.vehicle._master.mav.command_long_send(
-            self.vehicle._master.target_system, self.vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_MISSION_START, 0,
-            0, 0, 0, 0, 0, 0, 0, 0)
-        time.sleep(2)
+        self.current_yaw = yaw
+        self.current_pitch = pitch
 
-        print("Mission started")
+    # gimbal 4
+    def adjust_gimbal_relative_to_current(self, target_x, target_y):  # 상대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
 
-        while True:
-            print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
-            if self.vehicle.location.global_relative_frame.alt >= h * 0.8:
-                print("Reached target altitude!!!!!!!!!!!!!!!!!!!!")
-                break
-            time.sleep(1)
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
 
-        self.vehicle.mode = VehicleMode("GUIDED")
+        yaw_adjustment = self.current_yaw + diff_x
+        pitch_adjustment = self.current_pitch - diff_y
 
-    # Drone movement2 block
-    def set_yaw_to_west(self):
-        yaw_angle = 270
-        is_relative = False
+        # yaw_adjustment = max(-self.max_yaw, min(self.max_yaw, yaw_adjustment))
+        # pitch_adjustment = max(self.min_pitch, min(self.max_pitch, pitch_adjustment))
 
-        self.vehicle._master.mav.command_long_send(
-            self.vehicle._master.target_system, self.vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
-            yaw_angle, 0, 0, is_relative, 0, 0, 0)
-
-        tolerance = 5  # 단위는 도
-
-        while True:
-            current_yaw = self.vehicle.attitude.yaw
-            current_yaw_deg = math.degrees(current_yaw) % 360
-            angle = abs(current_yaw_deg - yaw_angle) % 360
-
-            if min(angle, 360 - angle) <= tolerance:
-                break
-            print("Yaw : ", min(angle, 360 - angle))
-            time.sleep(0.5)
-
-        print("Setting yaw to face WEST!!!!!!!!!!!!!!!!!!!!")
-        time.sleep(0.5)
-
-    # Drone movement3 non-block
-    def set_yaw_to_west_nonblock(self, angle):
-        yaw_angle = angle  # 270이 서쪽
-        is_relative = False
-
-        self.vehicle._master.mav.command_long_send(
-            self.vehicle._master.target_system, self.vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,
-            yaw_angle, 0, 0, is_relative, 0, 0, 0)
-
-        self.target_yaw = yaw_angle
-        self.yaw_tolerance = 0.1  # 단위는 도
-
-    # Drone movement4 non-block
-    def velocity(self, vx, vy, vz):
-        if self.vehicle.mode != VehicleMode("GUIDED"):
-            self.vehicle.mode = VehicleMode("GUIDED")
-            time.sleep(0.1)
-
-        msg = self.vehicle.message_factory.set_position_target_local_ned_encode(
-            0,  # boot time
-            0, 0,  # target system, target component
-            mavutil.mavlink.MAV_FRAME_LOCAL_NED,  # coordinate frame
-            0b0000111111000111,  # type mask (enabling only velocity)
-            0, 0, 0,  # x, y, z 위치
-            vx, -vy, -vz,  # x, y, z 속도
-            0, 0, 0,  # x, y, z 가속도
-            0, 0)  # yaw, yaw_rate
-        self.vehicle.send_mavlink(msg)
-
-    # Drone movement5 non-block (velocity 함수 사용)
-    def velocity_pid(self, target_x, target_y, velocity_z, history_positions, proportional=0.6, integral=0.001,
-                     derivative=0.5):
-        pos_x, pos_y = self.get_pos()
-
-        error_x = target_x - pos_x
-        error_y = target_y - pos_y
-        cumulative_error_x = sum([target_x - pos[0] for pos in history_positions])
-        cumulative_error_y = sum([target_y - pos[1] for pos in history_positions])
-        previous_error_x = target_x - history_positions[-10][0]
-        previous_error_y = target_y - history_positions[-10][1]
-        error_delta_x = error_x - previous_error_x
-        error_delta_y = error_y - previous_error_y
-
-        velocity_x = proportional * error_x + integral * cumulative_error_x + derivative * error_delta_x
-        velocity_y = proportional * error_y + integral * cumulative_error_y + derivative * error_delta_y
-        self.velocity(velocity_x, velocity_y, velocity_z)
-
-    # Drone movement6 non-block
-    def goto_location(self, x, y, z, speed=10):
-        LATITUDE_CONVERSION = 111000
-        LONGITUDE_CONVERSION = 88.649 * 1000
-
-        target_lat = self.init_lat + (x / LATITUDE_CONVERSION)
-        target_lon = self.init_lon - (y / LONGITUDE_CONVERSION)
-        target_alt = z
-
-        if self.vehicle.mode != VehicleMode("GUIDED"):
-            self.vehicle.mode = VehicleMode("GUIDED")
-            time.sleep(0.1)
-
-        target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
-
-        self.vehicle.groundspeed = speed
-        self.vehicle.simple_goto(target_location)
-
-        # print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt} at {speed} m/s")
-
-    # Drone movement7 block (get_pos 함수 사용)
-    def goto_location_block(self, x, y, z):
-        LATITUDE_CONVERSION = 111000
-        LONGITUDE_CONVERSION = 88.649 * 1000
-
-        print(self.init_lat, y, LONGITUDE_CONVERSION)
-
-        target_lat = self.init_lat + (x / LATITUDE_CONVERSION)
-        target_lon = self.init_lon - (y / LONGITUDE_CONVERSION)
-        target_alt = z
-
-        def get_distance(lat1, lon1, lat2, lon2):
-            import math
-            R = 6371000  # Earth radius in meters
-
-            d_lat = math.radians(lat2 - lat1)
-            d_lon = math.radians(lon2 - lon1)
-
-            a = (math.sin(d_lat / 2) * math.sin(d_lat / 2) +
-                 math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
-                 math.sin(d_lon / 2) * math.sin(d_lon / 2))
-            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-            return R * c
-
-        if self.vehicle.mode != VehicleMode("GUIDED"):
-            self.vehicle.mode = VehicleMode("GUIDED")
-            time.sleep(0.1)
-
-        target_location = LocationGlobalRelative(target_lat, target_lon, target_alt)
-        self.vehicle.simple_goto(target_location)
-        print(f"Moving to: Lat: {target_lat}, Lon: {target_lon}, Alt: {target_alt}")
-
-        while True:
-            current_location = self.vehicle.location.global_relative_frame
-            distance_to_target = get_distance(current_location.lat, current_location.lon, target_lat, target_lon)
-            alt_diff = abs(current_location.alt - target_alt)
-            print("current pos : ", self.get_pos())
-
-            if distance_to_target < 3 and alt_diff < 3:
-                print("Arrived at target location!!!!!!!!!!!!!!!!!!!!!")
-                break
-            time.sleep(0.5)
-
-    # Drone movement8 block
-    def land(self):
-        print("Initiating landing sequence")
-        self.vehicle._master.mav.command_long_send(
-            self.vehicle._master.target_system, self.vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_NAV_LAND, 0,
-            0, 0, 0, 0, 0, 0, 0, 0)
-
-        while self.vehicle.location.global_relative_frame.alt > -100:
-            print(f"Altitude: {self.vehicle.location.global_relative_frame.alt}")
-            time.sleep(1)
-        print("Landed successfully!!!!!!!!!!!!!!!!!!!!")
-
-    # locking 1 (get_pos 함수, velocity_pid 함수 사용)
-    def locking_easy(self, x, y, num):
-        x_conversion = (x - 425) / num
-        y_conversion = (y - 240) / num
-        target_x = self.get_pos()[0] + x_conversion
-        target_y = self.get_pos()[1] + y_conversion
-        self.velocity_pid(target_x, target_y, self.past_pos_data)
+        self.set_gimbal_angle(-yaw_adjustment, pitch_adjustment)
         print(target_x, target_y)
+        print(yaw_adjustment, -pitch_adjustment)
 
-    # locking 2
-    def locking_drl(self, yaw_cam, pitch_cam, x_frame, y_frame, alt=5, velocity=0.3):
-        # 카메라 초기 각도
-        standard_pitch = self.standard_pit
-        standard_yaw = 0
-        # 프레임 변경
-        x_frame = x_frame + ((yaw_cam - standard_yaw) * (130 / 15))
-        y_frame = y_frame + ((pitch_cam - standard_pitch) * (130 / 15))
+    # gimbal 5
+    def adjust_gimbal(self, target_x, target_y):  # 절대 각도
+        center_x = self.frame_width // 2
+        center_y = self.frame_height // 2
 
-        obs = np.array([(x_frame - 425) / 10, (y_frame - 240) / 10])
-        action, _ = self.model.predict(obs)
+        diff_x = target_x - center_x
+        diff_y = target_y - center_y
 
-        speed_magnitude = np.linalg.norm(action)
-        if speed_magnitude > 10:
-            action = (action / speed_magnitude) * 10
+        scale_factor_yaw = 135 / center_x
+        scale_factor_pitch = (25 + 90) / center_y
 
-        x_conversion = -action[0] * velocity
-        y_conversion = -action[1] * velocity
-        target_x = self.get_pos()[0] + x_conversion
-        target_y = self.get_pos()[1] + y_conversion
+        yaw_adjustment = self.current_yaw + diff_x * scale_factor_yaw
+        pitch_adjustment = self.current_pitch - diff_y * scale_factor_pitch
 
-        self.goto_location(target_x, target_y, alt)
-        print(x_conversion, y_conversion)
+        yaw_adjustment = max(-135, min(135, yaw_adjustment))
+        pitch_adjustment = max(-90, min(25, pitch_adjustment))
 
-    # get position (m)
-    def get_pos(self):
-        LATITUDE_CONVERSION = 111000
-        LONGITUDE_CONVERSION = 88.649 * 1000
+        self.set_gimbal_angle(yaw_adjustment, pitch_adjustment)
 
-        delta_lat = self.vehicle.location.global_relative_frame.lat - self.init_lat
-        delta_lon = self.vehicle.location.global_relative_frame.lon - self.init_lon
+    # gimbal 6
+    def accquire_data(self):
+        self.send_command_to_gimbal(b'\x55\x66\x01\x00\x00\x00\x00\x0d\xe8\x05')
 
-        x = delta_lat * LATITUDE_CONVERSION
-        y = -delta_lon * LONGITUDE_CONVERSION
+        try:
+            response, addr = self.udp_socket.recvfrom(1024)
+            # print("Received:", response)
+            return response
+        except socket.error as e:
+            print(f"Error receiving data via UDP: {e}")
+            return None
 
-        return x, y
+    # gimbal 7 modified 11/02
+    def acquire_attitude(self, response):
+        try:
+            # CMD ID를 찾습니다.
+            index_0d = response.find(b'\x0D')
 
-    # update past data position by rolling
-    def update_past_pos_data(self):
-        self.past_pos_data = np.roll(self.past_pos_data, shift=-1, axis=0)
-        self.past_pos_data[-1] = self.get_pos()
+            # Yaw, Pitch, Roll 데이터를 추출합니다.
+            data_06 = response[index_0d + 1:index_0d + 7]
+            yaw_raw, pitch_raw, roll_raw = struct.unpack('<hhh', data_06)
 
-    # IMM target tracking (4x2 행렬만 처리, 30x2 행렬만 입력)
-    def imm_tracking(self, data_raw, num_steps=2):
-        def compute_velocity_and_acceleration(values):
-            velocities = np.diff(values) / np.diff(times)
-            accelerations = np.diff(velocities)
-            return velocities[-1], accelerations[-1]
+            # Yaw Velocity, Pitch Velocity, Roll Velocity 데이터를 추출합니다.
+            data_0c = response[index_0d + 7:index_0d + 15]
+            # print(len(data_0c))
+            if len(data_0c) != 8:
+                raise ValueError("Invalid data length for yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw")
 
-        def predict_next_step(value, velocity, acceleration, delta_t):
-            value_cv = value + velocity * delta_t
-            value_ca = value + velocity * delta_t + 0.5 * acceleration * delta_t ** 2
-            w1, w2 = 0.6, 0.4  # 모델 가중치
-            return w1 * value_cv + w2 * value_ca
+            yaw_velocity_raw, pitch_velocity_raw, roll_velocity_raw, _ = struct.unpack('<hhhh', data_0c)
 
-        def select_rows(matrix):
-            # 행렬의 1, 10, 20, 30번째 행을 선택
-            selected_rows = matrix[[0, 9, 19, 29], :]
-            return selected_rows
+            # 추출한 데이터를 10으로 나눠 실제 값으로 변환합니다.
+            yaw = yaw_raw / 10.0
+            pitch = pitch_raw / 10.0
+            if pitch < 0:
+                pitch = -(180 + pitch)
+            else:
+                pitch = 180 - pitch
+            roll = roll_raw / 10.0
+            yaw_velocity = yaw_velocity_raw / 10.0
+            pitch_velocity = pitch_velocity_raw / 10.0
+            roll_velocity = roll_velocity_raw / 10.0
 
-        data = select_rows(data_raw)
+            return yaw, pitch, roll, yaw_velocity, pitch_velocity, roll_velocity
+        except struct.error as e:
+            print("Error in unpacking data: {}".format(e))
+            return 10000, 10000, 10000, 10000, 10000, 10000
+        except ValueError as e:
+            print("Error: {}".format(e))
+            return 10000, 10000, 10000, 10000, 10000, 10000
 
-        data = np.array(data)
-        times = np.arange(1, data.shape[0] + 1)
-        x_values = data[:, 0]
-        y_values = data[:, 1]
+    # gimbal 8 added 11/04
+    def set_gimbal_angle_feedback(self, yaw, pitch):
+        for i in range(0, 2):
+            self.set_gimbal_angle(yaw, pitch)
+            yaw_set = self.current_yaw
+            pitch_set = self.current_pitch
 
-        vx, ax = compute_velocity_and_acceleration(x_values)
-        vy, ay = compute_velocity_and_acceleration(y_values)
+            response = self.accquire_data()
+            yaw_current, pitch_current, _, _, _, _ = self.acquire_attitude(response)
+            if abs(yaw_set - yaw_current) < 5 and abs(pitch_set - pitch_current) < 5:
+                break
 
-        predictions = []
-        delta_t_pred = 1  # 예측에 사용할 시간 간격
+    def get_velocity(self):
+        vn, ve, vd = self.vehicle.velocity
+        return vn, ve
 
-        x_next, y_next = x_values[-1], y_values[-1]
-
-        for _ in range(num_steps):
-            x_next = predict_next_step(x_next, vx, ax, delta_t_pred)
-            y_next = predict_next_step(y_next, vy, ay, delta_t_pred)
-
-            vx += ax * delta_t_pred
-            vy += ay * delta_t_pred
-
-            predictions.append((x_next, y_next))
-
-        return predictions
-
-    # get battery
-    def battery_state(self):
-        return self.vehicle.battery.voltage
+    def get_altitude(self):
+        altitude = self.vehicle.location.global_relative_frame.alt
+        return altitude
 
     # end
     def close_connection(self):
         self.vehicle.close()
 
+    # to avi
+    def images_to_avi(self, image_prefix, base_output_filename, fps=10):
+        files = os.listdir()
+        jpg_files = [file for file in files if file.startswith(image_prefix) and file.endswith('.jpg')]
 
-if __name__ == "__main__":
-    altitude = 5
-    gt = Drone()
+        jpg_files.sort(key=lambda x: int(x.split('_')[-1].split('.jpg')[0]))
 
-    try:
-        gt.arm_takeoff(altitude)
-        gt.set_yaw_to_west()
-        time.sleep(0.1)
+        if not jpg_files:
+            print("No jpg files found with the given prefix.")
+            return
 
-        nums = 1, 1
-        # raw_input = input("위도, 경도: ")
-        # nums = [float(num.strip()) for num in raw_input.split(",")]
+        img = cv2.imread(jpg_files[0])
+        if img is None:
+            print(f"Error reading the image: {jpg_files[0]}")
+            return
 
-        if len(nums) == 2:
-            step = 0
-            plt.ion()
-            fig, ax = plt.subplots(figsize=(6, 6))
-            ax.set_xlim(-15, 15)  # x축 범위 설정
-            ax.set_ylim(-15, 15)  # y축 범위 설정
+        height, width, layers = img.shape
 
-            init_count = 8  # 0으로 하면 초기 기동 작동
-            yaw_set = 270
-            direction = 5
-            positions = []
+        combinations = [('XVID', 'avi')]
 
-            while True:
-                step += 1
-                receive_arr = np.array(gt.receiving_data())
+        for codec, ext in combinations:
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            output_filename = f"{base_output_filename}_{codec}.{ext}"
+            out = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
 
-                # 초기 기동
-                if init_count < 5:
-                    # 고개를 계속 돌림
-                    gt.set_yaw_to_west_nonblock(yaw_set)
-                    if yaw_set < 240 or yaw_set > 300:
-                        direction = - direction
-                        yaw_set += 2 * direction
-                    yaw_set += direction
-                    time.sleep(0.1)
-                    # gt.goto_location(x, y ,z)
-
-                    # 찾으면 +1
-                    receive_arr = np.array(gt.receiving_data())
-                    if receive_arr[0] > 0:
-                        init_count += 1
-
-                        # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
-                        if init_count >= 5:
-                            gt.set_yaw_to_west()
-                            while (gt.receiving_data()[0] > 550) and (300 > gt.receiving_data()[0]):
-                                x, y = gt.get_pos()
-                                x_yaw = yaw_set - 270
-                                gt.goto_location(x + x_yaw / 10, y)
-
-                # 일반 기동
+            for file in jpg_files:
+                img = cv2.imread(file)
+                if img is not None:
+                    out.write(img)
                 else:
-                    print("Normal maneuver...")
+                    print(f"Error reading the image: {file}")
 
-                    if receive_arr[0] == 0:
-                        receive_arr[0] = 425
-                        receive_arr[1] = 240
-
-                    print(0, receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
-                    gt.locking_drl(0, receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=gt.moving_velocity)
-                    time.sleep(0.1)
-
-                if step % 10 == 0:
-                    current_pos = gt.get_pos()
-                    ax.clear()
-                    ax.set_xlim(-15, 15)
-                    ax.set_ylim(-15, 15)
-                    positions.append((-current_pos[1], current_pos[0]))
-                    ax.scatter(-current_pos[1], current_pos[0], color='green', s=20)
-                    if len(positions) > 1:
-                        xs, ys = zip(*positions)
-                        ax.plot(xs, ys, color='orange')
-
-                    plt.draw()
-                    plt.pause(0.1)
-                    plt.savefig(f'graph_at_step_{step}.png')
+            out.release()
+            print(f"Saved video with {codec} codec to {output_filename}")
 
 
-        else:
-            print("정확하게 두 개의 실수를 입력하세요.")
-    except ValueError:
-        print("올바른 형식의 실수를 입력하세요.")
-    except KeyboardInterrupt:
-        print("LANDLANdLAnd")
-        gt.land()
-        gt.close_connection()
+def draw_velocity_arrow(image, vn, ve):
+    x = vn
+    y = ve
+    
+    # 이미지 오른쪽 상단을 기준으로 시작점 설정
+    h, w = image.shape[:2]
+    start_point = (w - 100, 50)  # 예를 들어, 오른쪽 상단에서 100px 왼쪽, 50px 아래
+
+    # 화살표 끝점 계산 (스케일 조정 필요)
+    scale = 10  # 이 값을 조절하여 화살표의 길이를 조절할 수 있습니다.
+    end_point = (int(start_point[0] + x * scale), int(start_point[1] - y * scale))
+
+    # 화살표 그리기
+    cv2.arrowedLine(image, start_point, end_point, (0, 0, 255), 2, tipLength=0.3)
+
+    return image
+
+
+if __name__ == '__main__':
+
+    start_command = input("Press 's' to start: ")
+
+    if start_command == 's':
+        drone = Drone()
+        detect2_period = 0
+        detect2_count = 0
+        vote_array = []
+        vote_result = 'None'
+        image_counter = 1
+
+        drone.set_gimbal_angle(drone.init_yaw, drone.init_pitch)
+        time.sleep(2)
+
+        try:
+            while True:
+                ret, frame = drone.camera.read()
+                if not ret:
+                    print("Failed to grab frame")
+                    break
+
+                # detect1 start !!!!!!!!!!!!!!!
+                frame = cv2.resize(frame, (drone.frame_width, drone.frame_height))
+                x, y, w, h, _ = drone.detect1(frame)
+
+                # detect2 start !!!!!!!!!!!!!!!
+                if x > 0:
+                    detect2_period += 1
+                if detect2_period > drone.using_detect2_wait:
+                    if (detect2_period % drone.using_detect2_period == 0) and (
+                            detect2_count < drone.using_detect2_count):
+                        vote_array.append(drone.detect2(x, y, w, h, frame))
+                        detect2_count += 1
+                    elif detect2_count == drone.using_detect2_count:
+                        vote_result = drone.voting(vote_array)
+                        drone.using_detect2_count -= 1
+
+                # camera centering
+                # drone.init_yaw += 0.01 * (x - drone.frame_width_divide_2)
+
+                drone.init_pitch += 0.01 * (drone.frame_height_divide_2 - y)
+
+                response = drone.accquire_data()
+                yaw_current, pitch_current, _, _, _, _ = drone.acquire_attitude(response)
+
+                if drone.init_pitch > drone.max_pitch:
+                    drone.init_pitch = drone.max_pitch
+                if drone.init_pitch < drone.min_pitch:
+                    drone.init_pitch = drone.min_pitch
+
+                drone.set_gimbal_angle_feedback(drone.init_yaw, drone.init_pitch)
+                # 송신 데이터 지정/데이터 송신
+                data = [x, y, w, h, int(yaw_current), int(pitch_current)]
+
+                if (yaw_current < 90) and (yaw_current > -90) and (pitch_current > 0) and (pitch_current < 90):
+                    height, width = frame.shape[:2]
+                    text_position = (10, height - 10)
+                    cv2.putText(frame, str(int(pitch_current)), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.9,
+                                (0, 0, 255), 2)
+
+                    drone.sending_data(data)
+                    print(data)
+
+                # 바운딩 박스
+                if w > 0 and h > 0:
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    center_x = x + w // 2
+                    center_y = y + h // 2
+
+                    # 중심점 좌표 표시
+                    center_text = f"Center: ({center_x}, {center_y})"
+                    cv2.putText(frame, center_text, (x + w, y + h), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 120, 50), 1)
+
+                # 이미지에 시간 표시
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+
+                # 이미지에 기종 식별 결과 표시
+                text_size = cv2.getTextSize(vote_result, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
+                text_x = frame.shape[1] - text_size[0] - 10
+                text_y = frame.shape[0] - 10
+                cv2.putText(frame, vote_result, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+
+                # 이미지에 화샆표 표시
+                vn, ve = drone.get_velocity()
+                frame = draw_velocity_arrow(frame, vn, ve)
+
+                # 드론 고도 데이터 표시
+                altitude = drone.get_altitude()
+                height, width = frame.shape[:2]
+                altitude_text = f"Altitude: {altitude:.2f}m"
+                cv2.putText(frame, altitude_text, (width - 200, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+                # 이미지 저장
+                filename = f"{image_counter}.jpg"
+                cv2.imwrite(filename, frame)
+                image_counter += 1
+
+                # sending data
+                # drone.sending_data(sending_data)
+                # Display the resulting frame
+                # cv2.imshow('Drone Camera Feed', frame)
+
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+        except KeyboardInterrupt:
+            drone.close_connection()
+            drone.camera.release()
+            cv2.destroyAllWindows()
