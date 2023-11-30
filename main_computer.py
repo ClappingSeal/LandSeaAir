@@ -27,7 +27,7 @@ class Drone:
         self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.received_data = (42, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
         # DRL model load
