@@ -455,4 +455,5 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("LANDLANdLAnd")
             gt.land()
+            time.sleep(1)
             gt.close_connection()
