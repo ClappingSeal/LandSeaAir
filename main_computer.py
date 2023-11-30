@@ -7,6 +7,8 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from stable_baselines3 import PPO
+from datetime import datetime
+import csv
 
 logging.getLogger('dronekit').setLevel(logging.CRITICAL)
 
@@ -21,11 +23,11 @@ class Drone:
         # Connecting values
         self.connection_string = connection_string
         self.baudrate = baudrate
-        self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
-        # self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
+        # self.vehicle = connect(self.connection_string, wait_ready=True, baud=self.baudrate, timeout=100)
+        self.vehicle = connect('tcp:127.0.0.1:5762', wait_ready=False, timeout=100)
 
         # Communication
-        self.received_data = (425, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.received_data = (42, 240, 0, 0, 0, self.standard_pit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self.vehicle.add_message_listener('DATA64', self.data64_callback)
 
         # DRL model load
@@ -307,7 +309,15 @@ class Drone:
         y = -delta_lon * LONGITUDE_CONVERSION
 
         return x, y
+    
+    def get_pos2(self):
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 현재 시간
+        latitude = self.vehicle.location.global_relative_frame.lat  # 위도
+        longitude = self.vehicle.location.global_relative_frame.lon  # 경도
+        altitude = self.vehicle.location.global_relative_frame.alt  # 고도
 
+        return current_time, latitude, longitude, altitude
+    
     # update past data position by rolling
     def update_past_pos_data(self):
         self.past_pos_data = np.roll(self.past_pos_data, shift=-1, axis=0)
@@ -370,88 +380,79 @@ if __name__ == "__main__":
     altitude = 5
     gt = Drone()
 
-    try:
-        gt.arm_takeoff(altitude)
-        gt.set_yaw_to_west()
-        time.sleep(0.1)
+    with open('drone_data.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Time", "Latitude", "Longitude", "Altitude"])  # 헤더 작성
 
-        nums = 1, 1
-        # raw_input = input("위도, 경도: ")
-        # nums = [float(num.strip()) for num in raw_input.split(",")]
+        try:
+            gt.arm_takeoff(altitude)
+            gt.set_yaw_to_west()
+            time.sleep(0.1)
 
-        if len(nums) == 2:
-            step = 0
-            plt.ion()
-            fig, ax = plt.subplots(figsize=(6, 6))
-            ax.set_xlim(-15, 15)  # x축 범위 설정
-            ax.set_ylim(-15, 15)  # y축 범위 설정
+            nums = 1, 1
+            # raw_input = input("위도, 경도: ")
+            # nums = [float(num.strip()) for num in raw_input.split(",")]
 
-            init_count = 8  # 0으로 하면 초기 기동 작동
-            yaw_set = 270
-            direction = 5
-            positions = []
+            if len(nums) == 2:
+                step = 0
 
-            while True:
-                step += 1
-                receive_arr = np.array(gt.receiving_data())
+                init_count = 8  # 0으로 하면 초기 기동 작동
+                yaw_set = 270
+                direction = 5
+                positions = []
+                data = []
 
-                # 초기 기동
-                if init_count < 5:
-                    # 고개를 계속 돌림
-                    gt.set_yaw_to_west_nonblock(yaw_set)
-                    if yaw_set < 240 or yaw_set > 300:
-                        direction = - direction
-                        yaw_set += 2 * direction
-                    yaw_set += direction
-                    time.sleep(0.1)
-                    # gt.goto_location(x, y ,z)
-
-                    # 찾으면 +1
+                while True:
+                    step += 1
                     receive_arr = np.array(gt.receiving_data())
-                    if receive_arr[0] > 0:
-                        init_count += 1
 
-                        # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
-                        if init_count >= 5:
-                            gt.set_yaw_to_west()
-                            while (gt.receiving_data()[0] > 550) and (300 > gt.receiving_data()[0]):
-                                x, y = gt.get_pos()
-                                x_yaw = yaw_set - 270
-                                gt.goto_location(x + x_yaw / 10, y)
+                    # 초기 기동
+                    if init_count < 5:
+                        # 고개를 계속 돌림
+                        gt.set_yaw_to_west_nonblock(yaw_set)
+                        if yaw_set < 240 or yaw_set > 300:
+                            direction = - direction
+                            yaw_set += 2 * direction
+                        yaw_set += direction
+                        time.sleep(0.1)
+                        # gt.goto_location(x, y ,z)
 
-                # 일반 기동
-                else:
-                    print("Normal maneuver...")
+                        # 찾으면 +1
+                        receive_arr = np.array(gt.receiving_data())
+                        if receive_arr[0] > 0:
+                            init_count += 1
 
-                    if receive_arr[0] == 0:
-                        receive_arr[0] = 425
-                        receive_arr[1] = 240
+                            # 5번 찾으면 서쪽을 본 후, 그 x축 맞추기
+                            if init_count >= 5:
+                                gt.set_yaw_to_west()
+                                while (gt.receiving_data()[0] > 550) and (300 > gt.receiving_data()[0]):
+                                    x, y = gt.get_pos()
+                                    x_yaw = yaw_set - 270
+                                    gt.goto_location(x + x_yaw / 10, y)
 
-                    print(0, receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
-                    gt.locking_drl(0, receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=gt.moving_velocity)
-                    time.sleep(0.1)
+                    # 일반 기동
+                    else:
+                        print("Normal maneuver...")
 
-                if step % 10 == 0:
-                    current_pos = gt.get_pos()
-                    ax.clear()
-                    ax.set_xlim(-15, 15)
-                    ax.set_ylim(-15, 15)
-                    positions.append((-current_pos[1], current_pos[0]))
-                    ax.scatter(-current_pos[1], current_pos[0], color='green', s=20)
-                    if len(positions) > 1:
-                        xs, ys = zip(*positions)
-                        ax.plot(xs, ys, color='orange')
+                        if receive_arr[0] == 0:
+                            receive_arr[0] = 425
+                            receive_arr[1] = 240
 
-                    plt.draw()
-                    plt.pause(0.1)
-                    plt.savefig(f'graph_at_step_{step}.png')
+                        print(0, receive_arr[5], receive_arr[0], receive_arr[1])  # yaw, pitch, x, y
+                        gt.locking_drl(0, receive_arr[5], receive_arr[0], receive_arr[1], alt=5, velocity=gt.moving_velocity)
+                        time.sleep(0.1)
+
+                    current_time, lat, lon, alt = gt.get_pos2()
+                    print(f"Time: {current_time}, Latitude: {lat}, Longitude: {lon}, Altitude: {alt}")
+                    writer.writerow([current_time, lat, lon, alt])  # 데이터 기록
+                    time.sleep(1)  # 1초마다 데이터 쓰기 (또는 필요에 따라 간격 조정)
 
 
-        else:
-            print("정확하게 두 개의 실수를 입력하세요.")
-    except ValueError:
-        print("올바른 형식의 실수를 입력하세요.")
-    except KeyboardInterrupt:
-        print("LANDLANdLAnd")
-        gt.land()
-        gt.close_connection()
+            else:
+                print("정확하게 두 개의 실수를 입력하세요.")
+        except ValueError:
+            print("올바른 형식의 실수를 입력하세요.")
+        except KeyboardInterrupt:
+            print("LANDLANdLAnd")
+            gt.land()
+            gt.close_connection()
