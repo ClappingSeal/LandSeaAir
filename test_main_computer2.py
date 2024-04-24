@@ -61,4 +61,6 @@ class Drone:
         while len(packed_data) < 64:
             packed_data += b'\x00'
 
-        msg = self.vehicle.message_factory.ㄹ
+        msg = self.vehicle.message_factory.
+
+ㅁㄴㅇㄹㄴㅁㅇㄹㄹ
