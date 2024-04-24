@@ -381,3 +381,4 @@ if __name__ == "__main__":
         gt.set_yaw_to_north()
         gt.land()
         gt.close_connection()
+aaa
