@@ -56,11 +56,4 @@ class Drone:
         # Packing Data
         packed_data = bytearray()
         for item in data:
-            packed_data += item.to_bytes(4, 'little')
-
-        while len(packed_data) < 64:
-            packed_data += b'\x00'
-
-        msg = self.vehicle.message_factory.
-
-ㅁㄴㅇㄹㄴㅁㅇㄹㄹ
+            pㄹ
